@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Christian Prayer Live — Faith, Hope, Love. Pray together and grow in faith on TikTok Live." />
+  <title>Christian Prayer Live — Faith • Hope • Love</title>
+  <link rel="stylesheet" href="/css/live.css" />
+</head>
+<body>
+  <div class="app-workspace">
+    <!-- ====================================================================
+         VERTICAL 9:16 LIVESTREAM STAGE — 1080 x 1920 (OBS BROWSER SOURCE)
+         ==================================================================== -->
+    <main class="stage-wrapper" id="stageWrapper">
+      <div class="stage-9x16" id="stage9x16">
+        <!-- Background photography + cinematic overlays -->
+        <div class="background-stack" aria-hidden="true">
+          <img class="stage-bg" id="bgLayerA" alt="" />
+          <img class="stage-bg" id="bgLayerB" alt="" />
+          <div class="bg-tint"></div>
+          <img class="stage-overlay rays" src="/assets/christian/overlays/golden-light-rays.png" alt="" />
+          <img class="stage-overlay bokeh" src="/assets/christian/overlays/gold-bokeh-particles.png" alt="" />
+          <img class="stage-overlay vignette" src="/assets/christian/overlays/soft-vignette.png" alt="" />
+        </div>
+        <div class="stage-aura" aria-hidden="true"></div>
+
+        <canvas id="prayerCanvas" aria-hidden="true"></canvas>
+
+        <!-- Brand header -->
+        <header class="stage-header">
+          <div class="header-top">
+            <div class="live-pill">
+              <span class="live-dot" id="liveDot"></span>
+              <span id="liveStatusText">LIVE</span>
+            </div>
+            <div class="viewer-pill">
+              <span class="viewer-icon">◉</span>
+              <span id="viewerCount">0</span>
+              <span class="viewer-label">watching</span>
+            </div>
+          </div>
+          <h1 class="brand-title">CHRISTIAN PRAYER LIVE</h1>
+          <div class="brand-tagline"><span></span>FAITH • HOPE • LOVE<span></span></div>
+        </header>
+
+        <div class="lower-stack">
+        <!-- Prayer request focus -->
+        <section class="prayer-card" id="prayerCard">
+          <div class="prayer-card-head">
+            <div class="prayer-label"><span class="prayer-mark">✝</span> PRAYER REQUEST</div>
+            <div class="candle-strip" id="candleStrip" aria-hidden="true"></div>
+          </div>
+          <p class="prayer-ask" id="prayerAsk">You are welcome here. Type <strong>PRAY FOR ME</strong> in the comments to share a prayer request.</p>
+          <p class="prayer-community" id="prayerCommunity">Let us pray together and encourage one another in faith, hope and love.</p>
+        </section>
+
+        <!-- Scripture card -->
+        <section class="verse-card" id="verseCard">
+          <div class="verse-label">VERSE OF THE MOMENT</div>
+          <blockquote class="verse-text" id="verseText">The Lord is my shepherd; I shall not want.</blockquote>
+          <div class="verse-ref" id="verseRef">Psalm 23:1 (KJV)</div>
+        </section>
+
+        <!-- Live comments + community activity -->
+        <section class="comments-card">
+          <div class="comments-column">
+            <div class="section-heading">
+              <span class="heading-label">LIVE COMMENTS</span>
+              <span class="heading-line"></span>
+              <span class="heading-sub" id="commentsCount">0</span>
+            </div>
+            <div class="comments-list" id="commentsList">
+              <div class="comments-empty" id="commentsEmpty">Comments from TikTok will appear here.</div>
+            </div>
+          </div>
+
+          <aside class="activity-column">
+            <div class="section-heading">
+              <span class="heading-label">COMMUNITY</span>
+              <span class="heading-line"></span>
+            </div>
+            <div class="stage-activity-list" id="stageActivityList">
+              <div class="comments-empty">Recent activity will appear here.</div>
+            </div>
+          </aside>
+        </section>
+
+        <!-- Community counters -->
+        <section class="community-row" aria-label="Community activity">
+          <div class="community-stat">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z" /></svg>
+            <div class="stat-copy"><strong id="statPrayers">0</strong><small>Prayers</small></div>
+          </div>
+          <div class="community-stat">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.9 2.2 3 3.9 3 5.6A3 3 0 0 1 12 11a3 3 0 0 1-3-2.4C9 6.9 10.1 5.2 12 3Z" /><path d="M10.5 11h3v9h-3z" /><path d="M7 20h10" /></svg>
+            <div class="stat-copy"><strong id="statCandles">0</strong><small>Candles</small></div>
+          </div>
+          <div class="community-stat">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2h2v6h6v2h-6v12h-2V10H5V8h6V2Z" /></svg>
+            <div class="stat-copy"><strong id="statAmens">0</strong><small>Amens</small></div>
+          </div>
+          <div class="community-stat">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z" /></svg>
+            <div class="stat-copy"><strong id="statFollowers">0</strong><small>Followers</small></div>
+          </div>
+          <div class="community-stat">
+            <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16v10H4z" /><path d="M3 7h18v3H3z" /><path d="M12 7v13" /><path d="M8 7a2 2 0 1 1 4 0" /><path d="M12 7a2 2 0 1 1 4 0" /></svg>
+            <div class="stat-copy"><strong id="statGifts">0</strong><small>Gifts</small></div>
+          </div>
+        </section>
+
+        <footer class="stage-footer">
+          <div class="footer-tagline">FAITH • HOPE • LOVE</div>
+          <div class="footer-sub" id="footerActivity">Pray Together. Grow in Faith.</div>
+          <div class="stage-credit" id="stageCredit"></div>
+        </footer>
+        </div>
+
+        <!-- Live animations -->
+        <div class="amen-overlay" id="amenOverlay" aria-live="polite">
+          <div class="amen-glow"></div>
+          <div class="amen-word">AMEN</div>
+          <div class="amen-sub" id="amenSub">Let us pray together.</div>
+        </div>
+
+        <div class="event-toast" id="eventToast" role="status">
+          <div class="toast-mark" id="toastMark">✝</div>
+          <div class="toast-copy">
+            <div class="toast-title" id="toastTitle"></div>
+            <div class="toast-sub" id="toastSub"></div>
+          </div>
+        </div>
+
+        <div class="celebration-banner" id="celebrationBanner">
+          <div class="celebration-rays"></div>
+          <div class="celebration-label">A GIFT OF KINDNESS</div>
+          <div class="celebration-title" id="celebrationTitle">Thank you</div>
+          <div class="celebration-sub" id="celebrationSub"></div>
+        </div>
+
+        <div class="connection-warning" id="connectionWarning">Reconnecting to the prayer room…</div>
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         QUICK CONTROL DOCK — hidden in OBS mode (?obs=1)
+         ==================================================================== -->
+    <aside class="quick-dock" id="quickDock">
+      <div class="dock-header">
+        <div>
+          <div class="dock-eyebrow">CHRISTIAN PRAYER LIVE</div>
+          <div class="dock-title">Live Control</div>
+        </div>
+        <a class="dock-link" href="/admin" target="_blank" rel="noopener">Admin ↗</a>
+      </div>
+
+      <section class="dock-section">
+        <div class="dock-section-title">Audio &amp; Voice</div>
+        <button class="dock-btn gold" id="btnUnlockAudio">Enable Audio &amp; Narration</button>
+        <div class="dock-grid-2">
+          <button class="dock-btn toggle on" id="btnToggleTts">Narration: On</button>
+          <button class="dock-btn toggle" id="btnToggleMusic">Ambience: Off</button>
+        </div>
+        <label class="dock-field">
+          <span>Narration language</span>
+          <select id="selectTtsLanguage">
+            <option value="en">English (US)</option>
+            <option value="vi">Tiếng Việt</option>
+          </select>
+        </label>
+        <div class="volume-row">
+          <div class="volume-label"><span>Ambience</span><strong id="valMusicVol">0%</strong></div>
+          <input type="range" id="sliderMusicVol" min="0" max="100" value="45" />
+        </div>
+        <div class="volume-row">
+          <div class="volume-label"><span>Narration</span><strong id="valTtsVol">95%</strong></div>
+          <input type="range" id="sliderTtsVol" min="0" max="100" value="95" />
+        </div>
+        <div class="voice-status" id="voiceStatus">Voice engine starting…</div>
+      </section>
+
+      <section class="dock-section">
+        <div class="dock-section-title">TikTok Live</div>
+        <div class="dock-inline">
+          <input type="text" id="inputTikTokUser" placeholder="@username or Live link" />
+          <button class="dock-btn gold" id="btnConnectTikTok">Connect</button>
+        </div>
+        <div class="dock-inline">
+          <button class="dock-btn" id="btnDisconnectTikTok">Disconnect</button>
+          <button class="dock-btn" id="btnToggleAutoSim">Demo activity: Off</button>
+        </div>
+        <div class="connection-note" id="connectionNote">Not connected to TikTok Live.</div>
+      </section>
+
+      <section class="dock-section">
+        <div class="dock-section-title">Background Rotation</div>
+        <div class="dock-grid-2">
+          <button class="dock-btn toggle on" id="btnToggleRotation">Rotation: On</button>
+          <button class="dock-btn" id="btnNextBackground">Next Image</button>
+        </div>
+        <label class="dock-field">
+          <span>Category</span>
+          <select id="selectBackgroundCategory"><option value="all">All images</option></select>
+        </label>
+        <label class="dock-field">
+          <span>Choose background</span>
+          <select id="selectBackgroundManual"><option value="">Loading images…</option></select>
+        </label>
+        <div class="volume-row compact">
+          <div class="volume-label"><span>Rotation interval</span><strong id="valRotationInterval">60s</strong></div>
+          <input type="range" id="sliderRotationInterval" min="10" max="300" step="5" value="60" />
+        </div>
+        <div class="asset-credit" id="assetCredit"></div>
+      </section>
+
+      <section class="dock-section">
+        <div class="dock-section-title">Prayer Requests</div>
+        <div class="prayer-dock-actions">
+          <button class="dock-btn" id="btnPausePrayers">Pause Notifications</button>
+          <a class="dock-btn link-btn" href="/admin#prayers" target="_blank" rel="noopener">Review Queue</a>
+        </div>
+        <div class="prayer-dock-note" id="prayerDockNote">0 requests in the queue</div>
+      </section>
+
+      <section class="dock-section">
+        <div class="dock-section-title">Quick Test</div>
+        <input type="text" id="inputDevoteeName" value="Sarah M." placeholder="Viewer display name" />
+        <input type="text" id="inputDevoteeWish" value="Please pray for my family and for peace this week." placeholder="Prayer request" />
+        <div class="dock-grid-2">
+          <button class="dock-btn" id="btnRpcCandle">Light Candle</button>
+          <button class="dock-btn gold" id="btnRpcPrayer">Prayer Request</button>
+          <button class="dock-btn" id="btnRpcVerse">Scripture Card</button>
+          <button class="dock-btn" id="btnRpcAmen">✝ Amen</button>
+          <button class="dock-btn" id="btnRpcGift">Gift</button>
+          <button class="dock-btn" id="btnRpcCelebration">Big Blessing</button>
+        </div>
+      </section>
+
+      <section class="dock-section">
+        <div class="dock-section-title">Recent Activity</div>
+        <div class="event-feed" id="eventFeed"><div class="feed-empty">No activity yet.</div></div>
+      </section>
+    </aside>
+  </div>
+
+  <script src="/js/audio.js"></script>
+  <script src="/js/particles.js"></script>
+  <script src="/js/live.js"></script>
+</body>
+</html>

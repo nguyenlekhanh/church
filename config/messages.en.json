@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "language": "en-US",
+    "brand": "CHRISTIAN PRAYER LIVE",
+    "notes": "All messages are intentionally short so they read well aloud. Bible verses use the King James Version (public domain) with verified book, chapter and verse references. Nothing here promises healing, wealth, miracles, or salvation in exchange for gifts."
+  },
+  "templates": {
+    "follow": [
+      "Welcome to our prayer community. God bless you!",
+      "Welcome, friend. We are glad you are praying with us.",
+      "Welcome to the family of faith. God bless you!"
+    ],
+    "share": [
+      "Thank you for sharing faith, hope and love!",
+      "Thank you for sharing this moment of prayer with others.",
+      "Thank you for spreading faith, hope and love today."
+    ],
+    "like": [
+      "Thank you for the love. God bless you.",
+      "We see your heart. God bless you.",
+      "Thank you for being here in prayer."
+    ],
+    "welcome": [
+      "Welcome to Christian Prayer Live. Pray together, grow in faith.",
+      "Welcome, friend. You are among people of faith, hope and love.",
+      "Welcome to our prayer community. May you feel at peace here.",
+      "Thank you for joining us. Let us pray together."
+    ],
+    "prayerRequestDisplay": [
+      "{name} is asking for prayers.",
+      "{name} is asking for prayer: {text}",
+      "{name} would love prayer today."
+    ],
+    "prayerRequestCommunity": [
+      "Let us keep {name} in our prayers.",
+      "Let us lift {name} up in prayer.",
+      "Together, let us pray for {name}."
+    ],
+    "prayerRequestTts": [
+      "{name} is asking for prayers. Let us keep {name} in our prayers.",
+      "Let us pray for {name} and everyone carrying a heavy heart today."
+    ],
+    "giftThanks": {
+      "small": [
+        "Thank you for your kindness. God bless you.",
+        "Thank you for supporting our prayer community.",
+        "Your kindness is a blessing to this community."
+      ],
+      "medium": [
+        "Thank you for supporting our prayer community. God bless you.",
+        "Thank you for your generous heart. May your kindness inspire hope and love.",
+        "We are grateful for your support. Peace be with you."
+      ],
+      "large": [
+        "Thank you for supporting our prayer community. May your kindness inspire hope and love.",
+        "What a generous heart. Thank you for blessing this community today.",
+        "Thank you for your kindness and support. Our prayers are with you and your family."
+      ]
+    },
+    "closing": [
+      "Thank you for praying with us. Go in peace, and may God's love go with you.",
+      "Thank you for joining us tonight. Keep the faith, hold on to hope, and share love.",
+      "Until next time, may peace fill your home and your heart. God bless you."
+    ]
+  },
+  "commands": {
+    "AMEN": [
+      "Amen.",
+      "Amen. Thank you for joining us in prayer.",
+      "Amen. May peace fill your heart today.",
+      "Amen. God is with you.",
+      "Amen, and amen."
+    ],
+    "PRAY": [
+      "Let us pray together.",
+      "Let us pause and pray together.",
+      "Join me in prayer, wherever you are.",
+      "Let us bring our hearts before God together."
+    ],
+    "JESUS": [
+      "Jesus is our hope and our peace.",
+      "Jesus invites us to come to Him with every burden.",
+      "Keep your eyes on Jesus. He is faithful.",
+      "The name of Jesus is a refuge for the weary heart.",
+      "Jesus is the reason we gather with hope today."
+    ],
+    "FAITH": [
+      "Faith grows one prayer at a time.",
+      "Hold on to your faith, even on the hard days.",
+      "Faith is trusting God when we cannot see the whole road.",
+      "A little faith, lived faithfully, can carry you a long way.",
+      "Faith is not the absence of questions. It is trust in the middle of them."
+    ],
+    "HOPE": [
+      "There is always hope in God's hands.",
+      "Hope is a light that does not go out.",
+      "Let hope rise in your heart today.",
+      "Hold on to hope. Tomorrow is still being written.",
+      "Hope reminds us that this moment is not the whole story."
+    ],
+    "LOVE": [
+      "God's love is with you right now.",
+      "Love others generously. Love leaves a lasting mark.",
+      "You are deeply loved, and you are not alone.",
+      "Let love guide your words and soften your heart today.",
+      "God's love meets us in ordinary moments like this one."
+    ],
+    "PRAYER": [
+      "If you need prayer, type PRAY FOR ME and we will pray with you.",
+      "Share your prayer request in the comments. Our community is here for you.",
+      "What would you like prayer for today? Type PRAY FOR ME.",
+      "You do not have to carry it alone. Send your prayer request in the comments."
+    ],
+    "GOD": [
+      "God is near to all who call on Him.",
+      "God's grace meets us right where we are.",
+      "God is with you in this moment.",
+      "Nothing is too heavy to bring to God.",
+      "God sees your heart, even when no one else does."
+    ],
+    "THANK YOU": [
+      "Thank you for being part of our prayer community.",
+      "Thank you, and may God bless you.",
+      "Thank you for your kindness. It does not go unnoticed.",
+      "We are grateful for you. God bless you.",
+      "Thank you for praying with us today."
+    ]
+  },
+  "categories": {
+    "welcome": [
+      "Welcome to Christian Prayer Live. Pray together, grow in faith.",
+      "Welcome, friend. You are among people of faith, hope and love.",
+      "Good to have you with us. Let us pray together.",
+      "Welcome to our prayer community. May your heart find peace here.",
+      "Thank you for spending this time in prayer with us."
+    ],
+    "prayerInvitation": [
+      "If you have a prayer need, type PRAY FOR ME. We will pray with you.",
+      "Let us pray for one another. Share your request in the comments.",
+      "Take a breath. Bring your request before God, and let us pray with you.",
+      "You are not alone in this. Send your prayer request and let us stand with you.",
+      "Is there something heavy on your heart today? Let us pray with you."
+    ],
+    "faith": [
+      "Faith grows one prayer at a time.",
+      "Hold on to your faith, even on the hard days.",
+      "Faith is trusting God when we cannot see the whole road.",
+      "A little faith, lived faithfully, can carry you a long way.",
+      "Faith is not the absence of questions. It is trust in the middle of them.",
+      "Faith that is small is still faith that is real."
+    ],
+    "hope": [
+      "There is always hope in God's hands.",
+      "Hope is a light that does not go out.",
+      "Let hope rise in your heart today.",
+      "Hold on to hope. Tomorrow is still being written.",
+      "Hope reminds us that this moment is not the whole story.",
+      "Hope is a quiet strength for the days that feel long."
+    ],
+    "love": [
+      "God's love is with you right now.",
+      "Love others generously. Love leaves a lasting mark.",
+      "You are deeply loved, and you are not alone.",
+      "Let love guide your words and soften your heart today.",
+      "God's love meets us in ordinary moments like this one.",
+      "Love is patient, and love never stops showing up."
+    ],
+    "gratitude": [
+      "Thank you for being part of this community of faith.",
+      "Thank you for praying with us today. It matters.",
+      "We are grateful for every person joining us in prayer.",
+      "Thank you for your kindness, your faith, and your time.",
+      "Gratitude turns an ordinary moment into a prayer."
+    ],
+    "bibleEncouragement": [
+      "God's Word is a lamp for the next step, not always the whole map.",
+      "The Scriptures remind us that we are never walking alone.",
+      "Let a verse of Scripture steady your heart today.",
+      "God's promises are not fragile, even when our days feel fragile.",
+      "The Bible is an invitation to know God more deeply, one page at a time."
+    ],
+    "community": [
+      "Faith grows stronger when we pray together.",
+      "This community is glad you are here.",
+      "Let us encourage one another in faith, hope and love.",
+      "Together we are a family of faith, even across many miles.",
+      "Thank you for making this a place of kindness and prayer."
+    ],
+    "giftThankYou": [
+      "Thank you for supporting our prayer community.",
+      "May your kindness inspire hope and love.",
+      "Thank you for your generous heart. God bless you.",
+      "Your support helps keep this prayer community going.",
+      "We are grateful for your kindness today."
+    ],
+    "closing": [
+      "Thank you for praying with us. Go in peace, and may God's love go with you.",
+      "Thank you for joining us tonight. Keep the faith, hold on to hope, and share love.",
+      "Until next time, may peace fill your home and your heart. God bless you.",
+      "We will be back soon. Until then, keep praying and keep hoping.",
+      "May God bless you and keep you. Thank you for being here."
+    ]
+  },
+  "bibleVerses": [
+    {
+      "text": "The Lord is my shepherd; I shall not want.",
+      "reference": "Psalm 23:1 (KJV)"
+    },
+    {
+      "text": "Be still, and know that I am God.",
+      "reference": "Psalm 46:10 (KJV)"
+    },
+    {
+      "text": "The Lord is my light and my salvation; whom shall I fear?",
+      "reference": "Psalm 27:1 (KJV)"
+    },
+    {
+      "text": "This is the day which the Lord hath made; we will rejoice and be glad in it.",
+      "reference": "Psalm 118:24 (KJV)"
+    },
+    {
+      "text": "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
+      "reference": "Proverbs 3:5 (KJV)"
+    },
+    {
+      "text": "Come unto me, all ye that labour and are heavy laden, and I will give you rest.",
+      "reference": "Matthew 11:28 (KJV)"
+    },
+    {
+      "text": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+      "reference": "John 3:16 (KJV)"
+    },
+    {
+      "text": "And we know that all things work together for good to them that love God.",
+      "reference": "Romans 8:28 (KJV)"
+    },
+    {
+      "text": "I can do all things through Christ which strengtheneth me.",
+      "reference": "Philippians 4:13 (KJV)"
+    },
+    {
+      "text": "Fear thou not; for I am with thee: be not dismayed; for I am thy God.",
+      "reference": "Isaiah 41:10 (KJV)"
+    },
+    {
+      "text": "Casting all your care upon him; for he careth for you.",
+      "reference": "1 Peter 5:7 (KJV)"
+    },
+    {
+      "text": "Let all your things be done with charity.",
+      "reference": "1 Corinthians 16:14 (KJV)"
+    }
+  ],
+  "prayerRequestTriggers": [
+    "pray for me",
+    "prayer request",
+    "please pray",
+    "pray for my",
+    "pray for us",
+    "need prayer",
+    "prayers please"
+  ]
+}

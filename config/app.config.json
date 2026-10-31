@@ -1,0 +1,59 @@
+{
+  "brand": {
+    "name": "CHRISTIAN PRAYER LIVE",
+    "tagline": "FAITH • HOPE • LOVE",
+    "secondaryTagline": "Pray Together. Grow in Faith.",
+    "market": "United States",
+    "tradition": "General Christian"
+  },
+  "theme": "christian",
+  "port": 3000,
+  "tiktok": {
+    "username": "",
+    "autoConnect": true
+  },
+  "language": {
+    "default": "en",
+    "fallback": "en"
+  },
+  "tts": {
+    "enabled": true,
+    "engine": "piper",
+    "volume": 0.95,
+    "rate": 1.0,
+    "maxQueue": 6,
+    "voices": {
+      "en": "en_US-amy-medium",
+      "vi": "vi_VN-vais1000-medium"
+    }
+  },
+  "background": {
+    "rotation": true,
+    "intervalSeconds": 60,
+    "category": "cathedral",
+    "randomize": true,
+    "transitionMs": 1600
+  },
+  "prayer": {
+    "autoApprove": true,
+    "paused": false,
+    "maxQueue": 30,
+    "cooldownSeconds": 30,
+    "maxLength": 120,
+    "showAvatar": false
+  },
+  "giftTiers": {
+    "small": 5,
+    "medium": 50,
+    "large": 200
+  },
+  "backgroundMusic": {
+    "enabled": true,
+    "volume": 0.45,
+    "file": ""
+  },
+  "moderation": {
+    "blockedWords": [],
+    "blockLinks": true
+  }
+}

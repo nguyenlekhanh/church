@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ministry Dashboard — Christian Prayer Live</title>
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body>
+  <div class="admin-shell">
+    <header class="admin-topbar">
+      <div class="brand-block">
+        <div class="brand-eyebrow">CHRISTIAN PRAYER LIVE</div>
+        <h1>Ministry Dashboard</h1>
+        <p>Faith • Hope • Love — “Pray Together. Grow in Faith.”</p>
+      </div>
+      <div class="topbar-center">
+        <div class="status-line" id="statusBanner">Connecting to the prayer room…</div>
+        <div class="status-sub" id="statusSub">Loading live state…</div>
+      </div>
+      <div class="topbar-actions">
+        <a class="btn" href="/?obs=1" target="_blank" rel="noopener">OBS 9:16</a>
+        <a class="btn gold" href="/" target="_blank" rel="noopener">Open Live Stage</a>
+      </div>
+    </header>
+
+    <main class="admin-grid">
+      <!-- Overview -->
+      <section class="panel span-2" id="overview">
+        <div class="panel-head">
+          <h2>Live Overview</h2>
+          <span class="panel-hint" id="overviewHint">Waiting for state…</span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-tile"><span class="stat-label">Prayer Requests</span><strong id="ovPrayers">0</strong></div>
+          <div class="stat-tile"><span class="stat-label">Candles Lit</span><strong id="ovCandles">0</strong></div>
+          <div class="stat-tile"><span class="stat-label">Amens</span><strong id="ovAmens">0</strong></div>
+          <div class="stat-tile"><span class="stat-label">Followers</span><strong id="ovFollowers">0</strong></div>
+          <div class="stat-tile"><span class="stat-label">Shares</span><strong id="ovShares">0</strong></div>
+          <div class="stat-tile"><span class="stat-label">Gifts</span><strong id="ovGifts">0</strong></div>
+          <div class="stat-tile"><span class="stat-label">Watching</span><strong id="ovViewers">0</strong></div>
+          <div class="stat-tile"><span class="stat-label">Prayer Queue</span><strong id="ovQueue">0</strong></div>
+        </div>
+      </section>
+
+      <!-- TikTok connection -->
+      <section class="panel" id="connection">
+        <div class="panel-head">
+          <h2>TikTok Live Connection</h2>
+          <span class="badge" id="connectionBadge">Disconnected</span>
+        </div>
+        <label class="field">
+          <span>@username or Live link</span>
+          <input type="text" id="ttUser" placeholder="@yourchannel or https://tiktok.com/@yourchannel/live" />
+        </label>
+        <div class="button-row">
+          <button class="btn gold" id="btnConnect">Connect Live</button>
+          <button class="btn" id="btnDisconnect">Disconnect</button>
+        </div>
+        <p class="note" id="connectionNote">Enter the account that is currently live, then connect.</p>
+
+        <div class="divider"></div>
+        <div class="inline-head">
+          <h3>Demo Activity</h3>
+          <label class="switch">
+            <input type="checkbox" id="autoSimToggle" />
+            <span>Simulate viewers</span>
+          </label>
+        </div>
+        <p class="note">Demo activity is optional and off by default. It creates sample prayer requests for testing the layout.</p>
+      </section>
+
+      <!-- TTS -->
+      <section class="panel" id="tts">
+        <div class="panel-head">
+          <h2>Piper Narration</h2>
+          <span class="badge" id="ttsBadge">Starting</span>
+        </div>
+        <p class="note" id="ttsStatusText">Loading the local voice engine…</p>
+        <label class="switch">
+          <input type="checkbox" id="ttsEnabled" />
+          <span>Enable spoken narration</span>
+        </label>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Default language</span>
+            <select id="ttsLanguage">
+              <option value="en">English (US)</option>
+              <option value="vi">Tiếng Việt</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>American English voice</span>
+            <select id="enVoice"></select>
+          </label>
+          <label class="field">
+            <span>Vietnamese voice</span>
+            <select id="vnVoice"></select>
+          </label>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-label"><span>Narration volume</span><strong id="ttsVolumeValue">95%</strong></div>
+          <input type="range" id="ttsVolume" min="0" max="100" value="95" />
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span>Speaking speed</span><strong id="ttsRateValue">1.00×</strong></div>
+          <input type="range" id="ttsRate" min="70" max="140" value="100" />
+        </div>
+
+        <div class="button-row">
+          <button class="btn gold" id="btnTestEn">Test English</button>
+          <button class="btn" id="btnTestVi">Test Vietnamese</button>
+        </div>
+        <div class="inline-input">
+          <input type="text" id="ttsCustomText" value="Welcome to Christian Prayer Live. Faith, hope and love." />
+          <button class="btn" id="btnSpeakCustom">Speak</button>
+        </div>
+        <audio id="audioPreview" controls class="audio-preview"></audio>
+      </section>
+
+      <!-- Backgrounds -->
+      <section class="panel span-2" id="backgrounds">
+        <div class="panel-head">
+          <h2>Background Rotation</h2>
+          <span class="panel-hint" id="backgroundHint">Loading local image library…</span>
+        </div>
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="bgRotation" />
+            <span>Auto-rotate backgrounds</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="bgRandomize" />
+            <span>Random order</span>
+          </label>
+          <label class="field compact">
+            <span>Category</span>
+            <select id="bgCategory"><option value="all">All images</option></select>
+          </label>
+          <label class="field compact">
+            <span>Interval (seconds)</span>
+            <input type="number" id="bgInterval" min="10" max="3600" step="5" value="60" />
+          </label>
+          <label class="field compact">
+            <span>Fade (ms)</span>
+            <input type="number" id="bgTransition" min="400" max="6000" step="100" value="1600" />
+          </label>
+          <button class="btn" id="btnNextBackground">Next Image</button>
+        </div>
+        <p class="note" id="currentBackground">Current: —</p>
+        <div class="background-grid" id="backgroundGrid"></div>
+        <p class="note small">All artwork is served locally. Source, license and attribution are recorded in <code>public/assets/christian/asset-manifest.json</code>.</p>
+      </section>
+
+      <!-- Prayer queue -->
+      <section class="panel span-2" id="prayers">
+        <div class="panel-head">
+          <h2>Prayer Request Queue</h2>
+          <div class="inline-head tight">
+            <label class="switch">
+              <input type="checkbox" id="prayerAutoApprove" />
+              <span>Auto-approve</span>
+            </label>
+            <label class="switch">
+              <input type="checkbox" id="prayerPaused" />
+              <span>Pause notifications</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="prayer-toolbar">
+          <div class="inline-input">
+            <input type="text" id="manualPrayerName" placeholder="Viewer name" />
+            <input type="text" id="manualPrayerText" placeholder="Prayer request" />
+            <button class="btn gold" id="btnAddPrayer">Add Request</button>
+          </div>
+          <div class="button-row right">
+            <button class="btn" id="btnClearPrayers">Clear Queue</button>
+          </div>
+        </div>
+        <p class="note" id="prayerCountNote">0 requests</p>
+        <div class="prayer-list" id="prayerQueue"></div>
+        <p class="note small">
+          Requests are moderated for links, phone numbers, profanity and spam. Never promise healing, wealth, miracles, or salvation,
+          and never require a gift to receive prayer.
+        </p>
+      </section>
+
+      <!-- Community feed -->
+      <section class="panel" id="comments">
+        <div class="panel-head">
+          <h2>Live Comments</h2>
+          <span class="panel-hint" id="commentCount">0</span>
+        </div>
+        <div class="chat-list" id="liveChatList"><div class="empty">Comments will appear here.</div></div>
+        <div class="divider"></div>
+        <div class="inline-input">
+          <input type="text" id="simComment" value="AMEN" placeholder="Test comment" />
+          <button class="btn gold" id="btnSimComment">Send</button>
+        </div>
+        <div class="chip-row" id="commandChips">
+          <button class="chip" data-command="AMEN">AMEN</button>
+          <button class="chip" data-command="PRAY">PRAY</button>
+          <button class="chip" data-command="JESUS">JESUS</button>
+          <button class="chip" data-command="FAITH">FAITH</button>
+          <button class="chip" data-command="HOPE">HOPE</button>
+          <button class="chip" data-command="LOVE">LOVE</button>
+          <button class="chip" data-command="PRAYER">PRAYER</button>
+          <button class="chip" data-command="GOD">GOD</button>
+          <button class="chip" data-command="THANK YOU">THANK YOU</button>
+          <button class="chip" data-command="pray for me and my family">PRAY FOR ME</button>
+        </div>
+      </section>
+
+      <!-- Activity -->
+      <section class="panel" id="activity">
+        <div class="panel-head">
+          <h2>Community Activity</h2>
+          <span class="panel-hint">Newest first</span>
+        </div>
+        <div class="activity-list" id="activityList"><div class="empty">No activity yet.</div></div>
+      </section>
+
+      <!-- Message library -->
+      <section class="panel span-2" id="messages">
+        <div class="panel-head">
+          <h2>Message Library</h2>
+          <div class="button-row tight">
+            <button class="btn" id="btnReloadMessages">Reload</button>
+            <button class="btn gold" id="btnSaveMessages">Save Changes</button>
+          </div>
+        </div>
+        <p class="note">
+          Welcome messages, prayer invitations, command responses, gift thanks and verified Scripture references live in
+          <code>config/messages.en.json</code>. Saving creates a <code>.bak</code> copy automatically.
+        </p>
+        <textarea id="messagesEditor" spellcheck="false"></textarea>
+        <div class="save-status" id="messagesStatus"></div>
+      </section>
+
+      <!-- RPC console -->
+      <section class="panel span-2" id="rpc">
+        <div class="panel-head">
+          <h2>JSON-RPC 2.0 Console</h2>
+          <span class="panel-hint">POST /rpc · ws://localhost:3000/ws</span>
+        </div>
+        <div class="rpc-row">
+          <label class="field">
+            <span>Method</span>
+            <input type="text" id="rpcMethod" value="temple.getState" />
+          </label>
+          <label class="field grow">
+            <span>Params (JSON)</span>
+            <textarea id="rpcParams" class="small-area" spellcheck="false">{}</textarea>
+          </label>
+          <button class="btn gold" id="btnSendRpc">Send</button>
+        </div>
+        <div class="chip-row">
+          <button class="chip rpc-preset" data-method="temple.getState" data-params="{}">Get state</button>
+          <button class="chip rpc-preset" data-method="temple.burnIncense" data-params='{"user":"Sarah M.","count":1}'>Light candle</button>
+          <button class="chip rpc-preset" data-method="temple.drawFortune" data-params='{"user":"Sarah M."}'>Scripture card</button>
+          <button class="chip rpc-preset" data-method="prayer.list" data-params="{}">Prayer queue</button>
+          <button class="chip rpc-preset" data-method="stage.listBackgrounds" data-params="{}">Backgrounds</button>
+          <button class="chip rpc-preset" data-method="tts.voices" data-params="{}">Voices</button>
+          <button class="chip rpc-preset" data-method="live.status" data-params="{}">Live status</button>
+          <button class="chip rpc-preset danger" data-method="temple.resetMerit" data-params="{}">Reset counters</button>
+        </div>
+        <pre id="rpcOutput">{ "status": "Ready" }</pre>
+      </section>
+    </main>
+
+    <footer class="admin-footer">
+      <div>
+        <strong>Windows startup</strong>
+        <code>bun install</code> · <code>uv venv .venv</code> · <code>uv pip install --python .venv\Scripts\python.exe piper-tts</code> · <code>bun start</code>
+      </div>
+      <div class="footer-meta">Christian Prayer Live · Local-first · Port 3000</div>
+    </footer>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

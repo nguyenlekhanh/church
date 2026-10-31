@@ -1,0 +1,18 @@
+{
+  "name": "christian-prayer-live",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Christian Prayer Live — a 9:16 TikTok Live prayer room for the US market (Bun.js + JSON-RPC + Piper TTS)",
+  "main": "server.js",
+  "scripts": {
+    "start": "bun run server.js",
+    "dev": "bun --watch server.js",
+    "test:smoke": "node scripts/smoke-test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "tiktok-live-connector": "^2.1.0",
+    "ws": "^8.18.0"
+  }
+}
