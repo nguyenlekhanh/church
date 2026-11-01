@@ -2149,3 +2149,146 @@ body.demo-mode .demo-badge { display: block; }
   .participant-figure svg,
   .participant.arriving .participant-figure { animation: none !important; }
 }
+
+/* ==========================================================================
+   Farewell scene — closing blessing triggered from Admin
+   ========================================================================== */
+.farewell-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 96px 84px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 1.4s ease, visibility 1.4s;
+}
+
+.farewell-scene.visible { opacity: 1; visibility: visible; }
+
+.farewell-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(232, 200, 122, 0.16), transparent 58%),
+    linear-gradient(180deg, rgba(4, 8, 15, 0.74) 0%, rgba(6, 12, 22, 0.86) 55%, rgba(3, 6, 11, 0.94) 100%);
+  backdrop-filter: blur(3px) saturate(1.05);
+}
+
+.farewell-glow {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  width: 980px;
+  height: 980px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(247, 230, 184, 0.2), rgba(232, 200, 122, 0.05) 46%, transparent 70%);
+  opacity: 0;
+}
+
+.farewell-scene.visible .farewell-glow { animation: farewellGlow 7s ease-out forwards; }
+
+@keyframes farewellGlow {
+  from { transform: translateX(-50%) scale(0.72); opacity: 0.2; }
+  45% { opacity: 1; }
+  to { transform: translateX(-50%) scale(1.08); opacity: 0.35; }
+}
+
+.farewell-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 900px;
+  padding: 62px 56px 54px;
+  text-align: center;
+  border: 1px solid rgba(232, 200, 122, 0.3);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(10, 18, 32, 0.82), rgba(6, 11, 20, 0.92));
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6), inset 0 0 70px rgba(232, 200, 122, 0.06);
+  transform: translateY(18px);
+  animation: farewellRise 1.5s ease forwards;
+}
+
+@keyframes farewellRise {
+  from { transform: translateY(26px); opacity: 0.2; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.farewell-mark {
+  font-family: var(--serif);
+  font-size: 62px;
+  line-height: 1;
+  color: var(--gold-bright);
+  text-shadow: 0 0 46px rgba(232, 200, 122, 0.55);
+}
+
+.farewell-eyebrow {
+  margin-top: 20px;
+  font-size: 15px;
+  letter-spacing: 6px;
+  text-indent: 6px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.farewell-title {
+  margin: 16px 0 0;
+  font-family: var(--serif);
+  font-size: var(--farewell-title-size, 74px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 1px;
+  color: var(--ivory);
+  text-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+}
+
+.farewell-rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 26px 0 30px;
+}
+
+.farewell-rule span {
+  width: 190px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232, 200, 122, 0.85), transparent);
+}
+
+.farewell-copy p {
+  margin: 0 0 20px;
+  font-family: var(--serif);
+  font-size: var(--farewell-copy-size, 30px);
+  line-height: 1.62;
+  color: rgba(255, 251, 242, 0.94);
+}
+
+.farewell-copy p:last-child { margin-bottom: 0; }
+
+.farewell-amen {
+  margin-top: 26px;
+  font-family: var(--serif);
+  font-size: 34px;
+  font-style: italic;
+  color: var(--gold-bright);
+  text-shadow: 0 0 32px rgba(232, 200, 122, 0.35);
+}
+
+.farewell-tagline {
+  margin-top: 34px;
+  font-size: 15px;
+  letter-spacing: 7px;
+  text-indent: 7px;
+  color: var(--gold);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farewell-scene,
+  .farewell-inner,
+  .farewell-scene.visible .farewell-glow { animation: none !important; transition: none !important; }
+}

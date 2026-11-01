@@ -2176,6 +2176,8 @@
         applyMusicPayload(params);
       } else if (method === 'show.state') {
         renderShow(params?.show);
+      } else if (method === 'show.farewell') {
+        renderFarewellStatus(params);
       } else if (method === 'quiz.state' || method === 'quiz.start' || method === 'quiz.reveal' || method === 'quiz.end') {
         if (params?.quiz) renderEngagement(currentState?.settings, params.quiz);
       } else if (method === 'congregation.state') {
@@ -2248,6 +2250,145 @@
     } catch (error) {
       reportError('Disconnect failed', error);
     }
+  });
+
+  /* ---------------------------------------------------------------------
+     End Live — closing blessing broadcast to the Live Stage
+     --------------------------------------------------------------------- */
+  let farewellLockTimer = null;
+
+  function farewellButtons() {
+    return [$('btnFarewell'), ...document.querySelectorAll('#farewellLibrary [data-farewell-id]')].filter(Boolean);
+  }
+
+  function setFarewellButtonsDisabled(disabled) {
+    farewellButtons().forEach((button) => { button.disabled = Boolean(disabled); });
+  }
+
+  function renderFarewellStatus(params) {
+    const hint = $('farewellHint');
+    if (params?.state === 'ended') {
+      clearTimeout(farewellLockTimer);
+      setFarewellButtonsDisabled(false);
+      if (hint) hint.textContent = 'Farewell finished — end LIVE in TikTok when ready.';
+      return;
+    }
+    const ms = Math.max(5000, Number(params?.durationMs) || 45000);
+    setFarewellButtonsDisabled(true);
+    if (hint) {
+      const title = params?.cue?.title || params?.title;
+      const label = title ? `“${title}”` : 'Farewell';
+      hint.textContent = params?.error
+        ? `${label} on the Live Stage · narration unavailable (${params.error})`
+        : `${label} playing on the Live Stage (${Math.round(ms / 1000)}s)`;
+    }
+    clearTimeout(farewellLockTimer);
+    // Re-enables the buttons even if the stage window is closed.
+    farewellLockTimer = setTimeout(() => setFarewellButtonsDisabled(false), ms);
+  }
+
+  async function playFarewellMessage(messageId) {
+    const hint = $('farewellHint');
+    setFarewellButtonsDisabled(true);
+    if (hint) hint.textContent = 'Sending the farewell…';
+    try {
+      const result = await callRpc('show.farewell', messageId ? { messageId } : {});
+      printOutput(result);
+      if (result?.ok) {
+        renderFarewellStatus({ durationMs: result.displayMs, error: result.error, title: result.title, cue: result.cue });
+      } else {
+        // A refusal (duplicate or unknown message) must leave the dashboard usable.
+        setFarewellButtonsDisabled(false);
+        if (hint) hint.textContent = result?.error || 'The farewell could not be started.';
+      }
+    } catch (error) {
+      setFarewellButtonsDisabled(false);
+      if (hint) hint.textContent = 'Farewell failed.';
+      reportError('Farewell failed', error);
+    }
+  }
+
+  $('btnFarewell')?.addEventListener('click', () => playFarewellMessage(null));
+
+  /* ---------------------------------------------------------------------
+     Farewell Message Library — server-validated, rendered from RPC
+     --------------------------------------------------------------------- */
+  function renderFarewellLibrary(data) {
+    const host = $('farewellLibrary');
+    const hint = $('farewellLibraryHint');
+    if (!host) return;
+    const messages = Array.isArray(data?.messages) ? data.messages : [];
+    if (hint) hint.textContent = `${messages.length} message${messages.length === 1 ? '' : 's'}`;
+    host.innerHTML = '';
+    if (messages.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'note small';
+      empty.textContent = 'No farewell messages are registered in config/farewell-messages.json.';
+      host.appendChild(empty);
+      return;
+    }
+    messages.forEach((message) => {
+      const card = document.createElement('div');
+      card.className = 'farewell-message';
+
+      const head = document.createElement('div');
+      head.className = 'farewell-message-head';
+      const title = document.createElement('strong');
+      title.textContent = message.title;
+      const meta = document.createElement('span');
+      meta.className = 'panel-hint';
+      meta.textContent = message.id === data.default ? 'Default · ' + message.paragraphs.length + ' paragraphs' : message.paragraphs.length + ' paragraphs';
+      head.append(title, meta);
+
+      const details = document.createElement('details');
+      details.className = 'farewell-message-copy';
+      const summary = document.createElement('summary');
+      summary.textContent = 'Show message text';
+      const body = document.createElement('div');
+      body.className = 'farewell-message-body';
+      message.paragraphs.forEach((paragraph) => {
+        const line = document.createElement('p');
+        line.textContent = paragraph;
+        body.appendChild(line);
+      });
+      if (message.closing) {
+        const closing = document.createElement('p');
+        closing.className = 'farewell-message-closing';
+        closing.textContent = message.closing;
+        body.appendChild(closing);
+      }
+      details.append(summary, body);
+
+      const play = document.createElement('button');
+      play.className = 'btn';
+      play.dataset.farewellId = message.id;
+      play.textContent = 'Play on Live Stage';
+
+      card.append(head, details, play);
+      host.appendChild(card);
+    });
+  }
+
+  async function loadFarewellLibrary() {
+    const host = $('farewellLibrary');
+    try {
+      renderFarewellLibrary(await callRpc('show.farewellList'));
+    } catch (error) {
+      if (host) {
+        host.innerHTML = '';
+        const failed = document.createElement('p');
+        failed.className = 'note small';
+        failed.textContent = 'The farewell library could not be loaded.';
+        host.appendChild(failed);
+      }
+      reportError('Farewell library failed', error);
+    }
+  }
+
+  $('farewellLibrary')?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-farewell-id]');
+    if (!button || button.disabled) return;
+    playFarewellMessage(button.dataset.farewellId);
   });
 
   $('autoSimToggle')?.addEventListener('change', async (event) => {
@@ -2980,6 +3121,7 @@
   loadImageLibrary();
   loadSchedule();
   loadHealth();
+  loadFarewellLibrary();
   setInterval(() => {
     if (currentSchedule) renderSchedule(currentSchedule);
   }, 1000);

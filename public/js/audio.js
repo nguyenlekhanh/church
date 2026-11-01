@@ -631,7 +631,9 @@
       const onStart = typeof options.onStart === 'function' ? options.onStart : null;
       const onEnd = typeof options.onEnd === 'function' ? options.onEnd : null;
 
-      if (!this.ttsEnabled) {
+      // `force` lets an explicit operator action (the farewell blessing) speak
+      // even when automatic narration is switched off.
+      if (!this.ttsEnabled && !options.force) {
         if (onStart) onStart();
         if (onEnd) setTimeout(onEnd, 4800);
         return;

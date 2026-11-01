@@ -1,0 +1,18 @@
+{
+  "$comment": "Farewell messages offered by Admin → Farewell Message Library. Add an entry, restart the server, and it appears in the dashboard. `closing` is shown separately on the stage and appended to the spoken text. Nothing here may be edited from the browser.",
+  "default": "until-we-meet-again",
+  "messages": [
+    {
+      "id": "until-we-meet-again",
+      "title": "Until We Meet Again",
+      "eyebrow": "FINAL BLESSING",
+      "paragraphs": [
+        "Dear friends, as we come to the end of this time together, we want to thank each and every one of you for joining us in prayer.",
+        "May God bless your families, strengthen your hearts, and fill your lives with peace, hope, and love.",
+        "Remember, you are never alone. God is always with you.",
+        "Thank you for praying with us today. Until we meet again, may the grace of our Lord Jesus Christ be with you all."
+      ],
+      "closing": "God bless you. Amen."
+    }
+  ]
+}

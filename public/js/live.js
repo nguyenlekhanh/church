@@ -63,6 +63,11 @@
   const prayerInvite = document.getElementById('prayerInvite');
   const prayerInviteTitle = document.getElementById('prayerInviteTitle');
   const prayerInviteSub = document.getElementById('prayerInviteSub');
+  const farewellScene = document.getElementById('farewellScene');
+  const farewellEyebrow = document.getElementById('farewellEyebrow');
+  const farewellTitle = document.getElementById('farewellTitle');
+  const farewellCopy = document.getElementById('farewellCopy');
+  const farewellAmen = document.getElementById('farewellAmen');
   const congregationScene = document.getElementById('congregationScene');
   const congregationRows = document.getElementById('congregationRows');
   const congregationCount = document.getElementById('congregationCount');
@@ -582,6 +587,103 @@
   }
 
   /* ---------------------------------------------------------------------
+     Farewell — closing blessing broadcast by the server (Admin → End Live)
+     --------------------------------------------------------------------- */
+  let farewellActive = false;
+  let farewellHideTimer = null;
+  let farewellSpokeAt = 0;
+
+  function farewellParagraphs(cue, text) {
+    const own = Array.isArray(cue?.paragraphs) ? cue.paragraphs.filter(Boolean) : [];
+    if (own.length > 0) return own;
+    return String(text || cue?.body || '')
+      .split(/\n{2,}/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
+
+  /** Shrinks a long blessing until the card fits inside the 1080x1920 stage. */
+  function fitFarewellScene() {
+    const inner = farewellScene?.querySelector('.farewell-inner');
+    if (!inner) return;
+    inner.style.removeProperty('--farewell-copy-size');
+    inner.style.removeProperty('--farewell-title-size');
+    // 192px is the scene's vertical padding at stage scale.
+    const available = Math.max(200, farewellScene.clientHeight - 192);
+    let copy = 30;
+    let title = 74;
+    for (let step = 0; step < 12 && inner.offsetHeight > available && copy > 18; step += 1) {
+      copy -= 1.5;
+      title = Math.max(48, title - 2.5);
+      inner.style.setProperty('--farewell-copy-size', `${copy}px`);
+      inner.style.setProperty('--farewell-title-size', `${title}px`);
+    }
+  }
+
+  function startFarewell(data) {
+    const cue = data?.cue || {};
+    const displayMs = Math.max(10000, Number(data?.durationMs) || Number(cue.displayMs) || 45000);
+
+    if (!farewellActive) {
+      const closing = String(cue.note || '').trim();
+      const paragraphs = farewellParagraphs(cue, data?.text);
+
+      if (farewellCopy) {
+        farewellCopy.innerHTML = '';
+        paragraphs
+          .filter((paragraph) => !closing || paragraph.trim() !== closing)
+          .forEach((paragraph) => {
+            const node = document.createElement('p');
+            node.textContent = paragraph;
+            farewellCopy.appendChild(node);
+          });
+      }
+      if (farewellEyebrow) farewellEyebrow.textContent = cue.eyebrow || 'FINAL BLESSING';
+      if (farewellTitle) farewellTitle.textContent = cue.title || 'Until We Meet Again';
+      if (farewellAmen) farewellAmen.textContent = closing || 'God bless you. Amen.';
+      fitFarewellScene();
+
+      farewellActive = true;
+      // A closing blessing outranks the programme: drop anything already queued
+      // for the stage. Server-side scheduling is untouched.
+      cueQueue.length = 0;
+      clearTimeout(cueAdvanceTimer);
+      activeCue = null;
+      showCard?.classList.remove('visible', 'leaving');
+      hideQuizCard();
+      prayerInvite?.classList.remove('visible');
+
+      if (farewellScene) {
+        farewellScene.classList.remove('visible');
+        void farewellScene.offsetWidth;
+        farewellScene.classList.add('visible');
+      }
+      stage?.classList.add('farewell-mode');
+      particleEngine.spawnBlessing();
+      audio.playSoftChime(0.9);
+      console.info('[Farewell] Closing blessing on the Live Stage.');
+    }
+
+    clearTimeout(farewellHideTimer);
+    farewellHideTimer = setTimeout(hideFarewell, displayMs);
+  }
+
+  function hideFarewell() {
+    if (!farewellActive) return;
+    // Never fade the blessing while Piper is still speaking to the room.
+    if (audio.ttsPlaying) {
+      clearTimeout(farewellHideTimer);
+      farewellHideTimer = setTimeout(hideFarewell, 3000);
+      return;
+    }
+    clearTimeout(farewellHideTimer);
+    farewellHideTimer = null;
+    farewellActive = false;
+    farewellScene?.classList.remove('visible');
+    stage?.classList.remove('farewell-mode');
+  }
+
+  /* ---------------------------------------------------------------------
      Event handling
      --------------------------------------------------------------------- */
   function enqueueEventTts(event) {
@@ -668,6 +770,10 @@
 
   function renderQuiz(quiz) {
     if (!quizCard) return;
+    if (farewellActive) {
+      hideQuizCard();
+      return;
+    }
     if (!quizIsActive(quiz)) {
       hideQuizCard();
       return;
@@ -729,7 +835,7 @@
   }
 
   function showPrayerInvite(title, sub) {
-    if (!prayerInvite) return;
+    if (!prayerInvite || farewellActive) return;
     const now = Date.now();
     if (now - lastInviteAt < 15000) return;
     lastInviteAt = now;
@@ -886,7 +992,7 @@
   }
 
   function displayNextCue() {
-    if (activeCue || !showCard) return;
+    if (activeCue || !showCard || farewellActive) return;
     const cue = cueQueue.shift();
     if (!cue) return;
     activeCue = cue;
@@ -923,7 +1029,7 @@
   }
 
   function handleShowCue(cue) {
-    if (!cue) return;
+    if (!cue || farewellActive) return;
     if (cueQueue.length > 3) cueQueue.shift();
     cueQueue.push(cue);
     if (!activeCue) displayNextCue();
@@ -1091,6 +1197,20 @@
   };
   audio.onTtsStateChange = (event) => {
     renderMusicStatus();
+    if (farewellActive) {
+      // Keep the blessing on screen while Piper is still speaking to the room.
+      if (event?.speaking) {
+        farewellSpokeAt = Date.now();
+        return;
+      }
+      const spokeMs = farewellSpokeAt ? Date.now() - farewellSpokeAt : 0;
+      farewellSpokeAt = 0;
+      if (spokeMs >= 3000) {
+        clearTimeout(farewellHideTimer);
+        farewellHideTimer = setTimeout(hideFarewell, 4500);
+      }
+      return;
+    }
     if (!activeCue) return;
     // Keep the cue on screen while Piper is still speaking to this room.
     if (event?.speaking) clearTimeout(cueAdvanceTimer);
@@ -1535,9 +1655,16 @@
           if (data?.url) {
             audio.enqueueTts(data.text || '', {
               lang: data.language || 'en',
-              url: data.url
+              url: data.url,
+              // The closing blessing is an operator action: speak it even when
+              // automatic narration is switched off.
+              force: data.source === 'farewell'
             });
           }
+          break;
+        case 'show.farewell':
+          if (data?.state === 'ended') hideFarewell();
+          else startFarewell(data || {});
           break;
         case 'show.cue':
           if (data?.cue) handleShowCue(data.cue);

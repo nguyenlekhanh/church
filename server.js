@@ -85,6 +85,10 @@ let narrationBusyUntil = 0;
 // Last cue of any kind (welcome included), replayed to a stage that reconnects.
 let lastPublishedCue = null;
 let lastPublishedAt = 0;
+// Farewell screen lock: a second click must never stack two readings.
+let farewellUntil = 0;
+let farewellCue = null;
+let farewellEndTimer = null;
 
 class PiperManager {
   constructor() {
@@ -1977,6 +1981,243 @@ function inspectTtsAudio(result, context = 'narration') {
   return stats;
 }
 
+// ============================================================================
+// 9b. FAREWELL SCREEN (OPERATOR-TRIGGERED CLOSING BLESSING)
+// ============================================================================
+// Messages live in config/farewell-messages.json. The browser only ever sends an
+// id, so the text shown on the stage and read by Piper always comes from here.
+const FAREWELL_LIBRARY_FILE = path.join(__dirname, 'config', 'farewell-messages.json');
+const FAREWELL_FALLBACK = {
+  id: 'until-we-meet-again',
+  title: 'Until We Meet Again',
+  eyebrow: 'FINAL BLESSING',
+  paragraphs: [
+    'Dear friends, as we come to the end of this time together, we want to thank each and every one of you for joining us in prayer.',
+    'May God bless your families, strengthen your hearts, and fill your lives with peace, hope, and love.',
+    'Remember, you are never alone. God is always with you.',
+    'Thank you for praying with us today. Until we meet again, may the grace of our Lord Jesus Christ be with you all.'
+  ],
+  closing: 'God bless you. Amen.'
+};
+// Held while Piper synthesizes, then replaced by the real reading length.
+const FAREWELL_SYNTHESIS_WINDOW_MS = 20000;
+const FAREWELL_MIN_SCREEN_MS = 45000;
+
+function normalizeFarewellMessages(raw) {
+  const entries = Array.isArray(raw?.messages) ? raw.messages : [];
+  const seen = new Set();
+  const messages = [];
+  entries.forEach((entry) => {
+    const id = String(entry?.id || '').trim().toLowerCase();
+    const title = String(entry?.title || '').trim();
+    const paragraphs = (Array.isArray(entry?.paragraphs) ? entry.paragraphs : [])
+      .map((paragraph) => String(paragraph || '').trim())
+      .filter(Boolean);
+    if (!id || !title || paragraphs.length === 0 || seen.has(id)) return;
+    seen.add(id);
+    const closing = String(entry?.closing || '').trim();
+    messages.push({
+      id,
+      title,
+      eyebrow: String(entry?.eyebrow || 'FINAL BLESSING').trim() || 'FINAL BLESSING',
+      paragraphs,
+      closing,
+      text: [...paragraphs, closing].filter(Boolean).join(' ')
+    });
+  });
+  return messages;
+}
+
+/** Loaded once at startup; a malformed or missing file falls back to the default. */
+const FAREWELL_LIBRARY = (() => {
+  let messages = [];
+  let defaultId = FAREWELL_FALLBACK.id;
+  try {
+    const raw = JSON.parse(fs.readFileSync(FAREWELL_LIBRARY_FILE, 'utf8'));
+    messages = normalizeFarewellMessages(raw);
+    const wanted = String(raw?.default || '').trim().toLowerCase();
+    if (wanted && messages.some((message) => message.id === wanted)) defaultId = wanted;
+  } catch (err) {
+    console.warn(`[Farewell] Library unavailable (${err.message}); using the built-in message.`);
+  }
+  if (messages.length === 0) messages = normalizeFarewellMessages({ messages: [FAREWELL_FALLBACK] });
+  if (!messages.some((message) => message.id === defaultId)) defaultId = messages[0].id;
+  console.log(`[Farewell] ${messages.length} closing message(s) registered · default ${defaultId}`);
+  return { messages, defaultId };
+})();
+
+function farewellMessageById(id) {
+  const wanted = String(id || FAREWELL_LIBRARY.defaultId).trim().toLowerCase();
+  return FAREWELL_LIBRARY.messages.find((message) => message.id === wanted) || null;
+}
+
+/** Sanitised library for the dashboard — no filesystem paths, no extra fields. */
+function farewellLibraryPayload() {
+  return {
+    default: FAREWELL_LIBRARY.defaultId,
+    messages: FAREWELL_LIBRARY.messages.map((message) => ({
+      id: message.id,
+      title: message.title,
+      eyebrow: message.eyebrow,
+      paragraphs: message.paragraphs,
+      closing: message.closing,
+      text: message.text,
+      characters: message.text.length
+    }))
+  };
+}
+
+function farewellPayload() {
+  const active = farewellMessageById(farewellCue?.messageId);
+  return {
+    active: Date.now() < farewellUntil,
+    cueId: farewellCue?.id || null,
+    messageId: active?.id || FAREWELL_LIBRARY.defaultId,
+    title: farewellCue?.title || active?.title || 'Until We Meet Again',
+    endsAt: farewellUntil ? new Date(farewellUntil).toISOString() : null
+  };
+}
+
+function buildFarewellCue(message) {
+  return {
+    id: `farewell-${Date.now().toString(36)}`,
+    kind: 'farewell',
+    messageId: message.id,
+    eyebrow: message.eyebrow,
+    title: message.title,
+    body: message.paragraphs[0],
+    note: message.closing,
+    paragraphs: [...message.paragraphs, message.closing].filter(Boolean),
+    ttsText: message.text,
+    displayMs: FAREWELL_MIN_SCREEN_MS,
+    at: new Date().toISOString()
+  };
+}
+
+/**
+ * Broadcasts the closing blessing to the Live Stage and narrates it through the
+ * shared Piper queue. It never touches the TikTok connection, the show timer or
+ * the background rotation — the operator ends the broadcast by hand afterwards.
+ */
+async function triggerFarewell(params = {}) {
+  const now = Date.now();
+  if (now < farewellUntil) {
+    return {
+      ok: false,
+      alreadyPlaying: true,
+      remainingSeconds: Math.ceil((farewellUntil - now) / 1000),
+      error: 'A farewell is already playing on the Live Stage. Wait for it to finish before starting another.',
+      farewell: farewellPayload()
+    };
+  }
+
+  const requested = params.messageId === undefined || params.messageId === null || params.messageId === ''
+    ? FAREWELL_LIBRARY.defaultId
+    : String(params.messageId).trim().toLowerCase();
+  const message = farewellMessageById(requested);
+  if (!message) {
+    return {
+      ok: false,
+      unknownMessage: true,
+      error: `Unknown farewell message "${requested || '(empty)'}". Choose one from the library.`,
+      messages: farewellLibraryPayload().messages.map((entry) => entry.id),
+      farewell: farewellPayload()
+    };
+  }
+
+  const cue = buildFarewellCue(message);
+  farewellCue = cue;
+  // Locked before the first await so a double click cannot queue two readings.
+  farewellUntil = now + FAREWELL_SYNTHESIS_WINDOW_MS;
+
+  state.showHistory = [
+    {
+      id: cue.id,
+      kind: cue.kind,
+      eyebrow: cue.eyebrow,
+      title: cue.title,
+      body: String(cue.body || '').slice(0, 260),
+      at: cue.at,
+      source: 'manual',
+      simulated: false
+    },
+    ...(state.showHistory || []).filter((entry) => entry.id !== cue.id)
+  ].slice(0, 20);
+  lastPublishedCue = cue;
+  lastPublishedAt = now;
+
+  // Visual first: the stage should never wait on speech synthesis.
+  broadcastNotification('show.farewell', {
+    cue,
+    messageId: message.id,
+    text: message.text,
+    paragraphs: cue.paragraphs,
+    state: 'started',
+    durationMs: FAREWELL_SYNTHESIS_WINDOW_MS,
+    startedAt: cue.at
+  });
+  broadcastNotification('show.state', { show: showPayload() });
+  saveState();
+
+  let durationSec = 0;
+  let error = null;
+  try {
+    const result = await ttsManager.synthesize(message.text, { lang: 'en' });
+    if (result.ok) {
+      inspectTtsAudio(result, 'the farewell message');
+      durationSec = Math.max(2, Number(result.durationSec) || 40);
+      narrationBusyUntil = Date.now() + durationSec * 1000 + 2200;
+      broadcastNotification('tts.play', {
+        text: message.text,
+        voice: result.voice,
+        language: result.language,
+        url: result.url,
+        durationSec,
+        source: 'farewell'
+      });
+    } else {
+      error = result.error || 'Piper is unavailable';
+    }
+  } catch (err) {
+    error = err.message;
+  }
+
+  const screenMs = durationSec
+    ? Math.max(FAREWELL_MIN_SCREEN_MS, durationSec * 1000 + 14000)
+    : FAREWELL_MIN_SCREEN_MS;
+  farewellUntil = Date.now() + screenMs;
+
+  broadcastNotification('show.farewell', {
+    cue,
+    messageId: message.id,
+    text: message.text,
+    paragraphs: cue.paragraphs,
+    state: error ? 'visual-only' : 'speaking',
+    durationMs: screenMs,
+    error
+  });
+
+  clearTimeout(farewellEndTimer);
+  farewellEndTimer = setTimeout(() => {
+    broadcastNotification('show.farewell', { cue, cueId: cue.id, state: 'ended' });
+  }, screenMs);
+
+  if (error) console.warn(`[Farewell] Narration unavailable: ${error}`);
+  else console.log(`[Farewell] "${message.title}" on the stage for ${Math.round(screenMs / 1000)}s.`);
+
+  return {
+    ok: true,
+    cue,
+    messageId: message.id,
+    title: message.title,
+    text: message.text,
+    displayMs: screenMs,
+    narration: !error,
+    error,
+    farewell: farewellPayload()
+  };
+}
+
 /** Sends a cue to the OBS stage, then narrates it through the shared TTS queue. */
 async function publishShowCue(cue, { source = 'auto' } = {}) {
   if (!cue) return;
@@ -3376,6 +3617,10 @@ async function handleRpcCall(method, params = {}) {
       return { cue: showProgram.testWelcome(params.name), show: showPayload() };
     case 'show.restart':
       return { cue: showProgram.restart({ source: 'manual' }), show: showPayload() };
+    case 'show.farewell':
+      return triggerFarewell(params);
+    case 'show.farewellList':
+      return farewellLibraryPayload();
 
     // ---- Bible quiz ----
     case 'quiz.status':

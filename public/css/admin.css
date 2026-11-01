@@ -550,6 +550,71 @@ input[type="range"] {
   cursor: progress;
 }
 
+/* Farewell message library ------------------------------------------------ */
+.farewell-library {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.farewell-message {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(16, 28, 47, 0.68);
+}
+
+.farewell-message-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.farewell-message-head strong {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+
+.farewell-message-copy summary {
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+}
+
+.farewell-message-copy summary:hover { color: var(--beige); }
+
+.farewell-message-body {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(232, 200, 122, 0.25);
+}
+
+.farewell-message-body p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--beige);
+}
+
+.farewell-message-body p:last-child { margin-bottom: 0; }
+
+.farewell-message-body .farewell-message-closing {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--gold-bright);
+}
+
+.farewell-message .btn { align-self: flex-start; }
+
 /* Backgrounds ------------------------------------------------------------- */
 .bg-controls {
   display: flex;

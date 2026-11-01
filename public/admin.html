@@ -61,6 +61,32 @@
 
         <div class="divider"></div>
         <div class="inline-head">
+          <h3>End Session</h3>
+          <span class="panel-hint" id="farewellHint">Idle</span>
+        </div>
+        <div class="button-row">
+          <button class="btn gold" id="btnFarewell">End Live · Say Goodbye</button>
+        </div>
+        <p class="note">
+          Sends a closing blessing to the Live Stage and narrates it with Piper. TikTok LIVE stays connected and the server keeps running —
+          end the broadcast in TikTok yourself once the narration finishes.
+        </p>
+
+        <div class="divider"></div>
+        <div class="inline-head">
+          <h3>Farewell Message Library</h3>
+          <span class="panel-hint" id="farewellLibraryHint">Loading…</span>
+        </div>
+        <p class="note small">
+          Every message is registered on the server, so the stage shows and Piper reads exactly the same text. Any message can be played
+          while another farewell is idle; the duplicate-playback lock still applies.
+        </p>
+        <div class="farewell-library" id="farewellLibrary">
+          <p class="note small">Loading the farewell library…</p>
+        </div>
+
+        <div class="divider"></div>
+        <div class="inline-head">
           <h3>Auto Reconnect</h3>
           <span class="panel-hint" id="tiktokRetryHint">—</span>
         </div>

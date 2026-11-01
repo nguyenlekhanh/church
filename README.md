@@ -278,6 +278,10 @@ Admin controls (**Live Show Automation** panel in `/admin`):
 
 The same controls exist in compact form in the stage's quick dock. Pausing stops the schedule but leaves manual cues available; welcome greetings keep their own switch.
 
+**Ending the session.** **End Live · Say Goodbye** in the dashboard's *TikTok Live Connection* panel sends one cue to the stage: the *Until We Meet Again* card with the closing blessing, then Piper reads the complete message through the normal narration queue (music ducks underneath and returns afterwards). The card holds past the end of the narration, then fades out; the button is refused while one is on screen, so a double click cannot stack two readings. Nothing else changes — the TikTok connection, the show timer, background rotation and the server all keep running. End the broadcast in TikTok yourself once the narration finishes.
+
+**Farewell Message Library.** Directly below that button, the dashboard lists every closing blessing registered in `config/farewell-messages.json` (title, paragraph count, expandable text and its own **Play on Live Stage** button). The browser only sends the message id; the server validates it against the library and broadcasts that exact text, so the card and Piper's reading can never disagree. Add an entry to the JSON file and restart the server to offer another message — arbitrary text from the browser is rejected, and the same single-playback lock covers every message. Long blessings shrink to fit the 1080×1920 stage rather than overflow it.
+
 ---
 
 ## Smart daily schedule (US timezones)
@@ -528,7 +532,7 @@ All original RPC method names still work. User-facing labels changed; endpoint n
 | Backgrounds | `stage.listBackgrounds`, `stage.setBackground`, `stage.nextBackground`, `stage.updateBackgroundSettings` |
 | Music | `music.get`, `music.update`, `music.next`, `music.previous`, `music.toggle`, `music.rescan`, `music.track.update`, `music.track.remove` |
 | Messages | `messages.get`, `messages.save` |
-| Live show | `show.status`, `show.update`, `show.next`, `show.nextVerse`, `show.nextReflection`, `show.nextPrayer`, `show.testWelcome`, `show.restart` |
+| Live show | `show.status`, `show.update`, `show.next`, `show.nextVerse`, `show.nextReflection`, `show.nextPrayer`, `show.testWelcome`, `show.restart`, `show.farewell`, `show.farewellList` |
 | Bible quiz | `quiz.status`, `quiz.update`, `quiz.next`, `quiz.reveal`, `quiz.answer` |
 | Gifts | `gift.update` (announce / TTS toggles) |
 | Prayer congregation | `congregation.get`, `congregation.update`, `congregation.reset`, `congregation.demo`, `congregation.demoClear`, `congregation.demoEvent` |
