@@ -21,6 +21,8 @@ The room is intentionally **general Christian** — welcoming to viewers across 
 | Live connection | TikTok Live Connector: comments, likes, follows, shares, gifts |
 | API | JSON-RPC 2.0 over HTTP (`/rpc`) and WebSocket (`/ws`) |
 | Narration | Local Piper worker, American English + Vietnamese voices |
+| Music | Five original ambient worship instrumentals, crossfaded playlist, auto-ducking under narration |
+| Live show | Automated welcome, Scripture, prayer, community and gratitude program with Piper narration |
 | Prayer requests | Moderated queue with approve / hide / remove / pause / clear |
 | Backgrounds | 21 locally served licensed photographs + automatic fade rotation |
 | Default scene | Licensed Gothic cathedral Mass with altar crucifix and praying congregation |
@@ -33,7 +35,8 @@ The room is intentionally **general Christian** — welcoming to viewers across 
 - Warm golden grade, soft light aura, drifting particles and a gentle vignette.
 - No floating hero cross and no baked-in text; the photograph itself is the main subject.
 - Compact prayer request and “Verse of the Moment” cards above the lower panels.
-- **Live Comments** and **Community Activity** in a single translucent bottom card.
+- **Live Comments** beside a rotating **Prayer Wall** and community activity list.
+- Centered program card for the current welcome, Scripture, prayer or community cue.
 - Counter strip for prayers, candles, amens, followers and gifts.
 - Event overlays: AMEN, prayer invitation, gratitude, welcome and tiered gift celebrations.
 - Optional quick-controls dock on desktop; `?obs=1` hides it for a clean broadcast.
@@ -78,7 +81,7 @@ The Piper worker is started automatically. The voice models are already installe
 2. URL: `http://localhost:3000/?obs=1`
 3. Width `1080`, Height `1920`.
 4. Enable **Shutdown source when not visible** only if you also reload it when going live (the page reconnects automatically).
-5. Use **Interact** once and press **Enable Audio** if OBS blocks autoplay. This unlocks the generated ambience, chimes and narration for the scene.
+5. Use **Interact** once and press **Enable Audio** if OBS blocks autoplay. This unlocks the worship playlist, chimes and narration for the scene. OBS browser sources normally allow autoplay, so music starts with the source.
 6. Keep the admin dashboard in a second browser window, not inside the OBS source.
 
 ---
@@ -112,13 +115,14 @@ No TikTok credentials or cookies are required for public LIVE rooms. A real LIVE
 | Like | Subtle golden particles over the altar, AMEN counter |
 | Follow | “Welcome to our prayer community. God bless you!” |
 | Share | “Thank you for sharing faith, hope and love!” |
-| Small gift | Prayer candle acknowledgement |
-| Medium gift | Warm golden-light and candlelight acknowledgement |
-| Large gift | Golden light celebration and community gratitude |
+| Small gift | Gift spotlight with sender, gift name, quantity and a spoken thank-you |
+| Medium gift | Spotlight plus warm golden-light and candlelight effects |
+| Large gift | Spotlight plus a golden light celebration and community gratitude |
+| Bible quiz | A KJV question stays on screen; correct comments are acknowledged by name before the reveal |
 
 Messages are selected from `config/messages.en.json`; the four most recently used messages in a category are avoided, and command replies are rate limited so narration never turns into spam.
 
-Gifts are **never** presented as purchasing prayers, blessings, healing or salvation. Prayer is always free.
+Gifts are **never** presented as purchasing prayers, blessings, healing or salvation. Prayer is always free. Gift cards only ever show a real event payload (sender, gift, quantity); nothing is fabricated for the stage.
 
 ---
 
@@ -158,11 +162,116 @@ The original `tts_worker.py` was replaced with a language-aware Piper worker. It
 - Vietnamese requests use `lang: "vi"`; text passed without a language is auto-detected.
 - Models are loaded on demand and cached in the worker (LRU-style, two models kept warm).
 - Generated WAV files are cached in `data/tts-cache` by text + voice + rate.
-- The browser keeps a single narration queue: speech never overlaps, ambience ducks under speech, and repeated identical lines are suppressed for a short window.
+- The browser keeps a single narration queue: speech never overlaps, background music ducks under speech, and repeated identical lines are suppressed for a short window.
 - TTS can be disabled in the admin dashboard or with `TTS_ENABLED=false`.
 - **Test English** and **Test Vietnamese** buttons in `/admin` exercise the real worker and play the result.
 
 Piper is the active engine because the Windows checkout already contains the ONNX voice models. ZeroTTS was the previous engine, but this environment has no `zerotts` package and the old worker's local model path pointed to a macOS directory, so there was no working fallback to keep. The original worker remains in `backup/tts_worker.py.bak`.
+
+---
+
+## Ambient worship music
+
+The livestream has a continuous, low-volume instrumental bed: soft piano, warm pads, gentle strings and a cathedral-style reverb tail. There are **no vocals, no percussion and no third-party recordings** — every track was composed and synthesised for this project and is dedicated to the public domain (CC0 1.0).
+
+| Track | Mood | Tempo | Length |
+| --- | --- | --- | --- |
+| `peaceful-prayer-01` | Warm pads, soft felt piano | 60 BPM | 3:28 |
+| `peaceful-prayer-02` | String ensemble over slow harmony | 56 BPM | 3:09 |
+| `cathedral-ambient-01` | Deep organ-like ambience, wide stone reverb | 52 BPM | 3:14 |
+| `piano-worship-01` | Solo felt piano, gentle arpeggios | 66 BPM | 3:24 |
+| `morning-prayer-01` | Bright piano with sunrise pads | 72 BPM | 3:20 |
+
+Files live in `public/assets/christian/audio/` as Ogg Opus (112 kb/s, 44.1 kHz stereo) and are documented in [music-manifest.json](public/assets/christian/audio/music-manifest.json).
+
+How playback works:
+
+- The browser fetches and decodes one loop at a time, then repeats it sample-accurately with the Web Audio API — no gap, click or restart at the loop point.
+- A second deck crossfades into the next track during the final 3.5 seconds; the next loop is decoded in advance.
+- **Ducking:** music runs at 10% by default; when Piper starts a sentence it glides to 3.5%, then fades back over roughly two seconds. A limiter on the music bus prevents clipping.
+- Track changes, pause/resume, volume, shuffle and repeat are stored in server state and broadcast over the WebSocket, so the OBS source follows the dashboard immediately without a reload.
+- WebSocket events (comments, prayers, gifts) never restart playback; the current deck keeps its position.
+- Autoplay follows the browser policy: OBS browser sources start automatically, regular tabs wait for the **Enable Audio** button. A failure to load a track is reported in the dashboard instead of stopping the show.
+
+Admin controls (**Background Music** panel in `/admin`):
+
+- Enable / disable the music bed.
+- Play / pause, previous, next, and select any track.
+- Volume slider (default 10%), shuffle, and repeat mode (whole playlist / single track / play once).
+- Autoplay with audio, live status text and the full playlist with tempo and length.
+- **Test Audio** plays the selected track locally in the dashboard only; it never starts a second copy on the OBS stage.
+
+Regenerate the tracks (no internet required):
+
+```bat
+.venv\Scripts\python.exe scripts\generate_music.py
+```
+
+The generator uses only `numpy` plus `ffmpeg` (for Opus encoding) and writes the manifest automatically.
+
+---
+
+## Automated live show
+
+The prayer room runs itself. A repeating program alternates short segments so the stream always has something gentle happening, and the host can override any part of it from the dashboard.
+
+| # | Segment | Holds for |
+| --- | --- | --- |
+| 1 | Welcome and peaceful introduction | 2:00 |
+| 2 | Bible verse | 2:30 |
+| 3 | Prayer session | 3:00 |
+| 4 | Bible verse | 2:30 |
+| 5 | Prayer session | 3:30 |
+| 6 | Community prayer + prayer wall request | 3:00 |
+| 7 | Bible verse | 2:30 |
+| 8 | Prayer session | 3:30 |
+| 9 | Bible reflection | 3:00 |
+| 10 | Bible verse | 2:30 |
+| 11 | Prayer of gratitude | 3:00 |
+| 12 | Prayer session | 3:30 |
+
+The cycle is about 35 minutes and then repeats; the **Pace** control on the dashboard stretches or tightens every segment at once (Gentle 1.3×, Standard 1×, Frequent 0.75×). Every segment fades a card onto the stage for 15–17 seconds — the card stays up while Piper is still speaking — and narration is queued so two prayers never overlap. Music ducks underneath automatically and returns afterwards.
+
+**Eight prayer themes, original prose:** Morning Prayer, Prayer for Healing, Prayer for Family, Prayer for Anxiety & Peace, Prayer for Financial Hardship, Prayer for Strength, Night Prayer, Prayer of Gratitude. Each theme has three prayers and the program avoids repeating a prayer or theme it used recently. The text never promises healing, wealth, miracles or salvation.
+
+**Twenty verified KJV verses** with a short original reflection each. They live in `config/messages.en.json`, so the reflection can be edited in the dashboard's message library. Recent verses are remembered so the same reference does not return immediately.
+
+**Welcome greetings.** When a real viewer joins the LIVE room (TikTok `MEMBER` event), the stage shows a welcome animation with their first name and Piper says a short greeting, for example: “Welcome, Sarah! We are so glad you are here. May God's peace be with you today.” A viewer is welcomed at most once every 45 minutes, greetings are spaced at least 20 seconds apart, and no more than three are sent in two minutes, so a busy room never turns into a greeting loop. Simulated events and the **Test Welcome** button never count as real viewers.
+
+**Prayer wall.** Approved requests rotate in the stage's right column, first names only. The community segment may lift one request up in prayer; its text is shown on screen but narration uses only the first name, so personal details are never read aloud. Requests tagged as simulated stay off the wall and out of the program.
+
+Admin controls (**Live Show Automation** panel in `/admin`):
+
+- Enable or disable automation, pause or resume the program.
+- Welcome-greeting toggle and a separate narration toggle for the program.
+- Prayer theme: rotate all eight, or pin one theme.
+- Pace: Gentle (1.3×), Standard (1×) or Frequent (0.75×) hold times.
+- Next Segment, Next Bible Verse, Next Reflection, Next Prayer, Gratitude Prayer.
+- Test Welcome (clearly labelled as a sample), Restart Program.
+- Live program status, next segment countdown and a log of auto / manual / test cues.
+
+The same controls exist in compact form in the stage's quick dock. Pausing stops the schedule but leaves manual cues available; welcome greetings keep their own switch.
+
+---
+
+## Bible quiz and community engagement
+
+A Bible quiz runs between program segments: one verified KJV question at a time, answered in the TikTok comments.
+
+- **150 original questions** in [lib/quiz.js](lib/quiz.js), each with a verified KJV reference, a short original explanation and alternate accepted spellings/numbers.
+- Answers are matched case-insensitively and tolerate extra spaces, so `noah`, `NOAH` and ` Noah ` all count.
+- A viewer's first correct answer is counted once; repeat answers from the same viewer are ignored.
+- The answer, reference and explanation stay hidden until the reveal, which happens 15–30 seconds later (25 by default). The reveal also names up to three correct viewers and is narrated by Piper when quiz narration is on.
+- The question rotates through the bank and avoids the recently used questions. A question is open for its answer window, then the answer stays on screen for about 14 seconds before the card leaves.
+- If a prayer or program cue is speaking when the reveal happens, the quiz narration is skipped rather than talking over it.
+
+**Prayer requests from comments.** `PRAY`, `PRAYER`, `AMEN` and phrases like `PRAY FOR ME`, `PLEASE PRAY` or `PRAY FOR MY FAMILY` trigger a short on-stage invitation to share a request. A genuine request goes through the existing moderation queue, appears on the prayer wall with a first name only, and the community is thanked on screen. The invitation is rate limited so it cannot spam a busy chat. Turning off **Prayer requests from comments** in the dashboard stops new requests from being queued; existing requests stay on the wall.
+
+**Listen for real events only.** The stage reacts to actual `temple.event` / `prayer.request` payloads from the TikTok connector. The dashboard's demo controls are labelled and the stage shows a red DEMO MODE badge whenever simulated activity is on.
+
+**Scene matching.** When it is enabled, each program cue picks a locally stored image category that fits it: welcome → cathedral, Scripture/reflection → Bible, community → church, gratitude → Bible, and prayers by theme (healing/night → candles, family/finances → church, strength → cross, morning/anxiety → backgrounds). Background rotation stays inside that category until the next cue. Turn it off to keep the rotation fully manual.
+
+Admin controls (**Community Engagement** panel in `/admin`): quiz on/off, answer narration, frequency (2–120 minutes), reveal delay, Next Question, Reveal Answer, prayer interaction toggle, gift announcement toggle, gift narration toggle, scene matching toggle and Next Background.
 
 ---
 
@@ -245,6 +354,24 @@ Rotation runs on the server and broadcasts `stage.background`, so every connecte
 | `BACKGROUND_ROTATION_INTERVAL` | Seconds between backgrounds | `60` |
 | `BACKGROUND_CATEGORY` | Initial category | `all` |
 | `PRAYER_AUTO_APPROVE` | Publish new requests immediately | `true` |
+| `MUSIC_ENABLED` | Enable the worship music bed | `true` |
+| `MUSIC_VOLUME` | Music volume (0–1) | `0.1` |
+| `MUSIC_DUCK_VOLUME` | Volume while Piper speaks | `0.035` |
+| `MUSIC_TRACK` | Startup track id | `peaceful-prayer-01` |
+| `MUSIC_AUTOPLAY` | Start music once audio is unlocked | `true` |
+| `SHOW_ENABLED` | Start the automated program | `true` |
+| `SHOW_WELCOME` | Welcome real viewers who join | `true` |
+| `SHOW_NARRATION` | Narrate program cues with Piper | `true` |
+| `SHOW_THEME` | Pin a prayer theme, or `auto` | `auto` |
+| `SHOW_PACE` | Hold-time multiplier (0.5–1.5) | `1` |
+| `QUIZ_ENABLED` | Run the Bible quiz between segments | `true` |
+| `QUIZ_FREQUENCY_MINUTES` | Minutes between questions | `10` |
+| `QUIZ_REVEAL_SECONDS` | Answer window before the reveal | `25` |
+| `QUIZ_TTS` | Narrate the answer | `true` |
+| `GIFT_ANNOUNCE` | Show gift cards and gift TTS | `true` |
+| `GIFT_TTS` | Speak the personalized gift thank-you | `true` |
+| `PRAYER_INTERACTION` | Accept prayer requests from comments | `true` |
+| `SCENE_MATCH` | Match the background to the program segment | `true` |
 
 Settings changed in the dashboard are persisted in `data/prayer-state.json` and take precedence for the current installation. The legacy `data/merit-state.json` is still read as a migration fallback.
 
@@ -263,13 +390,17 @@ All original RPC method names still work. User-facing labels changed; endpoint n
 | Narration | `temple.speak`, `temple.ttsStatus`, `tts.status`, `tts.voices`, `tts.test` |
 | Prayer | `prayer.list`, `prayer.add`, `prayer.approve`, `prayer.hide`, `prayer.remove`, `prayer.clear`, `prayer.setPaused`, `prayer.setAutoApprove` |
 | Backgrounds | `stage.listBackgrounds`, `stage.setBackground`, `stage.nextBackground`, `stage.updateBackgroundSettings` |
+| Music | `music.get`, `music.update`, `music.next`, `music.previous`, `music.toggle` |
 | Messages | `messages.get`, `messages.save` |
+| Live show | `show.status`, `show.update`, `show.next`, `show.nextVerse`, `show.nextReflection`, `show.nextPrayer`, `show.testWelcome`, `show.restart` |
+| Bible quiz | `quiz.status`, `quiz.update`, `quiz.next`, `quiz.reveal`, `quiz.answer` |
+| Gifts | `gift.update` (announce / TTS toggles) |
 | TikTok | `live.connect`, `live.disconnect`, `live.status`, `live.setAutoSim` |
 | Settings / health | `settings.get`, `settings.update`, `health.check` |
 
 Internal ritual names (`burnIncense`, `strikeWoodenFish`, `drawFortune`) are retained only for wire compatibility. Every label, message and visual shown to viewers is Christian.
 
-WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `tts.play`, `tts.status` and `temple.viewerCount`.
+WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
 
 Legacy state fields (`totalIncense`, `woodenFishHits`, `fortuneCount`, `offerings.lotus`, …) are still present alongside the new Christian counters.
 
@@ -285,6 +416,7 @@ config/
   messages.en.json         Editable English message library + verified verses
   piper/en|vn/             Installed Piper voices (untouched)
 lib/
+  show.js                  Program schedule, prayer themes, cue builder, welcomes
   messages.js              Non-repeating message selection
   voices.js                Voice discovery + defaults
 public/
@@ -292,16 +424,18 @@ public/
   admin.html               Ministry dashboard
   css/live.css, admin.css
   js/live.js               Stage state, overlays, comments, rotation
-  js/audio.js              Ambience, chimes, narration queue
+  js/audio.js              Music player + ducking, chimes, narration queue
   js/particles.js          Canvas light particles
   js/admin.js              Dashboard controls
   assets/christian/        Local imagery + manifest
+  assets/christian/audio/  5 original ambient tracks + music manifest
 data/
   prayer-state.json        Persisted state
   tts-cache/               Generated WAV narration (gitignored)
 scripts/
   smoke-test.js            API / WebSocket / TTS smoke test
   fetch_christian_assets.py  Licensed image fetcher
+  generate_music.py        Original ambient track renderer
 backup/                    Pre-conversion copies of modified files
 ```
 
@@ -315,11 +449,17 @@ Run against a live server:
 node scripts\smoke-test.js
 ```
 
-Last run on this machine: **51/51 checks passed**, including:
+Last run on this machine: **97/97 checks passed**, including:
 
 - Bun server startup, health endpoint and brand payload.
 - `temple.getState` compatibility and new counters.
 - Background catalog (21 images, all 7 categories including the new cathedral category), local asset serving, manual change.
+- Music playlist (5 tracks, 3–5 minutes each), default 10% volume with a 3.5% duck level, local Ogg serving, and a track change without a server restart.
+- Live show: 12-segment program, 8 prayer themes, 20 KJV verses each with a reflection, labelled test welcomes that never count as real viewers, manual verse/prayer/reflection cues, pause/resume, configurable pace and a `show.cue` WebSocket broadcast.
+- Bible quiz: 150 questions with KJV references, hidden answer before the reveal, case-insensitive matching (`  NOAH `), duplicate suppression, wrong answers ignored, reveal payload, answers rejected after the reveal, configurable frequency/reveal delay and a `quiz.start` WebSocket broadcast.
+- Gift pipeline: sender/quantity captured, personalized thank-you without purchase language, announcement and TTS toggles, and silenced gifts keeping an empty TTS payload.
+- Prayer interaction toggle (disabled comments do not queue) and scene matching (healing prayer → candles category), then both restored.
+- Prayer text and cue bodies checked for promised outcomes (healing, wealth, miracles, salvation).
 - Prayer queue add / display / first-name privacy / pause / hide / remove.
 - AMEN and PRAY comment commands, prayer-request detection and sanitization.
 - English Piper synthesis (`en_US-amy-medium`) and WAV serving.
@@ -331,13 +471,19 @@ Last run on this machine: **51/51 checks passed**, including:
 - WebSocket JSON-RPC result plus `prayer.request`, `temple.event`, `temple.state` notifications.
 - TikTok connector initialization and graceful failure for a non-live handle (`Failed to retrieve Room ID from all sources.`) without crashing; `live.disconnect` clears the stale channel/error state.
 - Browser rendering at 1080×1920 in headless Chromium, cathedral scene, background rotation within the cathedral category, AMEN overlay, prayer card, live comments/community, photo credit, footer placement and the admin dashboard.
-- The final 1080×1920 capture is [cathedral-stage-final.jpg](docs/screenshots/cathedral-stage-final.jpg).
-- Browser console had no JavaScript errors after a fresh OBS-mode reload.
+- Music playback in Chromium: autoplay after load, seamless Web Audio loop, gain 0.10 → 0.035 during Piper narration → 0.10 after it ended, live track switch from the dashboard, pause/resume, admin volume slider, and the dashboard test player.
+- Music continued through AMEN/prayer WebSocket events with no restart (verified by comparing the audio deck start time).
+- Automated show in Chromium: program line, cue card, prayer wall rotation (Grace/Sarah → Emily/David) with first names only, and a `show.cue` narration that ducked music to 0.035 and restored it to 0.10 without restarting the track.
+- A simulated prayer request stayed off the prayer wall and out of the community cue; simulated events carried a `simulated` flag and no welcome was generated from them.
+- Community engagement in Chromium at 1080×1920: quiz card (question open, countdown), revealed answer card with reference/explanation, gift spotlight above the prayer cards showing `Grace L. sent 3x Prayer candle`, prayer invitation banner on a PRAY comment, and no console errors. Captures: [quiz-stage-open.jpg](docs/screenshots/quiz-stage-open.jpg), [quiz-stage-answer.jpg](docs/screenshots/quiz-stage-answer.jpg), [gift-stage.jpg](docs/screenshots/gift-stage.jpg), [prayer-invite-stage.jpg](docs/screenshots/prayer-invite-stage.jpg).
+- The dashboard **Community Engagement** panel: quiz on/off (verified through `quiz.status`), frequency and reveal delay applied, and the prayer interaction toggle blocking a test request. Capture: [admin-community-engagement.jpg](docs/screenshots/admin-community-engagement.jpg).
+- The final 1080×1920 capture is [live-show-stage.png](docs/screenshots/live-show-stage.png); the dashboard panel is [admin-live-show.png](docs/screenshots/admin-live-show.png).
+- Browser console had no JavaScript errors after a fresh OBS-mode reload or a dashboard reload.
 
 Not tested here:
 
-- A real TikTok LIVE room (no live account/session was available). Connector wiring, event names and payload extraction were reviewed, but comment/like/follow/share/gift events were not observed from TikTok itself.
-- OBS Studio capture, audio autoplay policy and CEF performance (the page was verified in Chromium at the OBS aspect ratio, not inside OBS).
+- A real TikTok LIVE room (no live account/session was available). Connector wiring, event names and payload extraction were reviewed, but comment/like/follow/share/gift events — including the new join welcome — were not observed from TikTok itself. Welcome deduplication and the greeting text were tested through `show.testWelcome` and the engine's unit-level checks only.
+- OBS Studio capture, its audio routing/monitoring and CEF performance (the page was verified in Chromium at the OBS aspect ratio, not inside OBS). Music was heard in the browser tab, but the OBS-side mix was not monitored here.
 - Long-duration livestream stability/CPU over several hours.
 
 The app starts cleanly and does not require a TikTok connection to render the stage or serve the dashboard.
@@ -350,5 +496,6 @@ The app starts cleanly and does not require a TikTok connection to render the st
 - `backup/` contains the pre-conversion versions of the modified files.
 - TTS cache and generated WAV files can be cleared safely; they are recreated on demand.
 - `data/prayer-state.json` is the live state. Delete it to reset counters and the demo prayer queue.
-- Demo activity is off by default. The **Simulate viewers** switch on the dashboard generates sample events for layout testing only.
-- The stage reconnects its WebSocket automatically if the server restarts.
+- Demo activity is off by default. The **Simulate viewers** switch on the dashboard generates sample events for layout testing only; those events are flagged as simulated, never trigger welcomes, and never appear on the prayer wall. While it is on, a red **DEMO MODE · SIMULATED ACTIVITY** badge is visible on the stage so a test can never be mistaken for a real broadcast.
+- The automated program starts about 12 seconds after launch, once Piper is ready. Set `SHOW_ENABLED=false` to start with automation off.
+- The stage reconnects its WebSocket automatically if the server restarts, and replays the current cue if it is still within its display window.

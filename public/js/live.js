@@ -39,9 +39,35 @@
   const celebrationSub = document.getElementById('celebrationSub');
   const connectionWarning = document.getElementById('connectionWarning');
   const eventFeed = document.getElementById('eventFeed');
+  const showCard = document.getElementById('showCard');
+  const showEyebrow = document.getElementById('showEyebrow');
+  const showTitle = document.getElementById('showTitle');
+  const showBody = document.getElementById('showBody');
+  const showNote = document.getElementById('showNote');
+  const showRef = document.getElementById('showRef');
+  const programLine = document.getElementById('programLine');
+  const programText = document.getElementById('programText');
+  const prayerWallEl = document.getElementById('prayerWall');
+  const quizCard = document.getElementById('quizCard');
+  const quizQuestion = document.getElementById('quizQuestion');
+  const quizTimer = document.getElementById('quizTimer');
+  const quizAnswerText = document.getElementById('quizAnswerText');
+  const quizRef = document.getElementById('quizRef');
+  const quizExplanation = document.getElementById('quizExplanation');
+  const quizFoot = document.getElementById('quizFoot');
+  const giftCard = document.getElementById('giftCard');
+  const giftMark = document.getElementById('giftMark');
+  const giftSender = document.getElementById('giftSender');
+  const giftName = document.getElementById('giftName');
+  const giftThanks = document.getElementById('giftThanks');
+  const prayerInvite = document.getElementById('prayerInvite');
+  const prayerInviteTitle = document.getElementById('prayerInviteTitle');
+  const prayerInviteSub = document.getElementById('prayerInviteSub');
 
   const particleEngine = new window.PrayerParticleEngine(document.getElementById('prayerCanvas'));
   const audio = new window.PrayerAudioEngine();
+  // Exposed for OBS troubleshooting and for the admin test console.
+  window.prayerAudio = audio;
 
   const DEFAULT_PRAYER_ASK = 'You are welcome here. Type PRAY FOR ME in the comments to share a prayer request.';
   const DEFAULT_PRAYER_COMMUNITY = 'Let us pray together and encourage one another in faith, hope and love.';
@@ -82,7 +108,7 @@
      --------------------------------------------------------------------- */
   function unlockAudio() {
     audio.ensureContext();
-    if (currentState?.settings?.bgMusicEnabled) audio.startAmbience();
+    if (currentState?.settings?.music) audio.applyMusicSettings(currentState.settings.music);
     const btn = document.getElementById('btnUnlockAudio');
     if (btn) {
       btn.textContent = 'Audio Ready ✓';
@@ -469,6 +495,7 @@
     if (command === 'PRAY') {
       showAmen(message || 'Let us pray together.');
       queueToast('✝', message || 'Let us pray together.', `${event.user} is praying`);
+      showPrayerInvite('Let us pray with you', 'Type PRAY FOR ME in the comments to share a request.');
       return;
     }
     if (command === 'THANK YOU') {
@@ -480,6 +507,7 @@
     if (command === 'PRAYER') {
       queueToast('✝', message || 'Share your prayer request in the comments.', `${event.user} is praying`);
       particleEngine.spawnAmenWave(540, 470, 2);
+      showPrayerInvite('Share a prayer request', 'Type PRAY FOR ME and our community will pray with you.');
       return;
     }
     const marks = { JESUS: '✝', FAITH: '✝', HOPE: '✦', LOVE: '♡', GOD: '✝' };
@@ -488,17 +516,135 @@
     audio.playSoftChime(0.8);
   }
 
+  /* ---------------------------------------------------------------------
+     Community engagement — Bible quiz, gift spotlight, prayer invitation
+     --------------------------------------------------------------------- */
+  let quizSignature = '';
+  let quizActive = null;
+  let quizTickTimer = null;
+  let quizHideTimer = null;
+  let giftTimer = null;
+  let inviteTimer = null;
+  let lastInviteAt = 0;
+
+  function quizIsActive(quiz) {
+    return Boolean(quiz && quiz.active && quiz.active.question);
+  }
+
+  function hideQuizCard() {
+    if (!quizCard) return;
+    clearInterval(quizTickTimer);
+    quizTickTimer = null;
+    quizSignature = '';
+    quizActive = null;
+    quizCard.classList.remove('visible');
+    stage?.classList.remove('quiz-open');
+  }
+
+  function updateQuizCountdown(quiz) {
+    if (!quizActive || !quizTimer) return;
+    if (quizActive.revealed) return;
+    const revealAt = new Date(quizActive.revealAt).getTime();
+    const remaining = Math.max(0, Math.ceil((revealAt - Date.now()) / 1000));
+    quizTimer.textContent = `${remaining}s`;
+    if (remaining <= 0) clearInterval(quizTickTimer);
+  }
+
+  function quizFootText(active) {
+    if (!active.revealed) return 'Type your answer in the comments';
+    const count = Number(active.correctCount) || 0;
+    if (count === 0) return 'No correct answers yet — join the next round';
+    const names = Array.isArray(active.correctNames) ? active.correctNames.slice(0, 3) : [];
+    const who = names.length > 0 ? ` — ${names.join(', ')}` : '';
+    return `${count} correct ${count === 1 ? 'answer' : 'answers'}${who}`;
+  }
+
+  function renderQuiz(quiz) {
+    if (!quizCard) return;
+    if (!quizIsActive(quiz)) {
+      hideQuizCard();
+      return;
+    }
+    const active = quiz.active;
+    const revealed = Boolean(active.revealed);
+    const signature = `${active.id}:${revealed}`;
+    quizActive = active;
+
+    quizQuestion.textContent = active.question || '';
+    quizCard.classList.toggle('revealed', revealed);
+    quizFoot.textContent = quizFootText(active);
+
+    if (revealed) {
+      quizAnswerText.textContent = active.answer || '';
+      quizRef.textContent = active.reference || '';
+      quizExplanation.textContent = active.explanation || '';
+      quizTimer.textContent = 'ANSWER';
+      clearInterval(quizTickTimer);
+      quizTickTimer = null;
+    } else {
+      const total = Math.max(5, Number(active.secondsLeft) || Number(quiz.revealSeconds) || 25);
+      quizCard.style.setProperty('--quiz-ms', `${total * 1000}ms`);
+    }
+
+    if (quizSignature !== signature) {
+      // Only restart the entrance animation when a new question opens or the
+      // answer is revealed — regular state broadcasts must not flicker the card.
+      quizSignature = signature;
+      quizCard.classList.remove('visible');
+      void quizCard.offsetWidth;
+    }
+
+    quizCard.classList.add('visible');
+    stage?.classList.add('quiz-open');
+    clearTimeout(quizHideTimer);
+    quizHideTimer = null;
+
+    if (!revealed) {
+      updateQuizCountdown(quiz);
+      clearInterval(quizTickTimer);
+      quizTickTimer = setInterval(() => updateQuizCountdown(quiz), 500);
+    }
+  }
+
+  function showGiftCard(event) {
+    if (!giftCard) return;
+    if (event.announce === false) return;
+    const tier = event.tier || 'small';
+    giftSender.textContent = event.user || 'A friend';
+    giftName.textContent = event.giftName || 'a gift';
+    giftThanks.textContent = event.message || 'Thank you for your kindness.';
+    giftMark.textContent = tier === 'large' ? '✝' : tier === 'medium' ? '✦' : '♡';
+    giftCard.classList.remove('visible');
+    void giftCard.offsetWidth;
+    giftCard.classList.add('visible');
+    clearTimeout(giftTimer);
+    giftTimer = setTimeout(() => giftCard.classList.remove('visible'), tier === 'large' ? 9000 : 6500);
+  }
+
+  function showPrayerInvite(title, sub) {
+    if (!prayerInvite) return;
+    const now = Date.now();
+    if (now - lastInviteAt < 15000) return;
+    lastInviteAt = now;
+    prayerInviteTitle.textContent = title;
+    prayerInviteSub.textContent = sub;
+    prayerInvite.classList.add('visible');
+    clearTimeout(inviteTimer);
+    inviteTimer = setTimeout(() => prayerInvite.classList.remove('visible'), 7500);
+  }
+
   function handleGiftEvent(event) {
     const tier = event.tier || 'small';
+    showGiftCard(event);
     if (tier === 'large') {
       showCelebration(event.giftName || 'A gift of kindness', event.message || 'Thank you for supporting our prayer community.');
+      particleEngine.spawnCelebration();
+      audio.playChurchBell(0.9);
     } else if (tier === 'medium') {
-      queueToast('✦', event.message || 'Thank you for supporting our prayer community.', `${event.user} sent ${event.giftName}`);
       particleEngine.spawnAmenWave(540, 470, 2);
       particleEngine.spawnLikeBurst(540, 470, 22);
       audio.playChurchBell(0.85);
     } else {
-      queueToast('✦', event.message || 'Thank you for your kindness. God bless you.', `${event.user} sent ${event.giftName}`);
       particleEngine.spawnPrayerCandle(870, 900);
       audio.playCandleChime();
     }
@@ -604,6 +750,166 @@
   }
 
   /* ---------------------------------------------------------------------
+     Automated live show — cue card, program line, prayer wall
+     --------------------------------------------------------------------- */
+  const cueQueue = [];
+  let activeCue = null;
+  let cueAdvanceTimer = null;
+  let cueLeaveTimer = null;
+  let currentShow = null;
+  let wallRequests = [];
+  let wallOffset = 0;
+  let wallSignature = '';
+
+  function scheduleCueAdvance(ms) {
+    clearTimeout(cueAdvanceTimer);
+    cueAdvanceTimer = setTimeout(advanceCue, Math.max(1200, ms));
+  }
+
+  function advanceCue() {
+    if (!activeCue || !showCard) return;
+    showCard.classList.remove('visible');
+    showCard.classList.add('leaving');
+    clearTimeout(cueLeaveTimer);
+    cueLeaveTimer = setTimeout(() => {
+      showCard.classList.remove('leaving');
+      activeCue = null;
+      displayNextCue();
+    }, 950);
+  }
+
+  function displayNextCue() {
+    if (activeCue || !showCard) return;
+    const cue = cueQueue.shift();
+    if (!cue) return;
+    activeCue = cue;
+    const duration = Math.max(5000, Number(cue.displayMs) || 15000);
+
+    showCard.dataset.kind = cue.kind || 'prayer';
+    showEyebrow.textContent = cue.eyebrow || '';
+    showTitle.textContent = cue.title || '';
+    showBody.textContent = cue.body || '';
+    showNote.textContent = cue.note || '';
+    showRef.textContent = cue.reference || '';
+    showCard.style.setProperty('--cue-ms', `${duration}ms`);
+
+    showCard.classList.remove('leaving', 'visible');
+    void showCard.offsetWidth;
+    showCard.classList.add('visible');
+    scheduleCueAdvance(duration + 800);
+
+    if (cue.verse) showVerse(cue.verse, { flash: false });
+
+    if (cue.kind === 'welcome') {
+      particleEngine.spawnBlessing();
+      audio.playSoftChime(0.95);
+    } else if (cue.kind === 'prayer' || cue.kind === 'gratitude') {
+      particleEngine.spawnPrayerCandle(540, 880);
+      audio.playSoftChime(0.55);
+    } else if (cue.kind === 'community') {
+      particleEngine.spawnAmenWave(540, 620, 2);
+      audio.playSoftChime(0.7);
+    } else {
+      particleEngine.spawnBlessing();
+      audio.playSoftChime(0.6);
+    }
+  }
+
+  function handleShowCue(cue) {
+    if (!cue) return;
+    if (cueQueue.length > 3) cueQueue.shift();
+    cueQueue.push(cue);
+    if (!activeCue) displayNextCue();
+  }
+
+  function renderShow(show) {
+    if (!show) return;
+    currentShow = show;
+    const paused = !show.enabled || show.paused;
+    const label = show.current?.eyebrow || show.current?.label || '';
+
+    if (programText) {
+      programText.textContent = paused
+        ? (show.enabled ? 'PROGRAM PAUSED' : 'PROGRAM OFF')
+        : (label ? `NOW · ${label}` : 'PREPARING THE PRAYER ROOM');
+    }
+    if (programLine) programLine.classList.toggle('paused', paused);
+
+    setToggle(document.getElementById('btnToggleShow'), show.enabled, 'Program: On', 'Program: Off');
+
+    const nowEl = document.getElementById('showNow');
+    if (nowEl) {
+      const currentLabel = label || 'Idle';
+      const nextLabel = show.next?.label || '—';
+      nowEl.textContent = paused ? `${currentLabel} · paused` : `${currentLabel} · next: ${nextLabel}`;
+    }
+
+    const statusEl = document.getElementById('showStatus');
+    if (statusEl) {
+      if (!show.enabled) {
+        statusEl.textContent = 'Automated program is off. Cues appear only when you trigger them.';
+      } else if (show.paused) {
+        statusEl.textContent = 'Program paused. Welcome greetings follow their own setting.';
+      } else if (show.current) {
+        statusEl.textContent = `Segment ${show.current.index} of ${show.total} · ${show.current.label}. `
+          + `Welcome greetings ${show.welcomeEnabled ? 'on' : 'off'}. `
+          + (show.narrationBusySeconds > 0
+            ? `Narration speaking (${show.narrationBusySeconds}s).`
+            : 'Narration ready.');
+      } else {
+        statusEl.textContent = 'The program will start with a welcome cue.';
+      }
+    }
+  }
+
+  function paintPrayerWall() {
+    if (!prayerWallEl) return;
+    prayerWallEl.innerHTML = '';
+    if (wallRequests.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'comments-empty';
+      empty.textContent = 'Approved prayer requests will appear here.';
+      prayerWallEl.appendChild(empty);
+      return;
+    }
+    const count = Math.min(2, wallRequests.length);
+    for (let i = 0; i < count; i += 1) {
+      const item = wallRequests[(wallOffset + i) % wallRequests.length];
+      const row = document.createElement('div');
+      row.className = 'wall-item';
+      const name = document.createElement('span');
+      name.className = 'wall-name';
+      // First names only — never the full TikTok display name.
+      name.textContent = item.displayName || item.name || 'Friend';
+      const text = document.createElement('div');
+      text.className = 'wall-text';
+      text.textContent = item.text || 'Asking for prayer today.';
+      row.append(name, text);
+      prayerWallEl.appendChild(row);
+    }
+  }
+
+  function renderPrayerWall(requests) {
+    const next = (Array.isArray(requests) ? requests : []).filter(
+      (request) => request && request.name && request.status === 'approved' && request.source !== 'simulation'
+    );
+    const signature = next.map((request) => request.id).join('|');
+    if (signature === wallSignature) return;
+    wallSignature = signature;
+    wallRequests = next.slice(0, 12);
+    if (wallOffset >= wallRequests.length) wallOffset = 0;
+    paintPrayerWall();
+  }
+
+  // Rotate the wall gently so recent requests stay visible without scrolling.
+  setInterval(() => {
+    if (wallRequests.length > 2) {
+      wallOffset = (wallOffset + 2) % wallRequests.length;
+      paintPrayerWall();
+    }
+  }, 15000);
+
+  /* ---------------------------------------------------------------------
      Settings reflected in the quick dock
      --------------------------------------------------------------------- */
   function setToggle(button, on, labelOn, labelOff) {
@@ -611,6 +917,71 @@
     button.classList.toggle('on', Boolean(on));
     button.textContent = on ? labelOn : labelOff;
   }
+
+  /* ---------------------------------------------------------------------
+     Background worship music
+     --------------------------------------------------------------------- */
+  let musicTracks = [];
+
+  function musicTrackById(id) {
+    return musicTracks.find((track) => track.id === id) || null;
+  }
+
+  function renderMusicStatus(statusOverride) {
+    const status = statusOverride || audio.getMusicStatus();
+    const track = musicTrackById(status.trackId);
+    const nowEl = document.getElementById('musicNowPlaying');
+    if (nowEl) nowEl.textContent = track ? `${track.title} · ${track.bpm} BPM` : 'No worship track selected';
+
+    const stateEl = document.getElementById('musicStatus');
+    if (stateEl) {
+      if (!status.enabled) stateEl.textContent = 'Background music disabled.';
+      else if (status.paused) stateEl.textContent = 'Music paused.';
+      else if (!status.unlocked) stateEl.textContent = 'Enable audio to hear the worship playlist.';
+      else if (status.loading) stateEl.textContent = 'Loading track…';
+      else if (status.error) stateEl.textContent = `Music error: ${status.error}`;
+      else if (status.playing) stateEl.textContent = status.ducked ? 'Music playing · ducked under narration' : 'Music playing';
+      else stateEl.textContent = 'Music idle.';
+    }
+
+    setToggle(document.getElementById('btnToggleMusic'), status.enabled, 'Music: On', 'Music: Off');
+    const playBtn = document.getElementById('btnToggleMusicPlay');
+    if (playBtn) playBtn.textContent = status.playing ? 'Pause Music' : 'Play Music';
+    const shuffleBtn = document.getElementById('btnShuffleMusic');
+    if (shuffleBtn) {
+      shuffleBtn.textContent = status.shuffle ? 'Shuffle: On' : 'Shuffle: Off';
+      shuffleBtn.classList.toggle('on', Boolean(status.shuffle));
+    }
+  }
+
+  async function loadMusicCatalog() {
+    try {
+      const res = await fetch('/api/music');
+      const data = await res.json();
+      musicTracks = Array.isArray(data.tracks) ? data.tracks : [];
+      audio.setMusicPlaylist(musicTracks);
+      if (currentState?.settings?.music) audio.applyMusicSettings(currentState.settings.music);
+      else if (data.settings) audio.applyMusicSettings(data.settings);
+    } catch (err) {
+      console.warn('[Music] Catalog unavailable:', err.message);
+    }
+    renderMusicStatus();
+  }
+
+  audio.onMusicStateChange = (event) => {
+    renderMusicStatus(event?.status);
+    if (event?.reason === 'advance' && event.trackId) {
+      // Keep the shared state (and any other stage window) on the same track.
+      callRpc('music.update', { track: event.trackId });
+    }
+  };
+  audio.onTtsStateChange = (event) => {
+    renderMusicStatus();
+    if (!activeCue) return;
+    // Keep the cue on screen while Piper is still speaking to this room.
+    if (event?.speaking) clearTimeout(cueAdvanceTimer);
+    else scheduleCueAdvance(2400);
+  };
 
   function applySettings(settings, ttsStatus) {
     if (!settings) return;
@@ -626,18 +997,15 @@
       if (label) label.textContent = `${Math.round(settings.ttsVolume * 100)}%`;
     }
 
-    if (typeof settings.musicVolume === 'number') {
-      audio.setMusicVolume(settings.musicVolume);
+    const music = settings.music || {};
+    audio.applyMusicSettings(music);
+    if (typeof music.volume === 'number') {
       const slider = document.getElementById('sliderMusicVol');
-      if (slider && document.activeElement !== slider) slider.value = String(Math.round(settings.musicVolume * 100));
+      if (slider && document.activeElement !== slider) slider.value = String(Math.round(music.volume * 100));
       const label = document.getElementById('valMusicVol');
-      if (label) label.textContent = `${Math.round(settings.musicVolume * 100)}%`;
+      if (label) label.textContent = `${Math.round(music.volume * 100)}%`;
     }
-
-    if (typeof settings.bgMusicEnabled === 'boolean') {
-      audio.setMusicEnabled(settings.bgMusicEnabled);
-      setToggle(document.getElementById('btnToggleMusic'), settings.bgMusicEnabled, 'Ambience: On', 'Ambience: Off');
-    }
+    renderMusicStatus();
     setToggle(document.getElementById('btnToggleTts'), audio.ttsEnabled, 'Narration: On', 'Narration: Off');
 
     const languageSelect = document.getElementById('selectTtsLanguage');
@@ -667,6 +1035,9 @@
       autoSimBtn.textContent = settings.autoSim ? 'Demo activity: On' : 'Demo activity: Off';
       autoSimBtn.classList.toggle('on', Boolean(settings.autoSim));
     }
+    // Simulated activity is always visible on screen so it is never mistaken
+    // for a real viewer, comment or gift during a broadcast.
+    document.body.classList.toggle('demo-mode', Boolean(settings.autoSim));
 
     updateVoiceStatus(ttsStatus);
   }
@@ -732,6 +1103,9 @@
     else showVerse(DEFAULT_VERSE, { flash: false });
     applySettings(state.settings, state.tts);
     updateConnectionStatus(state);
+    renderShow(state.show);
+    renderQuiz(state.quiz);
+    renderPrayerWall(state.prayerRequests);
     renderEventFeed(state.recentEvents);
     renderStageActivity(state.recentEvents);
 
@@ -782,6 +1156,12 @@
         case 'prayer.request':
           if (data?.state) updateState(data.state);
           showPrayer(data || {});
+          if (data?.request) {
+            showPrayerInvite(
+              `Thank you, ${data.request.name || 'friend'}`,
+              'Your request is on the prayer wall — we are praying with you.'
+            );
+          }
           break;
         case 'prayer.state':
           if (data?.state) updateState(data.state);
@@ -807,12 +1187,41 @@
           if (currentState) currentState.tts = data;
           updateVoiceStatus(data);
           break;
+        case 'music.state':
+          if (data?.settings) {
+            if (currentState) {
+              currentState.settings = { ...(currentState.settings || {}), music: data.settings };
+            }
+            audio.applyMusicSettings(data.settings);
+            renderMusicStatus();
+          }
+          break;
         case 'tts.play':
           if (data?.url) {
             audio.enqueueTts(data.text || '', {
               lang: data.language || 'en',
               url: data.url
             });
+          }
+          break;
+        case 'show.cue':
+          if (data?.cue) handleShowCue(data.cue);
+          break;
+        case 'show.state':
+          if (data?.show) renderShow(data.show);
+          break;
+        case 'quiz.state':
+        case 'quiz.start':
+        case 'quiz.reveal':
+        case 'quiz.end':
+          if (data?.quiz) renderQuiz(data.quiz);
+          break;
+        case 'quiz.correct':
+          if (data?.quiz) renderQuiz(data.quiz);
+          if (data?.name) {
+            queueToast('✓', `Correct, ${data.name}!`, `${data.correctCount} ${data.correctCount === 1 ? 'answer' : 'answers'} so far`);
+            particleEngine.spawnLikeBurst(540, 470, 18);
+            audio.playSoftChime(0.9);
           }
           break;
         case 'temple.viewerCount':
@@ -875,9 +1284,38 @@
   });
 
   document.getElementById('btnToggleMusic')?.addEventListener('click', () => {
-    const enabled = !(currentState?.settings?.bgMusicEnabled);
-    audio.setMusicEnabled(enabled);
-    callRpc('temple.updateSettings', { bgMusicEnabled: enabled });
+    const enabled = !(currentState?.settings?.music?.enabled);
+    audio.ensureContext();
+    if (enabled) audio.startMusic();
+    else audio.stopMusic();
+    callRpc('music.update', { enabled });
+  });
+
+  document.getElementById('btnToggleMusicPlay')?.addEventListener('click', () => {
+    const paused = !(currentState?.settings?.music?.paused);
+    audio.ensureContext();
+    if (paused) audio.stopMusic({ fadeMs: 900 });
+    else audio.startMusic();
+    callRpc('music.update', { paused });
+  });
+
+  document.getElementById('btnNextMusic')?.addEventListener('click', () => {
+    audio.ensureContext();
+    const nextId = audio.advancePlaylist(1);
+    if (nextId) callRpc('music.update', { track: nextId });
+    renderMusicStatus();
+  });
+
+  document.getElementById('btnPrevMusic')?.addEventListener('click', () => {
+    audio.ensureContext();
+    const prevId = audio.advancePlaylist(-1);
+    if (prevId) callRpc('music.update', { track: prevId });
+    renderMusicStatus();
+  });
+
+  document.getElementById('btnShuffleMusic')?.addEventListener('click', () => {
+    const shuffle = !(currentState?.settings?.music?.shuffle);
+    callRpc('music.update', { shuffle });
   });
 
   document.getElementById('selectTtsLanguage')?.addEventListener('change', (event) => {
@@ -895,7 +1333,7 @@
     audio.setMusicVolume(value);
   });
   musicSlider?.addEventListener('change', (event) => {
-    callRpc('temple.updateSettings', { musicVolume: Number(event.target.value) / 100 });
+    callRpc('music.update', { volume: Number(event.target.value) / 100 });
   });
 
   ttsSlider?.addEventListener('input', (event) => {
@@ -921,6 +1359,15 @@
     const enabled = !(currentState?.settings?.autoSim);
     callRpc('live.setAutoSim', { enabled });
   });
+
+  document.getElementById('btnToggleShow')?.addEventListener('click', () => {
+    const enabled = !(currentShow?.enabled);
+    callRpc('show.update', { enabled });
+  });
+
+  document.getElementById('btnNextShow')?.addEventListener('click', () => callRpc('show.next'));
+  document.getElementById('btnShowVerse')?.addEventListener('click', () => callRpc('show.nextVerse'));
+  document.getElementById('btnShowPrayer')?.addEventListener('click', () => callRpc('show.nextPrayer', {}));
 
   document.getElementById('btnToggleRotation')?.addEventListener('click', () => {
     const enabled = !(currentState?.settings?.background?.enabled);
@@ -995,5 +1442,8 @@
   renderEventFeed([]);
   renderStageActivity([]);
   loadBackgroundCatalog();
+  loadMusicCatalog();
+  // OBS browser sources can autoplay; regular browsers stay silent until a click.
+  audio.ensureContext();
   connectWebSocket();
 })();

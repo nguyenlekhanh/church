@@ -398,7 +398,7 @@ body.obs-mode .stage-wrapper { background: #04070d; }
   z-index: 22;
   grid-area: prayer;
   padding: 16px 24px 14px 26px;
-  background: linear-gradient(135deg, rgba(9, 19, 35, 0.88), rgba(6, 12, 24, 0.76));
+  /*background: linear-gradient(135deg, rgba(9, 19, 35, 0.88), rgba(6, 12, 24, 0.76));*/
   border: 1px solid rgba(232, 200, 122, 0.34);
   border-left: 3px solid var(--gold);
   border-radius: 16px;
@@ -511,7 +511,7 @@ body.obs-mode .stage-wrapper { background: #04070d; }
   flex-direction: column;
   justify-content: center;
   padding: 14px 18px;
-  background: linear-gradient(150deg, rgba(8, 17, 31, 0.62), rgba(6, 12, 24, 0.48));
+  /*background: linear-gradient(150deg, rgba(8, 17, 31, 0.62), rgba(6, 12, 24, 0.48));*/
   border: 1px solid rgba(232, 200, 122, 0.22);
   border-radius: 16px;
   backdrop-filter: blur(10px);
@@ -563,10 +563,10 @@ body.obs-mode .stage-wrapper { background: #04070d; }
   grid-template-columns: 1.38fr 0.82fr;
   gap: 18px;
   padding: 12px 20px 10px;
-  background: linear-gradient(180deg, rgba(7, 14, 25, 0.58), rgba(5, 10, 19, 0.4));
+  /*background: linear-gradient(180deg, rgba(7, 14, 25, 0.58), rgba(5, 10, 19, 0.4));*/
   border: 1px solid rgba(232, 200, 122, 0.16);
   border-radius: 16px;
-  backdrop-filter: blur(9px);
+  /*backdrop-filter: blur(9px);*/
   overflow: hidden;
 }
 
@@ -1136,6 +1136,24 @@ body.obs-mode .stage-wrapper { background: #04070d; }
   cursor: pointer;
 }
 
+.music-now {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(214, 178, 94, 0.28);
+  border-radius: 8px;
+  background: rgba(214, 178, 94, 0.07);
+  font-size: 12px;
+  color: var(--ivory);
+  letter-spacing: 0.2px;
+}
+
+.music-status {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--beige-soft);
+}
+
 .voice-status,
 .connection-note,
 .prayer-dock-note {
@@ -1198,6 +1216,288 @@ body.obs-mode .stage-wrapper { background: #04070d; }
 .feed-item strong { color: var(--gold-bright); font-weight: 600; }
 
 /* ==========================================================================
+   Automated live show — program line, cue card, prayer wall
+   ========================================================================== */
+.program-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 15px;
+  font-size: 14px;
+  letter-spacing: 2.7px;
+  text-transform: uppercase;
+  color: rgba(247, 230, 184, 0.68);
+  transition: color 0.6s ease, opacity 0.6s ease;
+}
+
+.program-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px rgba(232, 200, 122, 0.8);
+  animation: programPulse 3.6s ease-in-out infinite;
+}
+
+.program-line.paused { color: rgba(191, 177, 153, 0.6); }
+.program-line.paused .program-dot { animation: none; opacity: 0.35; box-shadow: none; }
+
+@keyframes programPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.show-card {
+  position: absolute;
+  top: 496px;
+  left: 96px;
+  right: 96px;
+  z-index: 24;
+  padding: 42px 46px 38px;
+  border: 1px solid rgba(232, 200, 122, 0.34);
+  border-radius: 22px;
+  background: linear-gradient(155deg, rgba(9, 19, 35, 0.86), rgba(5, 11, 21, 0.74));
+  box-shadow:
+    0 44px 130px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(247, 230, 184, 0.1);
+  backdrop-filter: blur(14px);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(28px) scale(0.985);
+  transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.show-card.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.show-card.leaving {
+  opacity: 0;
+  transform: translateY(-16px) scale(0.995);
+}
+
+.show-glow {
+  position: absolute;
+  top: -140px;
+  left: 10%;
+  right: 10%;
+  height: 300px;
+  background: radial-gradient(ellipse at center, rgba(232, 200, 122, 0.18), transparent 70%);
+  pointer-events: none;
+}
+
+.show-eyebrow {
+  position: relative;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 4.6px;
+  text-indent: 4.6px;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+
+.show-title {
+  position: relative;
+  margin: 0 0 18px;
+  font-family: var(--serif);
+  font-size: 42px;
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: 0.4px;
+  color: var(--gold-bright);
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
+}
+
+.show-body {
+  position: relative;
+  margin: 0;
+  font-size: 27px;
+  line-height: 1.55;
+  color: rgba(255, 251, 242, 0.96);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+
+.show-note {
+  position: relative;
+  margin: 16px 0 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.45;
+  color: var(--beige);
+}
+
+.show-note:empty,
+.show-ref:empty { display: none; }
+
+.show-ref {
+  position: relative;
+  margin-top: 16px;
+  font-size: 17px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.92;
+}
+
+.show-progress {
+  position: absolute;
+  left: 46px;
+  right: 46px;
+  bottom: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(232, 200, 122, 0.14);
+  overflow: hidden;
+}
+
+.show-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(232, 200, 122, 0.45), var(--gold-bright));
+}
+
+.show-card.visible .show-progress span {
+  animation: cueProgress linear forwards;
+  animation-duration: var(--cue-ms, 15000ms);
+}
+
+@keyframes cueProgress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+/* Cue variations */
+.show-card[data-kind="welcome"] .show-title {
+  font-size: 58px;
+  color: var(--ivory);
+  letter-spacing: 0.2px;
+}
+
+.show-card[data-kind="welcome"] .show-eyebrow {
+  color: var(--gold-bright);
+}
+
+.show-card[data-kind="verse"] .show-body {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 32px;
+  line-height: 1.42;
+}
+
+.show-card[data-kind="reflection"] .show-body {
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1.45;
+}
+
+.show-card[data-kind="prayer"] .show-title,
+.show-card[data-kind="gratitude"] .show-title {
+  font-size: 38px;
+}
+
+.show-card[data-kind="community"] .show-title {
+  font-size: 38px;
+}
+
+/* Prayer wall */
+.section-heading.tight { margin-bottom: 5px; }
+.activity-heading { margin-top: 9px; }
+
+.prayer-wall {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: hidden;
+}
+
+.wall-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 9px 5px 12px;
+  border-left: 2px solid rgba(232, 200, 122, 0.5);
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(232, 200, 122, 0.09), transparent);
+  animation: wallIn 0.6s ease;
+}
+
+.wall-name {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+}
+
+.wall-text {
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--beige);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+@keyframes wallIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Demo safeguard badge — only visible while simulated activity is on */
+.demo-badge {
+  position: absolute;
+  top: 386px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  display: none;
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 163, 155, 0.55);
+  background: rgba(96, 32, 32, 0.6);
+  color: #ffd9d4;
+  font-size: 13px;
+  letter-spacing: 2.4px;
+  text-indent: 2.4px;
+  white-space: nowrap;
+}
+
+body.demo-mode .demo-badge { display: block; }
+
+/* Dock */
+.show-now {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(214, 178, 94, 0.28);
+  border-radius: 8px;
+  background: rgba(214, 178, 94, 0.07);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ivory);
+}
+
+.show-status {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--beige-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .program-dot,
+  .show-progress span { animation: none !important; }
+}
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 @media (max-width: 1100px) {
@@ -1224,4 +1524,313 @@ body.obs-mode .stage-wrapper { background: #04070d; }
   .live-dot,
   .mini-candle::before,
   .celebration-rays { animation: none !important; }
+}
+
+/* ==========================================================================
+   Community engagement — Bible quiz, gift spotlight, prayer invitation
+   ========================================================================== */
+.prayer-invite {
+  position: absolute;
+  top: 348px;
+  left: 50%;
+  transform: translate(-50%, -12px);
+  z-index: 34;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 820px;
+  padding: 14px 28px;
+  border: 1px solid rgba(232, 200, 122, 0.45);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(13, 25, 43, 0.95), rgba(7, 14, 26, 0.9));
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, transform 0.5s ease, visibility 0.5s;
+}
+
+.prayer-invite.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.prayer-invite-mark {
+  font-size: 26px;
+  color: var(--gold-bright);
+}
+
+.prayer-invite-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--ivory);
+  line-height: 1.2;
+}
+
+.prayer-invite-sub {
+  margin-top: 3px;
+  font-size: 17px;
+  letter-spacing: 0.4px;
+  color: var(--beige);
+}
+
+/* Bible quiz card ---------------------------------------------------------- */
+.quiz-card {
+  position: absolute;
+  top: 470px;
+  left: 96px;
+  right: 96px;
+  z-index: 25;
+  padding: 26px 34px 30px;
+  border: 1px solid rgba(232, 200, 122, 0.42);
+  border-radius: 20px;
+  background: linear-gradient(155deg, rgba(10, 21, 38, 0.93), rgba(5, 11, 21, 0.88));
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(247, 230, 184, 0.1);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(18px) scale(0.99);
+  transition: opacity 0.6s ease, transform 0.6s ease, visibility 0.6s;
+  overflow: hidden;
+}
+
+.quiz-card.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.quiz-card.leaving {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.995);
+}
+
+.quiz-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.quiz-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 4.2px;
+  color: var(--gold);
+}
+
+.quiz-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 200, 122, 0.5);
+  font-family: var(--serif);
+  font-size: 15px;
+  letter-spacing: 0;
+  color: var(--gold-bright);
+  background: rgba(232, 200, 122, 0.1);
+}
+
+.quiz-timer {
+  min-width: 74px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 200, 122, 0.32);
+  background: rgba(232, 200, 122, 0.08);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1.4px;
+  text-align: center;
+  color: var(--gold-bright);
+}
+
+.quiz-card.revealed .quiz-timer {
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--beige);
+}
+
+.quiz-question {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 33px;
+  line-height: 1.28;
+  color: var(--ivory);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+}
+
+.quiz-reveal {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+}
+
+.quiz-card.revealed .quiz-reveal { max-height: 260px; }
+
+.quiz-answer-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(232, 200, 122, 0.22);
+}
+
+.quiz-answer-label {
+  font-size: 12px;
+  letter-spacing: 3.4px;
+  color: var(--gold);
+}
+
+.quiz-answer-text {
+  font-family: var(--serif);
+  font-size: 28px;
+  color: var(--gold-bright);
+}
+
+.quiz-ref {
+  font-size: 14px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--beige);
+}
+
+.quiz-explanation {
+  margin: 10px 0 0;
+  font-size: 19px;
+  line-height: 1.45;
+  color: rgba(255, 251, 242, 0.9);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.quiz-foot {
+  margin-top: 16px;
+  font-size: 16px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--beige-soft);
+}
+
+.quiz-card.revealed .quiz-foot { color: var(--gold); }
+
+.quiz-progress {
+  position: absolute;
+  left: 34px;
+  right: 34px;
+  bottom: 12px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(232, 200, 122, 0.12);
+  overflow: hidden;
+}
+
+.quiz-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(232, 200, 122, 0.4), var(--gold-bright));
+}
+
+.quiz-card.visible:not(.revealed) .quiz-progress span {
+  animation: cueProgress linear forwards;
+  animation-duration: var(--quiz-ms, 25000ms);
+}
+
+.stage-9x16.quiz-open .show-card { opacity: 0; }
+
+/* Gift spotlight ----------------------------------------------------------- */
+.gift-card {
+  position: absolute;
+  left: 96px;
+  right: 96px;
+  bottom: 650px;
+  z-index: 56;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 28px;
+  border: 1px solid rgba(232, 200, 122, 0.5);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(18, 32, 53, 0.96), rgba(8, 16, 29, 0.93));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(247, 230, 184, 0.12);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease, visibility 0.5s;
+}
+
+.gift-card.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.gift-mark {
+  flex-shrink: 0;
+  width: 66px;
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 30px;
+  color: var(--gold-bright);
+  background: radial-gradient(circle, rgba(232, 200, 122, 0.28), rgba(232, 200, 122, 0.06));
+  border: 1px solid rgba(232, 200, 122, 0.45);
+  animation: giftGlow 2.6s ease-in-out infinite;
+}
+
+@keyframes giftGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(232, 200, 122, 0); }
+  50% { box-shadow: 0 0 34px rgba(232, 200, 122, 0.35); }
+}
+
+.gift-copy { min-width: 0; }
+
+.gift-label {
+  font-size: 12px;
+  letter-spacing: 3.6px;
+  color: var(--gold);
+}
+
+.gift-line {
+  margin-top: 6px;
+  font-size: 26px;
+  line-height: 1.3;
+  color: var(--ivory);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.gift-line strong { color: var(--gold-bright); font-weight: 600; }
+.gift-verb { color: var(--beige); }
+.gift-name { color: var(--gold-bright); }
+
+.gift-thanks {
+  margin-top: 6px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1.35;
+  color: var(--beige);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }

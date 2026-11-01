@@ -1,0 +1,105 @@
+{
+  "description": "Original ambient worship instrumentals for Christian Prayer Live.",
+  "generatedBy": "scripts/generate_music.py",
+  "license": "CC0 1.0 (public domain dedication) - synthesised from scratch, no samples",
+  "notes": "No vocals, no percussion. Each file loops seamlessly on a circular timeline.",
+  "defaultVolume": 0.1,
+  "duckedVolume": 0.035,
+  "tracks": [
+    {
+      "id": "peaceful-prayer-01",
+      "title": "Peaceful Prayer",
+      "file": "peaceful-prayer-01.ogg",
+      "mood": "Warm pads, soft felt piano",
+      "bpm": 60,
+      "durationSeconds": 208.0,
+      "format": "Ogg Opus 112 kb/s, 44.1 kHz stereo",
+      "bytes": 3631200,
+      "loop": "seamless (circular render + circular convolution reverb)",
+      "license": "Original composition, dedicated to the public domain (CC0 1.0)",
+      "source": "scripts/generate_music.py (synthesised locally, no samples)",
+      "attribution": "None required",
+      "metrics": {
+        "peak": 0.86,
+        "rms": 0.2108,
+        "loopSeamDelta": 0.00018
+      }
+    },
+    {
+      "id": "peaceful-prayer-02",
+      "title": "Quiet Hour",
+      "file": "peaceful-prayer-02.ogg",
+      "mood": "String ensemble over slow harmony",
+      "bpm": 56,
+      "durationSeconds": 188.57,
+      "format": "Ogg Opus 112 kb/s, 44.1 kHz stereo",
+      "bytes": 2583577,
+      "loop": "seamless (circular render + circular convolution reverb)",
+      "license": "Original composition, dedicated to the public domain (CC0 1.0)",
+      "source": "scripts/generate_music.py (synthesised locally, no samples)",
+      "attribution": "None required",
+      "metrics": {
+        "peak": 0.86,
+        "rms": 0.214,
+        "loopSeamDelta": 8e-05
+      }
+    },
+    {
+      "id": "cathedral-ambient-01",
+      "title": "Cathedral Light",
+      "file": "cathedral-ambient-01.ogg",
+      "mood": "Deep organ-like ambience, wide stone reverb",
+      "bpm": 52,
+      "durationSeconds": 193.85,
+      "format": "Ogg Opus 112 kb/s, 44.1 kHz stereo",
+      "bytes": 2615683,
+      "loop": "seamless (circular render + circular convolution reverb)",
+      "license": "Original composition, dedicated to the public domain (CC0 1.0)",
+      "source": "scripts/generate_music.py (synthesised locally, no samples)",
+      "attribution": "None required",
+      "metrics": {
+        "peak": 0.86,
+        "rms": 0.2044,
+        "loopSeamDelta": 0.000847
+      }
+    },
+    {
+      "id": "piano-worship-01",
+      "title": "Piano Worship",
+      "file": "piano-worship-01.ogg",
+      "mood": "Solo felt piano, gentle arpeggios",
+      "bpm": 66,
+      "durationSeconds": 203.64,
+      "format": "Ogg Opus 112 kb/s, 44.1 kHz stereo",
+      "bytes": 3419424,
+      "loop": "seamless (circular render + circular convolution reverb)",
+      "license": "Original composition, dedicated to the public domain (CC0 1.0)",
+      "source": "scripts/generate_music.py (synthesised locally, no samples)",
+      "attribution": "None required",
+      "metrics": {
+        "peak": 0.86,
+        "rms": 0.2413,
+        "loopSeamDelta": 0.008836
+      }
+    },
+    {
+      "id": "morning-prayer-01",
+      "title": "Morning Prayer",
+      "file": "morning-prayer-01.ogg",
+      "mood": "Bright piano with sunrise pads",
+      "bpm": 72,
+      "durationSeconds": 200.0,
+      "format": "Ogg Opus 112 kb/s, 44.1 kHz stereo",
+      "bytes": 2874794,
+      "loop": "seamless (circular render + circular convolution reverb)",
+      "license": "Original composition, dedicated to the public domain (CC0 1.0)",
+      "source": "scripts/generate_music.py (synthesised locally, no samples)",
+      "attribution": "None required",
+      "metrics": {
+        "peak": 0.86,
+        "rms": 0.2011,
+        "loopSeamDelta": 0.002146
+      }
+    }
+  ]
+}

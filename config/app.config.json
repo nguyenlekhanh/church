@@ -32,11 +32,13 @@
     "intervalSeconds": 60,
     "category": "cathedral",
     "randomize": true,
-    "transitionMs": 1600
+    "transitionMs": 1600,
+    "sceneMatch": true
   },
   "prayer": {
     "autoApprove": true,
     "paused": false,
+    "interactionEnabled": true,
     "maxQueue": 30,
     "cooldownSeconds": 30,
     "maxLength": 120,
@@ -49,8 +51,30 @@
   },
   "backgroundMusic": {
     "enabled": true,
-    "volume": 0.45,
-    "file": ""
+    "volume": 0.1,
+    "duckVolume": 0.035,
+    "track": "peaceful-prayer-01",
+    "autoplay": true,
+    "shuffle": false,
+    "repeat": "all"
+  },
+  "show": {
+    "enabled": true,
+    "paused": false,
+    "welcomeEnabled": true,
+    "narration": true,
+    "theme": "auto",
+    "pace": 1
+  },
+  "quiz": {
+    "enabled": true,
+    "frequencyMinutes": 10,
+    "revealSeconds": 25,
+    "tts": true
+  },
+  "gifts": {
+    "announce": true,
+    "tts": true
   },
   "moderation": {
     "blockedWords": [],

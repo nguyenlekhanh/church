@@ -51,6 +51,9 @@ function loadConfig() {
   const background = base.background || {};
   const prayer = base.prayer || {};
   const tiktok = base.tiktok || {};
+  const show = base.show || {};
+  const quiz = base.quiz || {};
+  const gifts = base.gifts || {};
 
   const config = {
     ...base,
@@ -87,7 +90,8 @@ function loadConfig() {
       ),
       category: envString('BACKGROUND_CATEGORY', background.category || 'all'),
       randomize: background.randomize !== false,
-      transitionMs: clamp(background.transitionMs, 400, 6000, 1600)
+      transitionMs: clamp(background.transitionMs, 400, 6000, 1600),
+      sceneMatch: envBool('SCENE_MATCH', background.sceneMatch !== false)
     },
     prayer: {
       autoApprove: envBool('PRAYER_AUTO_APPROVE', prayer.autoApprove !== false),
@@ -95,7 +99,8 @@ function loadConfig() {
       maxQueue: clamp(prayer.maxQueue, 5, 200, 30),
       cooldownSeconds: clamp(prayer.cooldownSeconds, 5, 600, 30),
       maxLength: clamp(prayer.maxLength, 40, 300, 120),
-      showAvatar: Boolean(prayer.showAvatar)
+      showAvatar: Boolean(prayer.showAvatar),
+      interactionEnabled: envBool('PRAYER_INTERACTION', prayer.interactionEnabled !== false)
     },
     tiktok: {
       username: envString('TIKTOK_USER', tiktok.username || ''),
@@ -107,9 +112,39 @@ function loadConfig() {
       large: clamp(base.giftTiers && base.giftTiers.large, 3, 1000000, 200)
     },
     backgroundMusic: {
-      enabled: base.backgroundMusic ? base.backgroundMusic.enabled !== false : false,
-      volume: clamp(base.backgroundMusic && base.backgroundMusic.volume, 0, 1, 0.45),
+      enabled: envBool('MUSIC_ENABLED', base.backgroundMusic ? base.backgroundMusic.enabled !== false : true),
+      volume: clamp(envNumber('MUSIC_VOLUME', base.backgroundMusic && base.backgroundMusic.volume), 0, 1, 0.1),
+      duckVolume: clamp(
+        envNumber('MUSIC_DUCK_VOLUME', base.backgroundMusic && base.backgroundMusic.duckVolume),
+        0,
+        0.5,
+        0.035
+      ),
+      track: envString('MUSIC_TRACK', (base.backgroundMusic && base.backgroundMusic.track) || 'peaceful-prayer-01'),
+      autoplay: envBool('MUSIC_AUTOPLAY', base.backgroundMusic ? base.backgroundMusic.autoplay !== false : true),
+      shuffle: Boolean(base.backgroundMusic && base.backgroundMusic.shuffle),
+      repeat: ['off', 'one', 'all'].includes(base.backgroundMusic && base.backgroundMusic.repeat)
+        ? base.backgroundMusic.repeat
+        : 'all',
       file: (base.backgroundMusic && base.backgroundMusic.file) || ''
+    },
+    show: {
+      enabled: envBool('SHOW_ENABLED', show.enabled !== false),
+      paused: Boolean(show.paused),
+      welcomeEnabled: envBool('SHOW_WELCOME', show.welcomeEnabled !== false),
+      narration: envBool('SHOW_NARRATION', show.narration !== false),
+      theme: envString('SHOW_THEME', show.theme || 'auto'),
+      pace: clamp(envNumber('SHOW_PACE', show.pace), 0.5, 1.5, 1)
+    },
+    quiz: {
+      enabled: envBool('QUIZ_ENABLED', quiz.enabled !== false),
+      frequencyMinutes: clamp(envNumber('QUIZ_FREQUENCY_MINUTES', quiz.frequencyMinutes), 2, 120, 10),
+      revealSeconds: clamp(envNumber('QUIZ_REVEAL_SECONDS', quiz.revealSeconds), 10, 90, 25),
+      tts: envBool('QUIZ_TTS', quiz.tts !== false)
+    },
+    gifts: {
+      announce: envBool('GIFT_ANNOUNCE', gifts.announce !== false),
+      tts: envBool('GIFT_TTS', gifts.tts !== false)
     },
     moderation: base.moderation || { blockedWords: [], blockLinks: true }
   };

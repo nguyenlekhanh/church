@@ -1,8 +1,9 @@
 /**
  * PrayerAudioEngine
- * - Soft, generated worship ambience (no external music files, no licensing issues).
+ * - Original ambient worship playlist (local Ogg Opus, seamless Web Audio loops).
+ * - Two-deck crossfade, shuffle/repeat, automatic volume ducking under narration.
  * - Gentle chimes and a warm church bell for community moments.
- * - Language-aware Piper narration queue: never overlaps, ducks ambience, caches URLs.
+ * - Language-aware Piper narration queue: never overlaps, ducks music, caches URLs.
  */
 (function () {
   'use strict';
@@ -12,18 +13,39 @@
       this.ctx = null;
       this.unlocked = false;
       this.sfxEnabled = true;
-      this.bgMusicEnabled = false;
       this.ttsEnabled = true;
       this.ttsLanguage = 'en';
       this.ttsVoice = '';
       this.ttsRate = 1.0;
 
-      const savedMusic = parseFloat(localStorage.getItem('prayer_music_vol'));
       const savedTts = parseFloat(localStorage.getItem('prayer_tts_vol'));
-      this.bgBaseVolume = Number.isFinite(savedMusic) ? Math.max(0, Math.min(1, savedMusic)) : 0.45;
       this.ttsVolume = Number.isFinite(savedTts) ? Math.max(0, Math.min(1, savedTts)) : 0.95;
 
-      this.ambience = null;
+      // Background music (ambient worship playlist).
+      this.music = {
+        tracks: [],
+        byId: new Map(),
+        enabled: false,
+        paused: true,
+        autoplay: true,
+        currentId: '',
+        volume: 0.1,
+        duckVolume: 0.035,
+        shuffle: false,
+        repeat: 'all',
+        master: null,
+        limiter: null,
+        deck: null,
+        buffers: new Map(),
+        loadingId: null,
+        loadError: null,
+        overrideUntil: 0,
+        crossfadeUntil: 0,
+        crossfadeTimer: null,
+        userStarted: false
+      };
+      this.onMusicStateChange = null;
+
       this.ttsQueue = [];
       this.ttsPlaying = false;
       this.currentAudio = null;
@@ -38,111 +60,372 @@
         if (!AudioCtx) return null;
         this.ctx = new AudioCtx();
       }
-      if (this.ctx.state === 'suspended') this.ctx.resume();
-      this.unlocked = true;
-      if (this.bgMusicEnabled) this.startAmbience();
+      if (this.ctx.state === 'suspended') {
+        const resume = this.ctx.resume();
+        if (resume && typeof resume.then === 'function') {
+          resume.then(() => {
+            // OBS browser sources allow autoplay; regular tabs may need a click.
+            if (this.ctx.state === 'running') {
+              this.unlocked = true;
+              if (this.music.enabled && !this.music.paused) this.startMusic();
+            }
+          }).catch(() => {});
+        }
+      }
+      this.unlocked = this.ctx.state === 'running';
+      // A user gesture just happened: honour the saved autoplay state.
+      if (this.unlocked && this.music.enabled && !this.music.paused) this.startMusic();
       return this.ctx;
     }
 
     /* ---------------------------------------------------------------------
-       Ambience
+       Background music — original ambient worship playlist
        --------------------------------------------------------------------- */
-    startAmbience() {
-      // Never create the audio context here: ensureContext() calls this method
-      // after unlocking, so requiring an existing context avoids recursion.
-      if (!this.bgMusicEnabled || this.ambience || !this.ctx) return;
-      const ctx = this.ctx;
-      if (ctx.state === 'suspended') ctx.resume();
-
-      const master = ctx.createGain();
-      master.gain.value = this.getAmbienceGain();
-      master.connect(ctx.destination);
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 900;
-      filter.Q.value = 0.4;
-      filter.connect(master);
-
-      const notes = [110, 164.81, 220, 329.63];
-      const oscillators = [];
-      notes.forEach((freq, index) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = index % 2 === 0 ? 'sine' : 'triangle';
-        osc.frequency.value = freq;
-        gain.gain.value = 0.035 / (index + 1);
-
-        const lfo = ctx.createOscillator();
-        const lfoGain = ctx.createGain();
-        lfo.frequency.value = 0.05 + index * 0.013;
-        lfoGain.gain.value = 0.012;
-        lfo.connect(lfoGain);
-        lfoGain.connect(gain.gain);
-        lfo.start();
-
-        osc.connect(gain);
-        gain.connect(filter);
-        osc.start();
-        oscillators.push({ osc, gain, lfo, lfoGain });
-      });
-
-      const chimeTimer = setInterval(() => {
-        if (!this.bgMusicEnabled) return;
-        this.playSoftChime(0.35);
-      }, 8200);
-
-      this.ambience = { master, filter, oscillators, chimeTimer };
+    setMusicPlaylist(tracks) {
+      const list = Array.isArray(tracks) ? tracks.filter((track) => track && track.url) : [];
+      this.music.tracks = list;
+      this.music.byId = new Map(list.map((track) => [track.id, track]));
+      if (!this.music.currentId && list.length > 0) this.music.currentId = list[0].id;
+      this.emitMusicState();
     }
 
-    stopAmbience() {
-      if (!this.ambience) return;
-      const { master, oscillators, chimeTimer } = this.ambience;
-      clearInterval(chimeTimer);
-      oscillators.forEach(({ osc, gain, lfo, lfoGain }) => {
-        try {
-          osc.stop();
-          lfo.stop();
-          osc.disconnect();
-          lfo.disconnect();
-          gain.disconnect();
-          lfoGain.disconnect();
-        } catch (_) {}
-      });
+    /** Applies the authoritative server settings without restarting playback needlessly. */
+    applyMusicSettings(settings) {
+      if (!settings || typeof settings !== 'object') return;
+      const music = this.music;
+      const nextId = String(settings.track || music.currentId || '');
+      const trackChanged = nextId && nextId !== music.currentId && Date.now() > music.overrideUntil;
+
+      if (typeof settings.volume === 'number') music.volume = Math.max(0, Math.min(1, settings.volume));
+      if (typeof settings.duckVolume === 'number') {
+        music.duckVolume = Math.max(0, Math.min(1, settings.duckVolume));
+      }
+      if (typeof settings.shuffle === 'boolean') music.shuffle = settings.shuffle;
+      if (typeof settings.repeat === 'string') music.repeat = settings.repeat;
+      if (typeof settings.autoplay === 'boolean') music.autoplay = settings.autoplay;
+
+      const shouldPlay = settings.enabled !== false && settings.paused !== true;
+      const wasPlaying = music.enabled && !music.paused;
+      music.enabled = settings.enabled !== false;
+      music.paused = settings.paused === true;
+
+      if (trackChanged) {
+        music.currentId = nextId;
+        if (shouldPlay) this.playTrack(nextId, { fadeMs: 1800 });
+      } else if (!music.currentId && nextId) {
+        music.currentId = nextId;
+      }
+
+      if (!shouldPlay && wasPlaying) this.stopMusic({ fadeMs: 1400 });
+      else if (shouldPlay && !wasPlaying && this.unlocked && music.autoplay) this.startMusic();
+      else if (shouldPlay && !music.deck && this.unlocked && music.autoplay) this.startMusic();
+
+      this.refreshMusicGain();
+      this.emitMusicState();
+    }
+
+    /** Starts (or resumes) the configured track. Safe to call repeatedly. */
+    startMusic(fadeMs = 2200) {
+      const music = this.music;
+      if (!this.ctx || !this.unlocked) return false;
+      if (!music.enabled || music.paused) return false;
+      const id = music.currentId || music.tracks[0]?.id;
+      if (!id) return false;
+      if (music.deck && (music.deck.id === id || music.deck.track?.id === id)) {
+        this.refreshMusicGain();
+        return true;
+      }
+      if (music.loadingId === id) return true;
+      music.userStarted = true;
+      this.playTrack(id, { fadeMs });
+      return true;
+    }
+
+    stopMusic({ fadeMs = 1200 } = {}) {
+      const music = this.music;
+      clearTimeout(music.crossfadeTimer);
+      music.crossfadeTimer = null;
+      music.paused = true;
+      if (!this.ctx || !music.master) {
+        music.deck = null;
+        this.emitMusicState();
+        return;
+      }
+      const now = this.ctx.currentTime;
       try {
-        master.disconnect();
+        music.master.gain.cancelScheduledValues(now);
+        music.master.gain.setValueAtTime(music.master.gain.value, now);
+        music.master.gain.linearRampToValueAtTime(0.0001, now + Math.max(0.05, fadeMs / 1000));
       } catch (_) {}
-      this.ambience = null;
-    }
-
-    getAmbienceGain() {
-      return this.ttsPlaying ? Math.max(0.015, this.bgBaseVolume * 0.14) : this.bgBaseVolume * 0.32;
-    }
-
-    refreshAmbienceGain() {
-      if (!this.ambience) return;
-      try {
-        this.ambience.master.gain.setTargetAtTime(this.getAmbienceGain(), this.ctx.currentTime, 0.4);
-      } catch (_) {}
+      if (music.deck) this.stopDeck(music.deck, fadeMs);
+      music.deck = null;
+      this.emitMusicState();
     }
 
     setMusicEnabled(enabled) {
-      this.bgMusicEnabled = Boolean(enabled);
-      if (this.bgMusicEnabled) {
-        this.startAmbience();
-      } else {
-        this.stopAmbience();
-      }
+      this.applyMusicSettings({ enabled: Boolean(enabled), paused: !enabled });
     }
 
     setMusicVolume(volume) {
       const value = Math.max(0, Math.min(1, Number(volume)));
       if (!Number.isFinite(value)) return;
-      this.bgBaseVolume = value;
+      this.music.volume = value;
       try {
         localStorage.setItem('prayer_music_vol', String(value));
       } catch (_) {}
-      this.refreshAmbienceGain();
+      this.refreshMusicGain();
+      this.emitMusicState();
+    }
+
+    ensureMusicBus() {
+      const music = this.music;
+      if (!this.ctx || music.master) return music.master;
+      const master = this.ctx.createGain();
+      master.gain.value = 0.0001;
+      // Safety limiter: narration and music can never clip the OBS source.
+      const limiter = this.ctx.createDynamicsCompressor();
+      limiter.threshold.value = -4;
+      limiter.knee.value = 8;
+      limiter.ratio.value = 12;
+      limiter.attack.value = 0.006;
+      limiter.release.value = 0.3;
+      master.connect(limiter);
+      limiter.connect(this.ctx.destination);
+      music.master = master;
+      music.limiter = limiter;
+      return master;
+    }
+
+    musicGainTarget() {
+      const music = this.music;
+      if (!music.enabled || music.paused) return 0;
+      return this.ttsPlaying ? Math.min(music.volume, music.duckVolume) : music.volume;
+    }
+
+    refreshMusicGain(immediate = false) {
+      const music = this.music;
+      if (!this.ctx || !music.master) return;
+      const target = this.musicGainTarget();
+      const now = this.ctx.currentTime;
+      try {
+        music.master.gain.cancelScheduledValues(now);
+        music.master.gain.setValueAtTime(Math.max(0.0001, music.master.gain.value), now);
+        if (immediate) music.master.gain.linearRampToValueAtTime(target, now + 0.08);
+        else music.master.gain.setTargetAtTime(target, now, 0.5);
+      } catch (_) {}
+    }
+
+    async loadMusicBuffer(track) {
+      const music = this.music;
+      if (!track) throw new Error('No track selected');
+      if (music.buffers.has(track.id)) return music.buffers.get(track.id);
+      if (music.loadingId === track.id && music.loadPromise) return music.loadPromise;
+      music.loadingId = track.id;
+      music.loadError = null;
+      const promise = (async () => {
+        const res = await fetch(track.url, { cache: 'force-cache' });
+        if (!res.ok) throw new Error(`Music file unavailable (${res.status})`);
+        const bytes = await res.arrayBuffer();
+        const buffer = await this.ctx.decodeAudioData(bytes);
+        // Keep at most two decoded loops in memory (current + preloaded next).
+        if (music.buffers.size >= 2) {
+          const firstKey = music.buffers.keys().next().value;
+          if (firstKey !== track.id) music.buffers.delete(firstKey);
+        }
+        music.buffers.set(track.id, buffer);
+        return buffer;
+      })();
+      music.loadPromise = promise;
+      try {
+        return await promise;
+      } catch (err) {
+        music.loadError = err.message;
+        console.warn('[Music]', err.message);
+        throw err;
+      } finally {
+        if (music.loadingId === track.id) {
+          music.loadingId = null;
+          music.loadPromise = null;
+        }
+        this.emitMusicState();
+      }
+    }
+
+    playTrack(trackId, { fadeMs = 1800, preloadedBuffer = null } = {}) {
+      const music = this.music;
+      const track = music.byId.get(trackId);
+      if (!track) return;
+      if (!this.ctx || !this.unlocked) {
+        music.currentId = trackId;
+        this.emitMusicState();
+        return;
+      }
+      const previous = music.deck;
+      this.ensureMusicBus();
+      music.currentId = trackId;
+      music.paused = false;
+      music.enabled = true;
+
+      const begin = async () => {
+        let buffer = preloadedBuffer;
+        if (!buffer) {
+          try {
+            buffer = await this.loadMusicBuffer(track);
+          } catch (_) {
+            this.emitMusicState();
+            return;
+          }
+        }
+        // A newer request may have won while the file decoded.
+        if (music.currentId !== trackId) return;
+        if (music.deck && (music.deck.id === trackId || music.deck.track?.id === trackId)) return;
+
+        this.startDeck(track, buffer, { fadeMs, previous });
+        this.refreshMusicGain();
+        this.emitMusicState();
+      };
+      begin();
+    }
+
+    startDeck(track, buffer, { fadeMs, previous }) {
+      const ctx = this.ctx;
+      const music = this.music;
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      source.buffer = buffer;
+      const loopOne = music.repeat === 'one';
+      source.loop = loopOne;
+      source.connect(gain);
+      gain.connect(music.master);
+
+      const now = ctx.currentTime;
+      const fade = Math.max(0.05, fadeMs / 1000);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(1, now + fade);
+
+      if (previous) {
+        try {
+          const oldGain = previous.gain;
+          oldGain.gain.cancelScheduledValues(now);
+          oldGain.gain.setValueAtTime(oldGain.gain.value, now);
+          oldGain.gain.linearRampToValueAtTime(0.0001, now + fade);
+          previous.source.stop(now + fade + 0.1);
+        } catch (_) {}
+      }
+
+      const deck = { id: track.id, track, source, gain, startedAt: now, duration: buffer.duration };
+      music.deck = deck;
+      source.onended = () => {
+        try {
+          gain.disconnect();
+        } catch (_) {}
+        if (music.deck === deck) {
+          music.deck = null;
+          if (!music.paused && music.repeat === 'off') this.emitMusicState();
+        }
+      };
+      source.start(now);
+
+      // Schedule the hand-off to the next track just before this one ends.
+      clearTimeout(music.crossfadeTimer);
+      music.crossfadeTimer = null;
+      if (!loopOne && music.repeat !== 'off') {
+        const crossfade = 3.5;
+        const waitMs = Math.max(1200, (buffer.duration - crossfade) * 1000);
+        music.crossfadeUntil = Date.now() + waitMs;
+        music.crossfadeTimer = setTimeout(() => {
+          if (music.deck !== deck) return;
+          this.advancePlaylist(1, { auto: true });
+        }, waitMs);
+        // Pre-decode the next loop while this one plays (keeps transitions gapless).
+        const nextId = this.peekNextTrackId();
+        if (nextId) {
+          const nextTrack = music.byId.get(nextId);
+          if (nextTrack && !music.buffers.has(nextId)) {
+            this.loadMusicBuffer(nextTrack).catch(() => {});
+          }
+        }
+      }
+    }
+
+    stopDeck(deck, fadeMs) {
+      if (!deck) return;
+      try {
+        const now = this.ctx ? this.ctx.currentTime : 0;
+        deck.gain.gain.cancelScheduledValues(now);
+        deck.gain.gain.setValueAtTime(Math.max(0.0001, deck.gain.gain.value), now);
+        deck.gain.gain.linearRampToValueAtTime(0.0001, now + Math.max(0.05, fadeMs / 1000));
+        deck.source.stop(now + Math.max(0.05, fadeMs / 1000) + 0.1);
+      } catch (_) {}
+    }
+
+    peekNextTrackId() {
+      const music = this.music;
+      const order = music.tracks.map((track) => track.id);
+      if (order.length < 2) return null;
+      if (music.shuffle) {
+        const pool = order.filter((id) => id !== music.currentId);
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+      const index = order.indexOf(music.currentId);
+      return order[(index + 1) % order.length];
+    }
+
+    /** Crossfades to the next/previous track and syncs the choice to the server. */
+    advancePlaylist(direction = 1, { auto = false } = {}) {
+      const music = this.music;
+      const order = music.tracks.map((track) => track.id);
+      if (order.length === 0) return null;
+      if (music.repeat === 'off' && auto) {
+        const index = order.indexOf(music.currentId);
+        if (!music.shuffle && index === order.length - 1) {
+          this.stopMusic({ fadeMs: 2500 });
+          return null;
+        }
+      }
+      let nextId;
+      if (music.shuffle) {
+        const pool = order.filter((id) => id !== music.currentId);
+        nextId = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        const index = order.indexOf(music.currentId);
+        nextId = order[(index + direction + order.length) % order.length];
+      }
+      music.overrideUntil = Date.now() + 5000;
+      const nextTrack = music.byId.get(nextId);
+      const buffer = nextTrack ? music.buffers.get(nextId) : null;
+      this.playTrack(nextId, { fadeMs: 3500, preloadedBuffer: buffer || null });
+      if (this.onMusicStateChange) {
+        this.onMusicStateChange({ reason: 'advance', trackId: nextId, auto });
+      }
+      return nextId;
+    }
+
+    getMusicStatus() {
+      const music = this.music;
+      const track = music.byId.get(music.currentId);
+      return {
+        enabled: music.enabled,
+        paused: music.paused,
+        playing: Boolean(music.deck),
+        unlocked: this.unlocked,
+        trackId: music.currentId,
+        title: track?.title || '',
+        volume: music.volume,
+        duckVolume: music.duckVolume,
+        ducked: Boolean(this.ttsPlaying),
+        shuffle: music.shuffle,
+        repeat: music.repeat,
+        loading: Boolean(music.loadingId),
+        error: music.loadError,
+        tracks: music.tracks.length
+      };
+    }
+
+    emitMusicState() {
+      if (typeof this.onMusicStateChange === 'function') {
+        this.onMusicStateChange({ reason: 'state', status: this.getMusicStatus() });
+      }
     }
 
     setTtsVolume(volume) {
@@ -321,7 +604,7 @@
     async processTtsQueue() {
       if (this.ttsPlaying || this.ttsQueue.length === 0) return;
       this.ttsPlaying = true;
-      this.refreshAmbienceGain();
+      this.refreshMusicGain();
       const item = this.ttsQueue.shift();
 
       try {
@@ -350,7 +633,7 @@
       } finally {
         this.ttsPlaying = false;
         if (this.ttsQueue.length === 0) {
-          this.refreshAmbienceGain();
+          this.refreshMusicGain();
           if (this.onTtsStateChange) {
             this.onTtsStateChange({ speaking: false, text: '', lang: '' });
           }

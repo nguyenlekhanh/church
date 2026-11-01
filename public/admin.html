@@ -120,6 +120,208 @@
         <audio id="audioPreview" controls class="audio-preview"></audio>
       </section>
 
+      <!-- Automated live show -->
+      <section class="panel span-2" id="show">
+        <div class="panel-head">
+          <h2>Live Show Automation</h2>
+          <span class="badge" id="showBadge">Loading</span>
+        </div>
+        <p class="note">
+          The program cycles through welcome, Scripture, prayer, community and gratitude segments and keeps running until you stop it.
+          Each cue appears on the OBS stage and is narrated by Piper when narration is enabled. Real TikTok joins trigger welcome greetings;
+          the test button is always labelled as a sample.
+        </p>
+
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="showEnabled" />
+            <span>Automation</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="showWelcome" />
+            <span>Welcome new viewers</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="showNarration" />
+            <span>Narrate program with Piper</span>
+          </label>
+          <label class="field compact grow">
+            <span>Prayer theme</span>
+            <select id="showTheme">
+              <option value="auto">Rotate all themes</option>
+            </select>
+          </label>
+          <label class="field compact">
+            <span>Pace</span>
+            <select id="showPace">
+              <option value="1.3">Gentle</option>
+              <option value="1">Standard</option>
+              <option value="0.75">Frequent</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="show-board">
+          <div class="show-board-head">
+            <span class="show-board-label" id="showNowLine">PROGRAM</span>
+            <span class="show-board-hint" id="showNextLine"></span>
+          </div>
+          <div class="show-board-title" id="showNowTitle">Waiting for the first cue…</div>
+          <div class="show-board-body" id="showNowBody"></div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn" id="btnShowPause">Pause Program</button>
+          <button class="btn" id="btnShowNext">Next Segment</button>
+          <button class="btn" id="btnShowVerse">Next Bible Verse</button>
+          <button class="btn" id="btnShowReflection">Next Reflection</button>
+          <button class="btn" id="btnShowPrayer">Next Prayer</button>
+          <button class="btn" id="btnShowGratitude">Gratitude Prayer</button>
+          <button class="btn gold" id="btnShowTestWelcome">Test Welcome</button>
+          <button class="btn" id="btnShowRestart">Restart Program</button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="inline-head">
+          <h3>Program Log</h3>
+          <span class="panel-hint">Newest first · auto, manual and test cues</span>
+        </div>
+        <div class="show-log" id="showLog"><div class="empty">No cues yet.</div></div>
+      </section>
+
+      <!-- Community engagement -->
+      <section class="panel span-2" id="engagement">
+        <div class="panel-head">
+          <h2>Community Engagement</h2>
+          <span class="badge" id="quizBadge">Loading</span>
+        </div>
+        <p class="note">
+          A Bible quiz runs between program segments: one KJV question, answers accepted from TikTok comments (case-insensitive),
+          then the answer, reference and a short explanation are revealed and narrated. Gifts and prayer requests are always real
+          events only — nothing here fabricates viewers, comments or donations.
+        </p>
+
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="quizEnabled" />
+            <span>Bible quiz</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="quizNarration" />
+            <span>Narrate the answer</span>
+          </label>
+          <label class="field compact">
+            <span>Every (minutes)</span>
+            <input type="number" id="quizFrequency" min="2" max="120" step="1" value="10" />
+          </label>
+          <label class="field compact">
+            <span>Reveal after</span>
+            <select id="quizRevealDelay">
+              <option value="15">15 seconds</option>
+              <option value="20">20 seconds</option>
+              <option value="25">25 seconds</option>
+              <option value="30">30 seconds</option>
+              <option value="45">45 seconds</option>
+            </select>
+          </label>
+          <button class="btn gold" id="btnQuizNext">Next Question</button>
+          <button class="btn" id="btnQuizReveal">Reveal Answer</button>
+        </div>
+
+        <div class="show-board">
+          <div class="show-board-head">
+            <span class="show-board-label" id="quizNowLine">BIBLE QUIZ</span>
+            <span class="show-board-hint" id="quizNextLine"></span>
+          </div>
+          <div class="show-board-title" id="quizNowTitle">No question open</div>
+          <div class="show-board-body" id="quizNowBody"></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="prayerInteraction" />
+            <span>Prayer requests from comments</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="giftAnnounce" />
+            <span>Gift announcements</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="giftTts" />
+            <span>Speak gift thanks</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="sceneMatch" />
+            <span>Match background to segment</span>
+          </label>
+          <button class="btn" id="btnNextScene">Next Background</button>
+        </div>
+        <p class="note" id="engagementNote">
+          Turning off prayer requests from comments stops new requests from being queued; existing requests stay on the wall.
+          Scene matching only uses the locally stored Christian images.
+        </p>
+      </section>
+
+      <!-- Background music -->
+      <section class="panel span-2" id="music">
+        <div class="panel-head">
+          <h2>Background Music</h2>
+          <span class="badge" id="musicBadge">Loading</span>
+        </div>
+        <p class="note">
+          Original ambient worship instrumentals — no vocals, no percussion. Music ducks to about 3% while Piper narrates,
+          then fades back to your set volume. Changes reach the live stage immediately, without a restart.
+        </p>
+
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="musicEnabled" />
+            <span>Background music</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="musicAutoplay" />
+            <span>Autoplay with audio</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="musicShuffle" />
+            <span>Shuffle</span>
+          </label>
+          <label class="field compact">
+            <span>Repeat</span>
+            <select id="musicRepeat">
+              <option value="all">Whole playlist</option>
+              <option value="one">Single track</option>
+              <option value="off">Play once</option>
+            </select>
+          </label>
+          <label class="field compact grow">
+            <span>Track</span>
+            <select id="musicTrack"><option value="">Loading playlist…</option></select>
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button class="btn gold" id="btnMusicPlayPause">Pause</button>
+          <button class="btn" id="btnMusicPrev">Previous</button>
+          <button class="btn" id="btnMusicNext">Next</button>
+          <button class="btn" id="btnMusicTest">Test Audio</button>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-label"><span>Music volume</span><strong id="musicVolumeValue">10%</strong></div>
+          <input type="range" id="musicVolume" min="0" max="100" value="10" />
+        </div>
+
+        <p class="note" id="musicStatus">Loading the playlist…</p>
+        <div class="music-track-list" id="musicPlaylist"></div>
+        <audio id="musicTestAudio" controls preload="none" class="audio-preview"></audio>
+        <p class="note small">
+          Tracks are synthesised locally and dedicated to the public domain (CC0) — no third-party recordings.
+          Details: <code>public/assets/christian/audio/music-manifest.json</code>.
+        </p>
+      </section>
+
       <!-- Backgrounds -->
       <section class="panel span-2" id="backgrounds">
         <div class="panel-head">

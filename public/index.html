@@ -42,7 +42,52 @@
           </div>
           <h1 class="brand-title">CHRISTIAN PRAYER LIVE</h1>
           <div class="brand-tagline"><span></span>FAITH • HOPE • LOVE<span></span></div>
+          <div class="program-line" id="programLine">
+            <span class="program-dot"></span>
+            <span id="programText">PREPARING THE PRAYER ROOM</span>
+          </div>
         </header>
+
+        <!-- Prayer invitation — shown when a viewer asks for prayer -->
+        <div class="prayer-invite" id="prayerInvite" role="status">
+          <span class="prayer-invite-mark">✝</span>
+          <div class="prayer-invite-copy">
+            <div class="prayer-invite-title" id="prayerInviteTitle">Let us pray with you</div>
+            <div class="prayer-invite-sub" id="prayerInviteSub">Type PRAY FOR ME in the comments.</div>
+          </div>
+        </div>
+
+        <!-- Bible quiz — one question at a time, answer in the comments -->
+        <section class="quiz-card" id="quizCard" aria-live="polite">
+          <div class="quiz-head">
+            <span class="quiz-label"><span class="quiz-mark">?</span> BIBLE QUIZ</span>
+            <span class="quiz-timer" id="quizTimer"></span>
+          </div>
+          <p class="quiz-question" id="quizQuestion"></p>
+          <div class="quiz-reveal" id="quizReveal">
+            <div class="quiz-answer-line">
+              <span class="quiz-answer-label">ANSWER</span>
+              <span class="quiz-answer-text" id="quizAnswerText"></span>
+              <span class="quiz-ref" id="quizRef"></span>
+            </div>
+            <p class="quiz-explanation" id="quizExplanation"></p>
+          </div>
+          <div class="quiz-foot" id="quizFoot">Type your answer in the comments</div>
+          <div class="quiz-progress" aria-hidden="true"><span id="quizProgress"></span></div>
+        </section>
+
+        <!-- Automated program cue: welcome, Scripture, prayer, community -->
+        <section class="show-card" id="showCard" aria-live="polite">
+          <div class="show-glow" aria-hidden="true"></div>
+          <div class="show-eyebrow" id="showEyebrow"></div>
+          <h2 class="show-title" id="showTitle"></h2>
+          <p class="show-body" id="showBody"></p>
+          <p class="show-note" id="showNote"></p>
+          <div class="show-ref" id="showRef"></div>
+          <div class="show-progress" aria-hidden="true"><span id="showProgress"></span></div>
+        </section>
+
+        <div class="demo-badge" id="demoBadge">DEMO MODE · SIMULATED ACTIVITY</div>
 
         <div class="lower-stack">
         <!-- Prayer request focus -->
@@ -76,7 +121,14 @@
           </div>
 
           <aside class="activity-column">
-            <div class="section-heading">
+            <div class="section-heading tight">
+              <span class="heading-label">PRAYER WALL</span>
+              <span class="heading-line"></span>
+            </div>
+            <div class="prayer-wall" id="prayerWall">
+              <div class="comments-empty">Prayer requests will appear here.</div>
+            </div>
+            <div class="section-heading tight activity-heading">
               <span class="heading-label">COMMUNITY</span>
               <span class="heading-line"></span>
             </div>
@@ -124,6 +176,16 @@
           <div class="amen-sub" id="amenSub">Let us pray together.</div>
         </div>
 
+        <!-- Live gift spotlight — real TikTok gifts only -->
+        <section class="gift-card" id="giftCard" role="status">
+          <div class="gift-mark" id="giftMark">✦</div>
+          <div class="gift-copy">
+            <div class="gift-label">A GIFT OF KINDNESS</div>
+            <div class="gift-line"><strong id="giftSender"></strong> <span class="gift-verb">sent</span> <span class="gift-name" id="giftName"></span></div>
+            <div class="gift-thanks" id="giftThanks"></div>
+          </div>
+        </section>
+
         <div class="event-toast" id="eventToast" role="status">
           <div class="toast-mark" id="toastMark">✝</div>
           <div class="toast-copy">
@@ -160,8 +222,18 @@
         <button class="dock-btn gold" id="btnUnlockAudio">Enable Audio &amp; Narration</button>
         <div class="dock-grid-2">
           <button class="dock-btn toggle on" id="btnToggleTts">Narration: On</button>
-          <button class="dock-btn toggle" id="btnToggleMusic">Ambience: Off</button>
+          <button class="dock-btn toggle" id="btnToggleMusic">Music: Off</button>
         </div>
+        <div class="music-now" id="musicNowPlaying">Loading worship playlist…</div>
+        <div class="dock-grid-2">
+          <button class="dock-btn" id="btnPrevMusic">◀ Previous</button>
+          <button class="dock-btn" id="btnNextMusic">Next ▶</button>
+        </div>
+        <div class="dock-grid-2">
+          <button class="dock-btn" id="btnToggleMusicPlay">Pause Music</button>
+          <button class="dock-btn" id="btnShuffleMusic">Shuffle: Off</button>
+        </div>
+        <div class="music-status" id="musicStatus">Background music idle.</div>
         <label class="dock-field">
           <span>Narration language</span>
           <select id="selectTtsLanguage">
@@ -170,8 +242,8 @@
           </select>
         </label>
         <div class="volume-row">
-          <div class="volume-label"><span>Ambience</span><strong id="valMusicVol">0%</strong></div>
-          <input type="range" id="sliderMusicVol" min="0" max="100" value="45" />
+          <div class="volume-label"><span>Music</span><strong id="valMusicVol">10%</strong></div>
+          <input type="range" id="sliderMusicVol" min="0" max="100" value="10" />
         </div>
         <div class="volume-row">
           <div class="volume-label"><span>Narration</span><strong id="valTtsVol">95%</strong></div>
@@ -191,6 +263,20 @@
           <button class="dock-btn" id="btnToggleAutoSim">Demo activity: Off</button>
         </div>
         <div class="connection-note" id="connectionNote">Not connected to TikTok Live.</div>
+      </section>
+
+      <section class="dock-section">
+        <div class="dock-section-title">Live Show</div>
+        <div class="show-now" id="showNow">Program starting…</div>
+        <div class="dock-grid-2">
+          <button class="dock-btn toggle on" id="btnToggleShow">Program: On</button>
+          <button class="dock-btn" id="btnNextShow">Next Segment</button>
+        </div>
+        <div class="dock-grid-2">
+          <button class="dock-btn" id="btnShowVerse">Next Verse</button>
+          <button class="dock-btn" id="btnShowPrayer">Next Prayer</button>
+        </div>
+        <div class="show-status" id="showStatus">Welcome, Scripture and prayer cues appear on the stage.</div>
       </section>
 
       <section class="dock-section">

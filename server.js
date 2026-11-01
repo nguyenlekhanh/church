@@ -23,6 +23,8 @@ const { TikTokLiveConnection, WebcastEvent, ControlEvent } = require('tiktok-liv
 const { loadConfig, loadMessages } = require('./config/config');
 const { MessageLibrary } = require('./lib/messages');
 const { discoverVoices, resolveVoice, defaultVoiceId } = require('./lib/voices');
+const { ShowProgram, PRAYER_THEMES } = require('./lib/show');
+const { QuizEngine, QUESTIONS: QUIZ_QUESTIONS } = require('./lib/quiz');
 
 const CONFIG = loadConfig();
 const PORT = CONFIG.port || 3000;
@@ -54,6 +56,13 @@ const BRAND = {
 // 2. PIPER TTS WORKER MANAGER (LANGUAGE AWARE: EN-US + VI-VN)
 // ============================================================================
 let ttsManager = null;
+let showProgram = null;
+let quizEngine = null;
+// Set while a show narration is playing so two prayers never talk over each other.
+let narrationBusyUntil = 0;
+// Last cue of any kind (welcome included), replayed to a stage that reconnects.
+let lastPublishedCue = null;
+let lastPublishedAt = 0;
 
 class PiperManager {
   constructor() {
@@ -320,6 +329,51 @@ function loadBackgroundImages() {
 }
 
 const BACKGROUNDS = loadBackgroundImages();
+
+// ============================================================================
+// 3b. AMBIENT WORSHIP MUSIC CATALOG
+// ============================================================================
+const MUSIC_DIR = path.join(CHRISTIAN_ASSETS_DIR, 'audio');
+const MUSIC_MANIFEST_FILE = path.join(MUSIC_DIR, 'music-manifest.json');
+
+function loadMusicCatalog() {
+  const empty = { tracks: [], byId: new Map(), manifest: {} };
+  try {
+    if (!fs.existsSync(MUSIC_MANIFEST_FILE)) {
+      console.warn('[Music] music-manifest.json not found; run scripts/generate_music.py');
+      return empty;
+    }
+    const manifest = JSON.parse(fs.readFileSync(MUSIC_MANIFEST_FILE, 'utf8'));
+    const tracks = (Array.isArray(manifest.tracks) ? manifest.tracks : [])
+      .filter((track) => track.file && fs.existsSync(path.join(MUSIC_DIR, track.file)))
+      .map((track) => ({
+        id: track.id,
+        title: track.title || track.id,
+        file: track.file,
+        url: `/assets/christian/audio/${track.file}`,
+        mood: track.mood || '',
+        bpm: track.bpm || null,
+        durationSeconds: track.durationSeconds || null,
+        format: track.format || '',
+        license: track.license || '',
+        attribution: track.attribution || '',
+        source: track.source || ''
+      }));
+    return {
+      tracks,
+      byId: new Map(tracks.map((track) => [track.id, track])),
+      manifest,
+      defaultVolume: Number(manifest.defaultVolume) || 0.1,
+      duckedVolume: Number(manifest.duckedVolume) || 0.035
+    };
+  } catch (err) {
+    console.warn(`[Music] Could not read music manifest (${err.message})`);
+    return empty;
+  }
+}
+
+const MUSIC = loadMusicCatalog();
+
 const BACKGROUND_LAYER_FILES = ['golden-light-rays.png', 'gold-bokeh-particles.png', 'soft-vignette.png']
   .map((file) => `/assets/christian/overlays/${file}`)
   .filter((url) => fs.existsSync(path.join(PUBLIC_DIR, url.replace('/assets/', 'assets/'))));
@@ -339,9 +393,37 @@ function defaultSettings() {
     vnVoice: defaultVoiceId(VOICES, CONFIG, 'vi'),
     ttsVolume: CONFIG.tts.volume,
     ttsRate: CONFIG.tts.rate,
-    bgMusicEnabled: CONFIG.backgroundMusic.enabled,
     sfxEnabled: true,
-    musicVolume: CONFIG.backgroundMusic.volume,
+    music: {
+      enabled: CONFIG.backgroundMusic.enabled,
+      volume: CONFIG.backgroundMusic.volume,
+      duckVolume: CONFIG.backgroundMusic.duckVolume,
+      track: MUSIC.byId.has(CONFIG.backgroundMusic.track)
+        ? CONFIG.backgroundMusic.track
+        : (MUSIC.tracks[0]?.id || ''),
+      autoplay: CONFIG.backgroundMusic.autoplay,
+      shuffle: CONFIG.backgroundMusic.shuffle,
+      repeat: CONFIG.backgroundMusic.repeat,
+      paused: false
+    },
+    show: {
+      enabled: CONFIG.show.enabled,
+      paused: CONFIG.show.paused,
+      welcomeEnabled: CONFIG.show.welcomeEnabled,
+      narration: CONFIG.show.narration,
+      theme: CONFIG.show.theme,
+      pace: CONFIG.show.pace
+    },
+    quiz: {
+      enabled: CONFIG.quiz.enabled,
+      frequencyMinutes: CONFIG.quiz.frequencyMinutes,
+      revealSeconds: CONFIG.quiz.revealSeconds,
+      tts: CONFIG.quiz.tts
+    },
+    gifts: {
+      announce: CONFIG.gifts.announce,
+      tts: CONFIG.gifts.tts
+    },
     autoSim: false,
     autoSimIntervalMs: 12000,
     background: {
@@ -350,13 +432,15 @@ function defaultSettings() {
       category: CONFIG.background.category,
       randomize: CONFIG.background.randomize,
       transitionMs: CONFIG.background.transitionMs,
+      sceneMatch: CONFIG.background.sceneMatch,
       current: firstBackground ? firstBackground.url : ''
     },
     prayer: {
       autoApprove: CONFIG.prayer.autoApprove,
       paused: CONFIG.prayer.paused,
       maxQueue: CONFIG.prayer.maxQueue,
-      cooldownSeconds: CONFIG.prayer.cooldownSeconds
+      cooldownSeconds: CONFIG.prayer.cooldownSeconds,
+      interactionEnabled: CONFIG.prayer.interactionEnabled
     }
   };
 }
@@ -378,6 +462,8 @@ const DEFAULT_STATE = {
   featuredVerse: messageLibrary.bibleVerse() || { text: 'The Lord is my shepherd; I shall not want.', reference: 'Psalm 23:1 (KJV)' },
   chatFeed: [],
   recentEvents: [],
+  showHistory: [],
+  quizRecent: [],
   settings: defaultSettings(),
   tiktok: {
     connected: false,
@@ -401,11 +487,17 @@ function loadState() {
         featuredVerse: saved.featuredVerse || DEFAULT_STATE.featuredVerse,
         chatFeed: Array.isArray(saved.chatFeed) ? saved.chatFeed : [],
         recentEvents: Array.isArray(saved.recentEvents) ? saved.recentEvents : [],
+        showHistory: Array.isArray(saved.showHistory) ? saved.showHistory : [],
+        quizRecent: Array.isArray(saved.quizRecent) ? saved.quizRecent : [],
         settings: {
           ...DEFAULT_STATE.settings,
           ...(saved.settings || {}),
           background: { ...DEFAULT_STATE.settings.background, ...((saved.settings || {}).background || {}) },
-          prayer: { ...DEFAULT_STATE.settings.prayer, ...((saved.settings || {}).prayer || {}) }
+          prayer: { ...DEFAULT_STATE.settings.prayer, ...((saved.settings || {}).prayer || {}) },
+          music: { ...DEFAULT_STATE.settings.music, ...((saved.settings || {}).music || {}) },
+          show: { ...DEFAULT_STATE.settings.show, ...((saved.settings || {}).show || {}) },
+          quiz: { ...DEFAULT_STATE.settings.quiz, ...((saved.settings || {}).quiz || {}) },
+          gifts: { ...DEFAULT_STATE.settings.gifts, ...((saved.settings || {}).gifts || {}) }
         },
         tiktok: { ...DEFAULT_STATE.tiktok }
       };
@@ -429,6 +521,11 @@ if (state.settings.background.category !== 'all' && !BACKGROUNDS.categories.incl
   state.settings.background.category = 'all';
 }
 
+// Repair a saved music track that is no longer in the manifest.
+if (state.settings.music && !MUSIC.byId.has(state.settings.music.track) && MUSIC.tracks.length > 0) {
+  state.settings.music.track = MUSIC.tracks[0].id;
+}
+
 let saveTimer = null;
 function saveState() {
   clearTimeout(saveTimer);
@@ -450,6 +547,8 @@ function saveState() {
       prayerRequests: state.prayerRequests.slice(0, 60),
       chatFeed: state.chatFeed.slice(0, 12),
       recentEvents: state.recentEvents.slice(0, 20),
+      showHistory: (state.showHistory || []).slice(0, 20),
+      quizRecent: (state.quizRecent || []).slice(0, 50),
       settings: state.settings
     };
     fs.promises.writeFile(STATE_FILE, JSON.stringify(payload, null, 2), 'utf8').catch((err) => {
@@ -691,6 +790,8 @@ function getPublicState() {
     chatFeed: chatFeedForClient(),
     recentEvents: state.recentEvents.slice(0, 12),
     settings: state.settings,
+    show: showPayload(),
+    quiz: quizPayload(),
     tiktok: state.tiktok,
     tts: ttsManager ? ttsManager.getStatus() : { ready: false, status: 'starting' },
     backgrounds: {
@@ -773,6 +874,7 @@ function displayPrayerRequest(request) {
     wish: request.text,
     prayerText: payload.ask,
     communityText: payload.community,
+    simulated: request.source === 'simulation',
     ttsText: state.settings.ttsEnabled ? payload.ttsText.slice(0, 120) : '',
     ttsLang: 'en',
     merit: 2
@@ -918,6 +1020,7 @@ const Rituals = {
       count,
       merit,
       wish,
+      simulated: Boolean(params.simulated),
       message: `${count} prayer ${count === 1 ? 'candle' : 'candles'} lit`,
       ttsText: ''
     });
@@ -945,6 +1048,7 @@ const Rituals = {
       avatar: member.avatar,
       count,
       merit,
+      simulated: Boolean(params.simulated),
       message: 'Amen',
       ttsText: ''
     });
@@ -976,6 +1080,7 @@ const Rituals = {
       count,
       merit,
       wish,
+      simulated: Boolean(params.simulated),
       message,
       ttsText: params.readTts && state.settings.ttsEnabled ? message : '',
       ttsLang: 'en'
@@ -1020,11 +1125,21 @@ const Rituals = {
     const uniqueId = String(params.uniqueId || '');
     const coins = clampNumber(params.coins, 1, 1000000, 1);
     const giftName = baseClean(stripHtml(params.giftName), 60) || 'a gift';
+    const quantity = clampNumber(params.quantity, 1, 999, 1);
+    const giftLabel = quantity > 1 ? `${quantity}x ${giftName}` : giftName;
     const tiers = CONFIG.giftTiers;
     const tier = coins >= tiers.large ? 'large' : coins >= tiers.medium ? 'medium' : 'small';
     const multiplier = tier === 'large' ? 12 : tier === 'medium' ? 6 : 3;
     const merit = Math.max(1, Math.round(coins * multiplier));
-    const message = messageLibrary.template(`giftThanks.${tier}`)
+    const giftSettings = state.settings.gifts || {};
+    const announce = giftSettings.announce !== false;
+    const personalThanks = messageLibrary.pickFromList(
+      messageLibrary.templateList('giftPersonal'),
+      // Drop a trailing period so the thank-you reads as one natural sentence.
+      { name: name === 'Friend' ? 'friend' : name.replace(/\.+$/, ''), gift: giftName, quantity }
+    );
+    const message = personalThanks
+      || messageLibrary.template(`giftThanks.${tier}`)
       || 'Thank you for supporting our prayer community.';
 
     state.giftCount += 1;
@@ -1040,11 +1155,15 @@ const Rituals = {
       uniqueId: member.uniqueId,
       avatar: member.avatar,
       giftType: params.giftType || tier,
-      giftName,
+      giftName: giftLabel,
+      giftBaseName: giftName,
+      quantity,
       coins,
       merit,
+      simulated: Boolean(params.simulated),
+      announce,
       message,
-      ttsText: state.settings.ttsEnabled ? message : '',
+      ttsText: announce && state.settings.ttsEnabled && giftSettings.tts !== false ? message : '',
       ttsLang: 'en'
     });
 
@@ -1093,6 +1212,7 @@ const Rituals = {
         meaning: 'A word of encouragement from Scripture.'
       },
       merit,
+      simulated: Boolean(params.simulated),
       message: `${verse.text} — ${verse.reference}`,
       ttsText,
       ttsLang: 'en'
@@ -1132,6 +1252,71 @@ const Rituals = {
 // ============================================================================
 // 9. SETTINGS / BACKGROUND ROTATION
 // ============================================================================
+function musicCatalogPayload() {
+  return { tracks: MUSIC.tracks, settings: state.settings.music };
+}
+
+function musicOrder() {
+  return MUSIC.tracks.map((track) => track.id);
+}
+
+function pickAdjacentTrack(direction = 1) {
+  const order = musicOrder();
+  if (order.length === 0) return null;
+  const current = state.settings.music.track;
+  if (state.settings.music.shuffle && order.length > 1) {
+    const pool = order.filter((id) => id !== current);
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  const index = order.indexOf(current);
+  const next = (index + (direction > 0 ? 1 : -1) + order.length) % order.length;
+  return order[next];
+}
+
+/** Mutates settings.music from a partial patch; returns true when anything changed. */
+function patchMusicSettings(patch = {}) {
+  const music = state.settings.music;
+  if (!music || !patch || typeof patch !== 'object') return false;
+  const before = JSON.stringify(music);
+
+  if (patch.track !== undefined) {
+    const id = String(patch.track || '');
+    if (id && !MUSIC.byId.has(id)) throw new Error(`Unknown music track: ${id}`);
+    if (id) {
+      music.track = id;
+      // Selecting a track is an explicit request to hear it.
+      music.paused = false;
+      if (!music.enabled) music.enabled = true;
+    }
+  }
+  if (typeof patch.enabled === 'boolean') {
+    music.enabled = patch.enabled;
+    if (patch.enabled) music.paused = false;
+  }
+  if (typeof patch.paused === 'boolean') {
+    music.paused = patch.paused;
+    if (!patch.paused) music.enabled = true;
+  }
+  if (typeof patch.autoplay === 'boolean') music.autoplay = patch.autoplay;
+  if (typeof patch.shuffle === 'boolean') music.shuffle = patch.shuffle;
+  if (patch.repeat === 'off' || patch.repeat === 'one' || patch.repeat === 'all') {
+    music.repeat = patch.repeat;
+  }
+  if (patch.volume !== undefined) music.volume = clampNumber(patch.volume, 0, 1, music.volume);
+  if (patch.duckVolume !== undefined) {
+    music.duckVolume = clampNumber(patch.duckVolume, 0, 0.5, music.duckVolume);
+  }
+  return JSON.stringify(music) !== before;
+}
+
+function applyMusicUpdate(params = {}) {
+  patchMusicSettings(params);
+  saveState();
+  broadcastNotification('music.state', { settings: state.settings.music });
+  broadcastNotification('temple.state', getPublicState());
+  return musicCatalogPayload();
+}
+
 function applySettingsUpdate(params = {}) {
   const settings = state.settings;
   if (typeof params.ttsEnabled === 'boolean') settings.ttsEnabled = params.ttsEnabled;
@@ -1146,8 +1331,10 @@ function applySettingsUpdate(params = {}) {
   }
   if (params.ttsVolume !== undefined) settings.ttsVolume = clampNumber(params.ttsVolume, 0, 1, settings.ttsVolume);
   if (params.ttsRate !== undefined) settings.ttsRate = clampNumber(params.ttsRate, 0.6, 1.6, settings.ttsRate);
-  if (params.musicVolume !== undefined) settings.musicVolume = clampNumber(params.musicVolume, 0, 1, settings.musicVolume);
-  if (typeof params.bgMusicEnabled === 'boolean') settings.bgMusicEnabled = params.bgMusicEnabled;
+  // Background music: current object shape plus the legacy scalar aliases.
+  if (params.music && typeof params.music === 'object') patchMusicSettings(params.music);
+  if (params.musicVolume !== undefined) patchMusicSettings({ volume: params.musicVolume });
+  if (typeof params.bgMusicEnabled === 'boolean') patchMusicSettings({ enabled: params.bgMusicEnabled });
   if (typeof params.sfxEnabled === 'boolean') settings.sfxEnabled = params.sfxEnabled;
   if (typeof params.autoSim === 'boolean') settings.autoSim = params.autoSim;
   if (params.autoSimIntervalMs !== undefined) {
@@ -1170,11 +1357,15 @@ function applySettingsUpdate(params = {}) {
         : settings.background.category;
       settings.background.category = category;
     }
+    if (typeof bg.sceneMatch === 'boolean') settings.background.sceneMatch = bg.sceneMatch;
   }
 
   if (params.prayer && typeof params.prayer === 'object') {
     if (typeof params.prayer.autoApprove === 'boolean') settings.prayer.autoApprove = params.prayer.autoApprove;
     if (typeof params.prayer.paused === 'boolean') settings.prayer.paused = params.prayer.paused;
+    if (typeof params.prayer.interactionEnabled === 'boolean') {
+      settings.prayer.interactionEnabled = params.prayer.interactionEnabled;
+    }
     if (params.prayer.cooldownSeconds !== undefined) {
       settings.prayer.cooldownSeconds = clampNumber(params.prayer.cooldownSeconds, 5, 600, settings.prayer.cooldownSeconds);
     }
@@ -1187,8 +1378,233 @@ function applySettingsUpdate(params = {}) {
   configureAutoSim(settings.autoSim);
   configureBackgroundRotation();
   saveState();
+  broadcastNotification('music.state', { settings: settings.music });
   broadcastNotification('temple.state', getPublicState());
   return getPublicState();
+}
+
+// ============================================================================
+// 10. AUTOMATED LIVE SHOW (welcome, Scripture, prayer, community, gratitude)
+// ============================================================================
+function showPayload() {
+  const status = showProgram ? showProgram.status() : null;
+  const history = (state.showHistory || []).slice(0, 12);
+  if (!status) {
+    return {
+      enabled: Boolean(state.settings.show && state.settings.show.enabled),
+      paused: Boolean(state.settings.show && state.settings.show.paused),
+      welcomeEnabled: Boolean(state.settings.show && state.settings.show.welcomeEnabled),
+      narration: Boolean(state.settings.show && state.settings.show.narration),
+      theme: (state.settings.show && state.settings.show.theme) || 'auto',
+      pace: (state.settings.show && state.settings.show.pace) || 1,
+      themes: PRAYER_THEMES.map((theme) => ({ id: theme.id, label: theme.label })),
+      history
+    };
+  }
+  return {
+    ...status,
+    history,
+    narrationBusySeconds: Math.max(0, Math.ceil((narrationBusyUntil - Date.now()) / 1000))
+  };
+}
+
+/** Sends a cue to the OBS stage, then narrates it through the shared TTS queue. */
+async function publishShowCue(cue, { source = 'auto' } = {}) {
+  if (!cue) return;
+  if (cue.verse) state.featuredVerse = cue.verse;
+  state.showHistory = [
+    {
+      id: cue.id,
+      kind: cue.kind,
+      eyebrow: cue.eyebrow || '',
+      title: cue.title || '',
+      body: String(cue.body || '').slice(0, 260),
+      at: cue.at || new Date().toISOString(),
+      source,
+      simulated: Boolean(cue.simulated)
+    },
+    ...(state.showHistory || []).filter((entry) => entry.id !== cue.id)
+  ].slice(0, 20);
+
+  lastPublishedCue = cue;
+  lastPublishedAt = Date.now();
+
+  // Visual first: the overlay should never wait on speech synthesis.
+  broadcastNotification('show.cue', { cue });
+  broadcastNotification('show.state', { show: showPayload() });
+  applySceneForCue(cue);
+  saveState();
+
+  const showSettings = state.settings.show || {};
+  if (!state.settings.ttsEnabled || showSettings.narration === false || !cue.ttsText) return;
+  if (Date.now() < narrationBusyUntil) {
+    console.log('[Show] Narration skipped: previous prayer is still speaking.');
+    return;
+  }
+  try {
+    const result = await ttsManager.synthesize(cue.ttsText, { lang: 'en' });
+    if (!result.ok) {
+      console.warn(`[Show] Narration unavailable: ${result.error}`);
+      return;
+    }
+    const durationSec = Math.max(2, Number(result.durationSec) || 8);
+    // Leaves room for the client's fade-out and a natural pause afterwards.
+    narrationBusyUntil = Date.now() + durationSec * 1000 + 2200;
+    broadcastNotification('tts.play', {
+      text: cue.ttsText,
+      voice: result.voice,
+      language: result.language,
+      url: result.url,
+      durationSec,
+      source: 'show'
+    });
+  } catch (err) {
+    console.warn('[Show] Narration failed:', err.message);
+  }
+}
+
+function applyShowUpdate(params = {}) {
+  const show = state.settings.show;
+  if (typeof params.enabled === 'boolean') {
+    show.enabled = params.enabled;
+    if (params.enabled) show.paused = false;
+  }
+  if (typeof params.paused === 'boolean') show.paused = params.paused;
+  if (typeof params.welcomeEnabled === 'boolean') show.welcomeEnabled = params.welcomeEnabled;
+  if (typeof params.narration === 'boolean') show.narration = params.narration;
+  if (params.pace !== undefined) show.pace = clampNumber(params.pace, 0.5, 1.5, show.pace);
+  if (typeof params.theme === 'string') {
+    const valid = params.theme === 'auto' || PRAYER_THEMES.some((theme) => theme.id === params.theme);
+    if (valid) show.theme = params.theme;
+  }
+  showProgram?.sync();
+  saveState();
+  broadcastNotification('show.state', { show: showPayload() });
+  broadcastNotification('temple.state', getPublicState());
+  return showPayload();
+}
+
+// ============================================================================
+// 10b. BIBLE QUIZ, GIFT EXPERIENCE, SCENE MATCHING
+// ============================================================================
+function quizPayload() {
+  if (!quizEngine) {
+    return {
+      enabled: Boolean(state.settings.quiz && state.settings.quiz.enabled),
+      frequencyMinutes: state.settings.quiz?.frequencyMinutes || 10,
+      revealSeconds: state.settings.quiz?.revealSeconds || 25,
+      tts: state.settings.quiz ? state.settings.quiz.tts !== false : true,
+      totalQuestions: QUIZ_QUESTIONS.length,
+      active: null
+    };
+  }
+  const payload = quizEngine.status();
+  payload.totalQuestions = QUIZ_QUESTIONS.length;
+  return payload;
+}
+
+async function narrateQuizReveal(payload) {
+  const quiz = state.settings.quiz || {};
+  if (quiz.tts === false || !state.settings.ttsEnabled) return;
+  if (Date.now() < narrationBusyUntil) {
+    console.log('[Quiz] Narration skipped: another prayer is still speaking.');
+    return;
+  }
+  const reference = String(payload.reference || '').replace(/\s*\(KJV\)\s*/i, '');
+  const text = `The answer is ${payload.answer}. ${payload.explanation} ${reference}.`;
+  try {
+    const result = await ttsManager.synthesize(text, { lang: 'en' });
+    if (!result.ok) {
+      console.warn(`[Quiz] Narration unavailable: ${result.error}`);
+      return;
+    }
+    const durationSec = Math.max(2, Number(result.durationSec) || 8);
+    narrationBusyUntil = Date.now() + durationSec * 1000 + 2200;
+    broadcastNotification('tts.play', {
+      text,
+      voice: result.voice,
+      language: result.language,
+      url: result.url,
+      durationSec,
+      source: 'quiz'
+    });
+  } catch (err) {
+    console.warn('[Quiz] Narration failed:', err.message);
+  }
+}
+
+function publishQuizEvent(type, payload) {
+  broadcastNotification(`quiz.${type}`, { ...payload, quiz: quizPayload() });
+  if (type === 'reveal') narrateQuizReveal(payload).catch(() => {});
+  saveState();
+}
+
+function applyQuizUpdate(params = {}) {
+  const quiz = state.settings.quiz;
+  if (typeof params.enabled === 'boolean') quiz.enabled = params.enabled;
+  if (params.frequencyMinutes !== undefined) {
+    quiz.frequencyMinutes = clampNumber(params.frequencyMinutes, 2, 120, quiz.frequencyMinutes);
+  }
+  if (params.revealSeconds !== undefined) {
+    quiz.revealSeconds = clampNumber(params.revealSeconds, 10, 90, quiz.revealSeconds);
+  }
+  if (typeof params.tts === 'boolean') quiz.tts = params.tts;
+
+  quizEngine.sync();
+  if (quiz.enabled && !quizEngine.active) quizEngine.scheduleNext(30000);
+  saveState();
+  broadcastNotification('quiz.state', { quiz: quizPayload() });
+  broadcastNotification('temple.state', getPublicState());
+  return quizPayload();
+}
+
+function applyGiftUpdate(params = {}) {
+  const gifts = state.settings.gifts;
+  if (typeof params.announce === 'boolean') gifts.announce = params.announce;
+  if (typeof params.tts === 'boolean') gifts.tts = params.tts;
+  saveState();
+  broadcastNotification('temple.state', getPublicState());
+  return gifts;
+}
+
+/** Visual theme for each program cue, using only the locally stored categories. */
+const SCENE_BY_THEME = {
+  morning: 'backgrounds',
+  healing: 'candles',
+  family: 'church',
+  anxiety: 'backgrounds',
+  finances: 'church',
+  strength: 'cross',
+  night: 'candles',
+  gratitude: 'bible'
+};
+
+function sceneCategoryForCue(cue) {
+  if (!cue) return null;
+  switch (cue.kind) {
+    case 'welcome': return 'cathedral';
+    case 'verse':
+    case 'reflection': return 'bible';
+    case 'community': return 'church';
+    case 'gratitude': return 'bible';
+    case 'prayer': return SCENE_BY_THEME[cue.theme] || 'cathedral';
+    default: return null;
+  }
+}
+
+function applySceneForCue(cue) {
+  const background = state.settings.background;
+  if (!background || background.sceneMatch === false) return;
+  const category = sceneCategoryForCue(cue);
+  if (!category || !BACKGROUNDS.categories.includes(category)) return;
+  const pool = BACKGROUNDS.images.filter(
+    (image) => image.category === category && image.url !== background.current
+  );
+  if (pool.length === 0) return;
+  const next = pool[Math.floor(Math.random() * pool.length)];
+  background.category = category;
+  setCurrentBackground(next.url, { rotate: true });
+  configureBackgroundRotation();
 }
 
 let backgroundTimer = null;
@@ -1306,7 +1722,7 @@ function chatFeedForList() {
   }));
 }
 
-function handleCommand(command, { user, uniqueId, avatar }) {
+function handleCommand(command, { user, uniqueId, avatar, simulated = false }) {
   const key = `${uniqueId || user}:${command}`;
   const now = Date.now();
   const last = commandCooldowns.get(key) || 0;
@@ -1331,6 +1747,7 @@ function handleCommand(command, { user, uniqueId, avatar }) {
     uniqueId: member.uniqueId,
     avatar: member.avatar,
     message,
+    simulated: Boolean(simulated),
     ttsText: state.settings.ttsEnabled ? message : '',
     ttsLang: 'en',
     merit: 1
@@ -1346,10 +1763,24 @@ function handleViewerComment(commentText, user, uniqueId, avatar, options = {}) 
   if (!raw || isBlockedContent(raw)) return null;
 
   const memberName = sanitizeDisplayName(user || uniqueId);
+
+  // Quiz answers are checked first so the correct answer is never printed in
+  // the public chat feed before the reveal.
+  if (quizEngine) {
+    const answer = quizEngine.submitAnswer({ text: raw, name: memberName, uniqueId });
+    if (answer?.correct) {
+      pushChatFeed({ user: memberName, text: 'answered the Bible quiz', avatar });
+      return { quizAnswer: true, already: answer.already, questionId: answer.question.id };
+    }
+  }
+
   pushChatFeed({ user: memberName, text: raw, avatar });
 
   // Prayer requests take priority: "pray for me" also contains the PRAY keyword.
   if (isPrayerRequestComment(raw)) {
+    if (state.settings.prayer.interactionEnabled === false) {
+      return { chat: true, prayerDisabled: true, member: recordMember(memberName, uniqueId, avatar, 0).name };
+    }
     const request = addPrayerRequest({
       name: memberName,
       uniqueId,
@@ -1362,7 +1793,12 @@ function handleViewerComment(commentText, user, uniqueId, avatar, options = {}) 
 
   const command = detectCommand(raw);
   if (command) {
-    const event = handleCommand(command, { user: memberName, uniqueId, avatar });
+    const event = handleCommand(command, {
+      user: memberName,
+      uniqueId,
+      avatar,
+      simulated: options.source === 'simulation'
+    });
     return event || { skipped: true };
   }
 
@@ -1483,6 +1919,8 @@ async function connectTikTokLive(usernameOrUrl) {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     recordMember(user, uniqueId, avatar, 0);
     broadcastNotification('temple.state', getPublicState());
+    // Real TikTok joins only. Simulation and test paths never reach this handler.
+    showProgram?.welcome({ name: firstNameForDisplay(user), uniqueId }, 'tiktok');
   });
 
   tiktokConn.on(WebcastEvent.CHAT, (data) => {
@@ -1583,7 +2021,8 @@ async function connectTikTokLive(usernameOrUrl) {
       uniqueId,
       avatar,
       coins: totalCoins,
-      giftName: displayGiftName
+      giftName: rawGiftName,
+      quantity: deltaCount
     });
   });
 
@@ -1642,13 +2081,19 @@ function runSingleSimulationStep() {
   if (roll < 0.3) {
     handleViewerComment(pick.wish, pick.user, pick.uniqueId, '', { source: 'simulation' });
   } else if (roll < 0.55) {
-    Rituals.burnIncense({ user: pick.user, uniqueId: pick.uniqueId, count: 1 });
+    Rituals.burnIncense({ user: pick.user, uniqueId: pick.uniqueId, count: 1, simulated: true });
   } else if (roll < 0.72) {
-    Rituals.strikeWoodenFish({ user: pick.user, uniqueId: pick.uniqueId, count: 3 });
+    Rituals.strikeWoodenFish({ user: pick.user, uniqueId: pick.uniqueId, count: 3, simulated: true });
   } else if (roll < 0.86) {
     handleViewerComment('AMEN', pick.user, pick.uniqueId, '', { source: 'simulation' });
   } else {
-    Rituals.offerGift({ user: pick.user, uniqueId: pick.uniqueId, coins: 12, giftName: 'Prayer candle' });
+    Rituals.offerGift({
+      user: pick.user,
+      uniqueId: pick.uniqueId,
+      coins: 12,
+      giftName: 'Prayer candle',
+      simulated: true
+    });
   }
 }
 
@@ -1805,6 +2250,65 @@ async function handleRpcCall(method, params = {}) {
     case 'stage.updateSettings':
       return applySettingsUpdate({ background: params });
 
+    // ---- Ambient worship music ----
+    case 'music.get':
+      return musicCatalogPayload();
+    case 'music.update':
+      return applyMusicUpdate(params);
+    case 'music.next':
+      return applyMusicUpdate({ track: pickAdjacentTrack(1) });
+    case 'music.previous':
+      return applyMusicUpdate({ track: pickAdjacentTrack(-1) });
+    case 'music.toggle':
+      return applyMusicUpdate({ paused: !state.settings.music.paused });
+
+    // ---- Automated live show ----
+    case 'show.status':
+      return showPayload();
+    case 'show.update':
+      return applyShowUpdate(params);
+    case 'show.next':
+      return { cue: showProgram.nextSegment('manual'), show: showPayload() };
+    case 'show.nextVerse':
+      return { cue: showProgram.nextVerse('manual'), show: showPayload() };
+    case 'show.nextReflection':
+      return { cue: showProgram.nextReflection('manual'), show: showPayload() };
+    case 'show.nextPrayer':
+      return {
+        cue: showProgram.nextPrayer('manual', params.theme && params.theme !== 'auto' ? params.theme : null),
+        show: showPayload()
+      };
+    case 'show.testWelcome':
+      return { cue: showProgram.testWelcome(params.name), show: showPayload() };
+    case 'show.restart':
+      return { cue: showProgram.restart({ source: 'manual' }), show: showPayload() };
+
+    // ---- Bible quiz ----
+    case 'quiz.status':
+      return quizPayload();
+    case 'quiz.update':
+      return applyQuizUpdate(params);
+    case 'quiz.next':
+      return {
+        quiz: quizEngine.next({ source: params.source === 'test' ? 'test' : 'manual' }),
+        active: quizPayload().active
+      };
+    case 'quiz.reveal':
+      return { quiz: quizEngine.reveal(), active: quizPayload().active };
+    case 'quiz.answer':
+      return {
+        result: quizEngine.submitAnswer({
+          text: params.text,
+          name: params.name || 'Test Viewer (demo)',
+          uniqueId: params.uniqueId || 'test.quiz'
+        }),
+        quiz: quizPayload()
+      };
+
+    // ---- Gift announcements ----
+    case 'gift.update':
+      return applyGiftUpdate(params);
+
     // ---- Message library ----
     case 'messages.get':
       return messageLibrary.snapshot();
@@ -1894,12 +2398,15 @@ app.get('/api/backgrounds', (_req, res) => res.json({
   settings: state.settings.background
 }));
 app.get('/api/messages', (_req, res) => res.json(messageLibrary.snapshot()));
+app.get('/api/music', (_req, res) => res.json(musicCatalogPayload()));
 app.get('/api/health', (_req, res) => res.json({
   ok: true,
   brand: BRAND,
   tts: ttsManager.getStatus(),
   tiktok: state.tiktok,
-  backgrounds: BACKGROUNDS.images.length
+  backgrounds: BACKGROUNDS.images.length,
+  musicTracks: MUSIC.tracks.length,
+  music: state.settings.music
 }));
 
 const server = http.createServer(app);
@@ -1914,6 +2421,19 @@ function broadcastNotification(method, params) {
 
 wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'temple.state', params: getPublicState() }));
+  ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'show.state', params: { show: showPayload() } }));
+  ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'quiz.state', params: { quiz: quizPayload() } }));
+  // Replay a cue that is still on screen so OBS can reload mid-prayer.
+  if (lastPublishedCue) {
+    const age = Date.now() - lastPublishedAt;
+    if (age >= 0 && age < (Number(lastPublishedCue.displayMs) || 15000)) {
+      ws.send(JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'show.cue',
+        params: { cue: lastPublishedCue, replay: true }
+      }));
+    }
+  }
   if (state.settings.background.current) {
     ws.send(JSON.stringify({
       jsonrpc: '2.0',
@@ -1953,6 +2473,50 @@ wss.on('connection', (ws) => {
 
 ttsManager = new PiperManager();
 
+quizEngine = new QuizEngine({
+  getSettings: () => state.settings.quiz,
+  recent: state.quizRecent,
+  publish: publishQuizEvent,
+  onChange: () => {
+    if (!quizEngine) return;
+    state.quizRecent = quizEngine.recent.slice(0, 50);
+    saveState();
+    broadcastNotification('quiz.state', { quiz: quizPayload() });
+  }
+});
+
+showProgram = new ShowProgram({
+  getSettings: () => state.settings.show,
+  getVerses: () => messageLibrary.data.bibleVerses || [],
+  getApprovedPrayers: () => state.prayerRequests
+    .filter((request) => request.status === 'approved' && request.source !== 'simulation')
+    .map((request) => ({ name: request.displayName, text: request.text })),
+  publish: publishShowCue,
+  onChange: () => {
+    saveState();
+    broadcastNotification('show.state', { show: showPayload() });
+  }
+});
+
+/** Waits briefly for Piper so the opening welcome cue is actually spoken. */
+function startAutomatedShow() {
+  if (!state.settings.show.enabled || state.settings.show.paused) {
+    console.log('[Show] Automated program is off. Use the admin dashboard to start it.');
+    return;
+  }
+  let attempts = 0;
+  const begin = () => {
+    if (ttsManager.ready || attempts >= 20) {
+      showProgram.start({ immediate: true });
+      console.log('[Show] Automated program started — welcome, Scripture, prayer, community, gratitude.');
+      return;
+    }
+    attempts += 1;
+    setTimeout(begin, 800);
+  };
+  begin();
+}
+
 server.listen(PORT, () => {
   const bgCount = BACKGROUNDS.images.length;
   console.log('============================================================');
@@ -1968,6 +2532,13 @@ server.listen(PORT, () => {
 
   configureBackgroundRotation();
   if (state.settings.autoSim) configureAutoSim(true);
+  startAutomatedShow();
+  if (state.settings.quiz.enabled) {
+    quizEngine.sync({ firstRun: true });
+    console.log('[Quiz] Bible quiz enabled — first question in about 45 seconds.');
+  } else {
+    console.log('[Quiz] Bible quiz is off. Enable it from the dashboard.');
+  }
 
   const defaultChannel = CONFIG.tiktok.autoConnect ? (CONFIG.tiktok.username || '') : '';
   if (defaultChannel) {
@@ -1981,6 +2552,12 @@ server.listen(PORT, () => {
 
 process.on('SIGINT', () => {
   console.log('\n[Server] Shutting down...');
+  try {
+    if (showProgram) showProgram.stop();
+  } catch (_) {}
+  try {
+    if (quizEngine) quizEngine.stop();
+  } catch (_) {}
   try {
     if (ttsManager && ttsManager.proc) ttsManager.proc.kill();
   } catch (_) {}

@@ -160,19 +160,188 @@ async function main() {
   const updated = await rpc('temple.updateSettings', { ttsVolume: 0.8, ttsRate: 1.05 });
   check('settings update works', updated.settings.ttsVolume === 0.8 && updated.settings.ttsRate === 1.05);
 
+  // 10b. Automated live show
+  const show = await rpc('show.status');
+  check('show program has a full sequence', Array.isArray(show.sequence) && show.sequence.length >= 8, `${show.sequence?.length} segments`);
+  check('show program offers eight prayer themes', show.themes?.length === 8, (show.themes || []).map((theme) => theme.id).join(', '));
+  check('show settings are exposed', typeof show.enabled === 'boolean' && typeof show.welcomeEnabled === 'boolean');
+  check('show tracks its own cue history', Array.isArray(show.history));
+
+  const library = await rpc('messages.get');
+  check(
+    'every Bible verse has a reflection',
+    library.bibleVerses.every((verse) => typeof verse.reflection === 'string' && verse.reflection.length > 20),
+    `${library.bibleVerses.length} verses`
+  );
+  check(
+    'Scripture references are KJV',
+    library.bibleVerses.every((verse) => /\(KJV\)$/.test(verse.reference))
+  );
+
+  const welcomeBefore = show.welcomesSent || 0;
+  const testWelcome = await rpc('show.testWelcome', { name: 'Smoke Viewer (demo)' });
+  check(
+    'test welcome is clearly labelled',
+    testWelcome.cue?.simulated === true && testWelcome.show.history[0].source === 'test',
+    testWelcome.cue?.title
+  );
+  check('test welcome never counts as a real viewer', (testWelcome.show.welcomesSent || 0) === welcomeBefore);
+
+  const verseCue = await rpc('show.nextVerse');
+  check('manual verse cue uses a KJV reference', /\(KJV\)$/.test(verseCue.cue?.reference || ''), verseCue.cue?.reference);
+  check('verse cue includes a spoken reflection', Boolean(verseCue.cue?.ttsText && verseCue.cue.ttsText.length > verseCue.cue.body.length));
+
+  const prayerCue = await rpc('show.nextPrayer', { theme: 'family' });
+  check('prayer theme can be selected', prayerCue.cue?.eyebrow === 'PRAYER FOR FAMILY', prayerCue.cue?.eyebrow);
+  check(
+    'prayer avoids promised outcomes',
+    !/guarantee|guaranteed|will heal|wealth|miracle|salvation/i.test(prayerCue.cue?.body || ''),
+    prayerCue.cue?.title
+  );
+
+  const reflectionCue = await rpc('show.nextReflection');
+  check('reflection cue carries a reflection', reflectionCue.cue?.kind === 'reflection' && reflectionCue.cue?.body?.length > 20);
+
+  const pausedShow = await rpc('show.update', { paused: true });
+  check('program can pause', pausedShow.paused === true && pausedShow.running === false);
+  const resumedShow = await rpc('show.update', { paused: false, theme: 'auto' });
+  check('program can resume', resumedShow.paused === false && resumedShow.running === true);
+
+  const pacedShow = await rpc('show.update', { pace: 1.3 });
+  check('program pace is configurable', pacedShow.pace === 1.3, `pace ${pacedShow.pace}`);
+  await rpc('show.update', { pace: 1 });
+
+  const cueSeen = await new Promise((resolve) => {
+    const ws = new WebSocket(BASE.replace('http', 'ws') + '/ws');
+    const timer = setTimeout(() => { ws.close(); resolve(false); }, 8000);
+    ws.on('open', () => { rpc('show.nextVerse').catch(() => {}); });
+    ws.on('message', (raw) => {
+      try {
+        const message = JSON.parse(raw.toString());
+        if (message.method === 'show.cue' && message.params?.cue?.kind === 'verse') {
+          clearTimeout(timer);
+          ws.close();
+          resolve(true);
+        }
+      } catch (_) {}
+    });
+    ws.on('error', () => { clearTimeout(timer); resolve(false); });
+  });
+  check('show cue broadcast over WebSocket', cueSeen === true);
+
+  // 10c. Bible quiz (answers are never exposed before the reveal)
+  const { QUESTIONS } = require('../lib/quiz.js');
+  const questionsById = new Map(QUESTIONS.map((question) => [question.id, question]));
+  const quizStatus = await rpc('quiz.status');
+  check('quiz has at least 100 questions', quizStatus.totalQuestions >= 100, `${quizStatus.totalQuestions} questions`);
+  check('quiz settings are exposed', typeof quizStatus.frequencyMinutes === 'number' && typeof quizStatus.revealSeconds === 'number',
+    `every ${quizStatus.frequencyMinutes}m · reveal ${quizStatus.revealSeconds}s`);
+  check('quiz questions carry verified KJV references', QUESTIONS.every((question) => /\(KJV\)$/.test(question.reference)));
+  check('every quiz answer is short enough for a comment', QUESTIONS.every((question) => question.answer.length <= 40));
+
+  const openedQuiz = await rpc('quiz.next', { source: 'test' });
+  const openQuestion = questionsById.get(openedQuiz.active?.id);
+  check('quiz question opens', Boolean(openedQuiz.active?.question && openQuestion));
+  check('quiz answer hidden before reveal', openedQuiz.active?.answer === null && openedQuiz.active?.reference === null);
+
+  const correctAnswer = await rpc('quiz.answer', {
+    text: `  ${openQuestion.answer.toUpperCase()} `,
+    name: 'Grace L.',
+    uniqueId: 'smoke.quiz.grace'
+  });
+  check('quiz accepts case-insensitive answers with whitespace', correctAnswer.result?.correct === true && correctAnswer.result?.already === false);
+  const duplicateAnswer = await rpc('quiz.answer', {
+    text: openQuestion.answer.toLowerCase(),
+    name: 'Grace L.',
+    uniqueId: 'smoke.quiz.grace'
+  });
+  check('quiz ignores a repeated answer from the same viewer', duplicateAnswer.result?.already === true);
+  const wrongAnswer = await rpc('quiz.answer', {
+    text: 'definitely not the answer',
+    name: 'Michael R.',
+    uniqueId: 'smoke.quiz.michael'
+  });
+  check('quiz ignores wrong answers without shaming the viewer', wrongAnswer.result === null && wrongAnswer.quiz.active.correctCount === 1);
+
+  const revealedQuiz = await rpc('quiz.reveal');
+  check('quiz reveals the answer', revealedQuiz.active?.revealed === true && revealedQuiz.active.answer === openQuestion.answer);
+  check('quiz reveal includes reference and explanation',
+    revealedQuiz.active.reference === openQuestion.reference && revealedQuiz.active.explanation?.length > 20);
+  const lateAnswer = await rpc('quiz.answer', { text: openQuestion.answer, name: 'Late Viewer', uniqueId: 'smoke.quiz.late' });
+  check('quiz rejects answers after the reveal', lateAnswer.result === null);
+
+  const updatedQuiz = await rpc('quiz.update', { enabled: true, frequencyMinutes: 12, revealSeconds: 20, tts: true });
+  check('quiz frequency and reveal delay are configurable', updatedQuiz.frequencyMinutes === 12 && updatedQuiz.revealSeconds === 20);
+  await rpc('quiz.update', { frequencyMinutes: 10, revealSeconds: 25 });
+
+  // 10d. Real gift events and personalized thanks
+  const giftEvent = await rpc('temple.offerGift', {
+    user: 'Grace L.',
+    uniqueId: 'smoke.gift.grace',
+    coins: 60,
+    giftName: 'Prayer candle',
+    quantity: 3
+  });
+  check('gift records the sender and quantity', giftEvent.event.user === 'Grace L.' && giftEvent.event.quantity === 3, giftEvent.event.giftName);
+  check('gift announcement is personalized', /Grace L/.test(giftEvent.event.message) && /Prayer candle/i.test(giftEvent.event.message), giftEvent.event.message);
+  check('gift thanks never imply gifts buy blessings', !/purchase|guarantee|buy|heal|wealth|miracle|salvation/i.test(giftEvent.event.message));
+  const giftSettingsOff = await rpc('gift.update', { announce: false, tts: false });
+  check('gift announcements can be turned off', giftSettingsOff.announce === false && giftSettingsOff.tts === false);
+  const silentGift = await rpc('temple.offerGift', { user: 'Michael R.', coins: 5, giftName: 'Rose', quantity: 1 });
+  check('silenced gifts keep their TTS text empty', silentGift.event.announce === false && silentGift.event.ttsText === '');
+  await rpc('gift.update', { announce: true, tts: true });
+
+  // 10e. Prayer interaction toggle + scene matching
+  const interactionOff = await rpc('temple.updateSettings', { prayer: { interactionEnabled: false } });
+  check('prayer interaction can be disabled', interactionOff.settings.prayer.interactionEnabled === false);
+  const ignoredPrayer = await rpc('temple.comment', {
+    comment: 'pray for my family please',
+    user: 'Toggle Tester',
+    uniqueId: 'smoke.toggle',
+    source: 'rpc'
+  });
+  check('disabled prayer interaction does not queue requests', ignoredPrayer?.prayerDisabled === true, JSON.stringify(ignoredPrayer).slice(0, 80));
+  await rpc('temple.updateSettings', { prayer: { interactionEnabled: true } });
+
+  await rpc('stage.updateSettings', { sceneMatch: true });
+  const sceneCue = await rpc('show.nextPrayer', { theme: 'healing' });
+  await sleep(400);
+  const sceneState = await rpc('temple.getState');
+  check('healing prayer switches to the candle scene', sceneState.settings.background.category === 'candles',
+    `${sceneCue.cue?.eyebrow} → ${sceneState.settings.background.category}`);
+  const sceneOff = await rpc('stage.updateSettings', { sceneMatch: false });
+  check('scene matching can be disabled', sceneOff.settings.background.sceneMatch === false);
+  await rpc('stage.updateSettings', { sceneMatch: true });
+
   // 11. Message library editable + command responses avoid overuse
   const messages = await rpc('messages.get');
   check('message library exposes commands', Array.isArray(messages.commands?.AMEN) && messages.commands.AMEN.length >= 3);
   check('gift thanks are tiered', Boolean(messages.templates?.giftThanks?.small && messages.templates?.giftThanks?.large));
   check('Bible references are present', messages.bibleVerses.every((verse) => verse.reference && verse.text));
 
-  // 12. Static pages
+  // 12. Ambient worship music
+  const music = await rpc('music.get');
+  check('music playlist loaded', music.tracks.length >= 5, `${music.tracks.length} tracks`);
+  check('music settings define ducking', typeof music.settings?.volume === 'number' && typeof music.settings?.duckVolume === 'number',
+    `volume ${music.settings?.volume} · duck ${music.settings?.duckVolume}`);
+  check('music defaults to 8-12% volume', music.settings?.volume >= 0.08 && music.settings?.volume <= 0.12, String(music.settings?.volume));
+  check('music tracks are 3-5 minutes', music.tracks.every((track) => track.durationSeconds >= 175 && track.durationSeconds <= 300),
+    music.tracks.map((track) => Math.round(track.durationSeconds)).join(', '));
+  if (music.tracks[0]) {
+    const audioFile = await fetch(`${BASE}${music.tracks[0].url}`);
+    check('music file served locally', audioFile.status === 200 && (audioFile.headers.get('content-type') || '').includes('audio'),
+      `${music.tracks[0].url} → ${audioFile.status}`);
+  }
+  const musicUpdate = await rpc('music.update', { track: music.tracks[0]?.id, volume: 0.1, enabled: true, paused: false });
+  check('music track can change without a restart', musicUpdate.settings.track === music.tracks[0]?.id && musicUpdate.settings.paused === false);
+
+  // 13. Static pages
   for (const pathname of ['/', '/admin', '/css/live.css', '/css/admin.css', '/js/live.js', '/js/admin.js', '/js/audio.js', '/js/particles.js']) {
     const res = await fetch(`${BASE}${pathname}`);
     check(`static ${pathname}`, res.status === 200, String(res.status));
   }
 
-  // 13. WebSocket + notifications
+  // 14. WebSocket + notifications
   await sleep(2700);
   await new Promise((resolve) => {
     const ws = new WebSocket(BASE.replace('http', 'ws') + '/ws');
@@ -180,6 +349,7 @@ async function main() {
     const timer = setTimeout(() => {
       check('websocket notified about prayer request', seen.has('prayer.request'), [...seen].join(', '));
       check('websocket notified about AMEN event', seen.has('temple.event'));
+      check('websocket notified about a new quiz question', seen.has('quiz.start'), [...seen].join(', '));
       ws.close();
       resolve();
     }, 9000);
@@ -189,6 +359,7 @@ async function main() {
       setTimeout(async () => {
         await rpc('prayer.add', { name: 'David K.', text: 'Please pray for wisdom and peace.', source: 'admin' });
         await rpc('temple.comment', { comment: 'AMEN', user: 'WebSocket Tester', uniqueId: 'smoke.ws' });
+        await rpc('quiz.next', { source: 'test' }).catch(() => {});
       }, 350);
     });
 
@@ -211,6 +382,8 @@ async function main() {
   await rpc('prayer.clear');
   await rpc('prayer.add', { name: 'Sarah M.', text: 'Please pray for my family and for peace this week.', source: 'admin' });
   await rpc('prayer.add', { name: 'Michael R.', text: 'Please pray for my mother as she recovers.', source: 'admin' });
+  await rpc('temple.updateSettings', { ttsVolume: 0.95, ttsRate: 1.0 });
+  await rpc('show.update', { paused: false });
 
   const failures = results.filter((result) => !result.ok);
   console.log('\n--------------------------------------------------------------');
