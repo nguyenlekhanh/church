@@ -42,7 +42,8 @@
         overrideUntil: 0,
         crossfadeUntil: 0,
         crossfadeTimer: null,
-        userStarted: false
+        userStarted: false,
+        failed: new Set()
       };
       this.onMusicStateChange = null;
 
@@ -82,10 +83,22 @@
        Background music — original ambient worship playlist
        --------------------------------------------------------------------- */
     setMusicPlaylist(tracks) {
+      const music = this.music;
       const list = Array.isArray(tracks) ? tracks.filter((track) => track && track.url) : [];
-      this.music.tracks = list;
-      this.music.byId = new Map(list.map((track) => [track.id, track]));
-      if (!this.music.currentId && list.length > 0) this.music.currentId = list[0].id;
+      music.tracks = list;
+      music.byId = new Map(list.map((track) => [track.id, track]));
+      music.failed = new Set();
+      if (list.length === 0) {
+        music.currentId = '';
+        if (music.deck || music.crossfadeTimer) this.stopMusic({ fadeMs: 1200 });
+      } else if (!music.currentId || !music.byId.has(music.currentId)) {
+        // The current file was removed or disabled: move to the next available track.
+        music.currentId = list[0].id;
+        music.loadError = null;
+        if (this.unlocked && music.enabled && !music.paused) {
+          this.playTrack(music.currentId, { fadeMs: 1800 });
+        }
+      }
       this.emitMusicState();
     }
 
@@ -93,7 +106,10 @@
     applyMusicSettings(settings) {
       if (!settings || typeof settings !== 'object') return;
       const music = this.music;
-      const nextId = String(settings.track || music.currentId || '');
+      let nextId = String(settings.track || music.currentId || '');
+      if (nextId && music.tracks.length > 0 && !music.byId.has(nextId)) {
+        nextId = music.tracks[0].id;
+      }
       const trackChanged = nextId && nextId !== music.currentId && Date.now() > music.overrideUntil;
 
       if (typeof settings.volume === 'number') music.volume = Math.max(0, Math.min(1, settings.volume));
@@ -271,7 +287,14 @@
         if (!buffer) {
           try {
             buffer = await this.loadMusicBuffer(track);
-          } catch (_) {
+          } catch (err) {
+            music.failed.add(trackId);
+            music.loadError = err.message || 'Track could not be loaded';
+            const fallback = music.tracks.find((item) => !music.failed.has(item.id));
+            if (fallback) {
+              music.currentId = fallback.id;
+              this.playTrack(fallback.id, { fadeMs: 900 });
+            }
             this.emitMusicState();
             return;
           }

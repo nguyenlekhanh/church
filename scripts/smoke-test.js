@@ -8,8 +8,11 @@
  *   node scripts/smoke-test.js
  */
 const WebSocket = require('ws');
+const fs = require('fs');
+const path = require('path');
 
 const BASE = process.env.BASE_URL || 'http://localhost:3000';
+const MUSIC_DIR = path.join(__dirname, '..', 'public', 'assets', 'christian', 'audio');
 const results = [];
 
 function check(name, condition, detail = '') {
@@ -325,13 +328,69 @@ async function main() {
   check('music settings define ducking', typeof music.settings?.volume === 'number' && typeof music.settings?.duckVolume === 'number',
     `volume ${music.settings?.volume} · duck ${music.settings?.duckVolume}`);
   check('music defaults to 8-12% volume', music.settings?.volume >= 0.08 && music.settings?.volume <= 0.12, String(music.settings?.volume));
-  check('music tracks are 3-5 minutes', music.tracks.every((track) => track.durationSeconds >= 175 && track.durationSeconds <= 300),
+  check('music tracks are 2-6 minutes', music.tracks.every((track) => track.durationSeconds >= 120 && track.durationSeconds <= 360),
     music.tracks.map((track) => Math.round(track.durationSeconds)).join(', '));
   if (music.tracks[0]) {
     const audioFile = await fetch(`${BASE}${music.tracks[0].url}`);
     check('music file served locally', audioFile.status === 200 && (audioFile.headers.get('content-type') || '').includes('audio'),
       `${music.tracks[0].url} → ${audioFile.status}`);
   }
+  check('music library includes disabled tracks', Array.isArray(music.library) && music.library.length >= music.tracks.length,
+    `${music.library?.length} library / ${music.tracks.length} enabled`);
+  check('rejected tracks removed from library', !music.library.some((track) => ['peaceful-prayer-02', 'cathedral-ambient-01'].includes(track.id)));
+  check('licensed Mixkit catalog present', music.library.filter((track) => /Mixkit/.test(track.license)).length >= 15,
+    `${music.library.filter((track) => /Mixkit/.test(track.license)).length} Mixkit tracks`);
+  check('every track records a license and source', music.library.every((track) => track.license && track.source),
+    `${music.library.filter((track) => !track.license || !track.source).length} missing`);
+  check('previous manifest backup exists', fs.existsSync(path.join(MUSIC_DIR, 'music-manifest.backup.json')));
+
+  const originalTrack = music.settings?.track;
+  const sourceMp3 = music.library.find((track) => track.file.endsWith('.mp3'))?.file;
+  const tempTrack = path.join(MUSIC_DIR, 'zz-smoke-track.mp3');
+  try {
+    fs.copyFileSync(path.join(MUSIC_DIR, sourceMp3), tempTrack);
+    const added = await rpc('music.rescan');
+    check('rescan finds a new audio file', added.scan.added === 1 && added.scan.found === music.library.length + 1,
+      `${added.scan.found} found · ${added.scan.added} new`);
+    const newTrack = added.library.find((track) => track.id === 'zz-smoke-track');
+    check('friendly title generated from filename', newTrack?.title === 'Zz Smoke Track', newTrack?.title);
+    check('new file marked with unverified license', /Unknown/.test(newTrack?.license || ''));
+    const servedNew = newTrack ? await fetch(`${BASE}${newTrack.url}`) : null;
+    check('new file is immediately previewable', servedNew?.status === 200 && (servedNew.headers.get('content-type') || '').includes('audio'));
+
+    const disabled = await rpc('music.track.update', { id: 'zz-smoke-track', enabled: false });
+    check('disabled track leaves the playlist', !disabled.tracks.some((track) => track.id === 'zz-smoke-track')
+      && disabled.library.some((track) => track.id === 'zz-smoke-track' && track.enabled === false));
+    check('disabling fixes the selected track', disabled.settings.track && disabled.settings.track !== 'zz-smoke-track');
+
+    await rpc('music.track.update', { id: 'zz-smoke-track', enabled: true, title: 'Smoke Test Prayer' });
+    const rescanned = await rpc('music.rescan');
+    check('custom title survives a rescan', rescanned.library.find((track) => track.id === 'zz-smoke-track')?.title === 'Smoke Test Prayer');
+
+    const traversal = await rpc('music.track.remove', { id: '../../server.js' }).then(() => false).catch(() => true);
+    check('removal rejects directory traversal', traversal);
+
+    const removal = await rpc('music.track.remove', { id: 'zz-smoke-track' });
+    check('removing a track moves the file to backups', !fs.existsSync(tempTrack) && Boolean(removal.removed?.backupFile));
+    const backupFile = removal.removed?.backupFile ? path.resolve(removal.removed.backupFile) : '';
+    if (backupFile && fs.existsSync(backupFile)) fs.unlinkSync(backupFile);
+  } finally {
+    if (fs.existsSync(tempTrack)) fs.unlinkSync(tempTrack);
+  }
+
+  const tempDeleted = path.join(MUSIC_DIR, 'zz-smoke-deleted.mp3');
+  try {
+    fs.copyFileSync(path.join(MUSIC_DIR, sourceMp3), tempDeleted);
+    await rpc('music.rescan');
+    fs.unlinkSync(tempDeleted);
+    const cleaned = await rpc('music.rescan');
+    check('rescan drops a file deleted from disk', cleaned.scan.removed === 1 && !cleaned.library.some((track) => track.id === 'zz-smoke-deleted'),
+      `${cleaned.scan.removed} removed · ${cleaned.scan.found} found`);
+  } finally {
+    if (fs.existsSync(tempDeleted)) fs.unlinkSync(tempDeleted);
+  }
+
+  await rpc('music.update', { track: originalTrack, enabled: true, paused: false });
   const musicUpdate = await rpc('music.update', { track: music.tracks[0]?.id, volume: 0.1, enabled: true, paused: false });
   check('music track can change without a restart', musicUpdate.settings.track === music.tracks[0]?.id && musicUpdate.settings.paused === false);
 

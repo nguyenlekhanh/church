@@ -25,6 +25,7 @@ const { MessageLibrary } = require('./lib/messages');
 const { discoverVoices, resolveVoice, defaultVoiceId } = require('./lib/voices');
 const { ShowProgram, PRAYER_THEMES } = require('./lib/show');
 const { QuizEngine, QUESTIONS: QUIZ_QUESTIONS } = require('./lib/quiz');
+const { MusicLibrary } = require('./lib/music-library');
 
 const CONFIG = loadConfig();
 const PORT = CONFIG.port || 3000;
@@ -336,43 +337,44 @@ const BACKGROUNDS = loadBackgroundImages();
 const MUSIC_DIR = path.join(CHRISTIAN_ASSETS_DIR, 'audio');
 const MUSIC_MANIFEST_FILE = path.join(MUSIC_DIR, 'music-manifest.json');
 
-function loadMusicCatalog() {
-  const empty = { tracks: [], byId: new Map(), manifest: {} };
-  try {
-    if (!fs.existsSync(MUSIC_MANIFEST_FILE)) {
-      console.warn('[Music] music-manifest.json not found; run scripts/generate_music.py');
-      return empty;
-    }
-    const manifest = JSON.parse(fs.readFileSync(MUSIC_MANIFEST_FILE, 'utf8'));
-    const tracks = (Array.isArray(manifest.tracks) ? manifest.tracks : [])
-      .filter((track) => track.file && fs.existsSync(path.join(MUSIC_DIR, track.file)))
-      .map((track) => ({
-        id: track.id,
-        title: track.title || track.id,
-        file: track.file,
-        url: `/assets/christian/audio/${track.file}`,
-        mood: track.mood || '',
-        bpm: track.bpm || null,
-        durationSeconds: track.durationSeconds || null,
-        format: track.format || '',
-        license: track.license || '',
-        attribution: track.attribution || '',
-        source: track.source || ''
-      }));
-    return {
-      tracks,
-      byId: new Map(tracks.map((track) => [track.id, track])),
-      manifest,
-      defaultVolume: Number(manifest.defaultVolume) || 0.1,
-      duckedVolume: Number(manifest.duckedVolume) || 0.035
-    };
-  } catch (err) {
-    console.warn(`[Music] Could not read music manifest (${err.message})`);
-    return empty;
-  }
+const MUSIC_LIBRARY = new MusicLibrary({
+  dir: MUSIC_DIR,
+  manifestPath: MUSIC_MANIFEST_FILE,
+  backupPath: path.join(MUSIC_DIR, 'music-manifest.backup.json'),
+  removedDir: path.join(__dirname, 'docs', 'backups', 'music-removed'),
+  publicUrl: '/assets/christian/audio'
+});
+
+// Mutated in place by applyMusicCatalog so every reference below stays current.
+const MUSIC = {
+  tracks: [],
+  allTracks: [],
+  byId: new Map(),
+  libraryById: new Map(),
+  manifest: {},
+  categories: [],
+  defaultVolume: 0.1,
+  duckedVolume: 0.035,
+  totalDurationSeconds: 0,
+  libraryMeta: { total: 0, enabled: 0, disabled: 0, totalDurationSeconds: 0, categories: [] }
+};
+
+function applyMusicCatalog(catalog) {
+  if (!catalog) return MUSIC;
+  MUSIC.tracks = catalog.tracks;
+  MUSIC.allTracks = catalog.allTracks;
+  MUSIC.byId = catalog.byId;
+  MUSIC.libraryById = catalog.libraryById;
+  MUSIC.manifest = catalog.manifest;
+  MUSIC.categories = catalog.categories;
+  MUSIC.defaultVolume = catalog.defaultVolume;
+  MUSIC.duckedVolume = catalog.duckedVolume;
+  MUSIC.totalDurationSeconds = catalog.totalDurationSeconds;
+  MUSIC.libraryMeta = catalog.libraryMeta;
+  return MUSIC;
 }
 
-const MUSIC = loadMusicCatalog();
+applyMusicCatalog(MUSIC_LIBRARY.readCatalog());
 
 const BACKGROUND_LAYER_FILES = ['golden-light-rays.png', 'gold-bokeh-particles.png', 'soft-vignette.png']
   .map((file) => `/assets/christian/overlays/${file}`)
@@ -1253,7 +1255,48 @@ const Rituals = {
 // 9. SETTINGS / BACKGROUND ROTATION
 // ============================================================================
 function musicCatalogPayload() {
-  return { tracks: MUSIC.tracks, settings: state.settings.music };
+  return {
+    tracks: MUSIC.tracks,
+    library: MUSIC.allTracks,
+    settings: state.settings.music,
+    meta: MUSIC.libraryMeta
+  };
+}
+
+/** If the selected track vanished or was disabled, move to the first playable one. */
+function repairMusicSelection() {
+  const music = state.settings.music;
+  if (!music) return false;
+  if (MUSIC.tracks.length === 0) {
+    if (!music.track) return false;
+    music.track = '';
+    music.paused = true;
+    return true;
+  }
+  if (MUSIC.byId.has(music.track)) return false;
+  music.track = MUSIC.tracks[0].id;
+  return true;
+}
+
+function musicRescanPayload(result) {
+  return {
+    ...musicCatalogPayload(),
+    scan: {
+      found: result.found,
+      added: result.addedCount,
+      removed: result.removedCount,
+      updated: result.updatedCount,
+      addedFiles: result.added,
+      removedFiles: result.removed,
+      updatedFiles: result.updated,
+      errors: result.errors,
+      scannedAt: result.scannedAt
+    }
+  };
+}
+
+function publishMusicLibrary(payload) {
+  broadcastNotification('music.library.updated', payload);
 }
 
 function musicOrder() {
@@ -1281,7 +1324,10 @@ function patchMusicSettings(patch = {}) {
 
   if (patch.track !== undefined) {
     const id = String(patch.track || '');
-    if (id && !MUSIC.byId.has(id)) throw new Error(`Unknown music track: ${id}`);
+    if (id && !MUSIC.byId.has(id)) {
+      if (MUSIC.libraryById.has(id)) throw new Error('That track is disabled. Enable it in the music library first.');
+      throw new Error(`Unknown music track: ${id}`);
+    }
     if (id) {
       music.track = id;
       // Selecting a track is an explicit request to hear it.
@@ -2261,6 +2307,37 @@ async function handleRpcCall(method, params = {}) {
       return applyMusicUpdate({ track: pickAdjacentTrack(-1) });
     case 'music.toggle':
       return applyMusicUpdate({ paused: !state.settings.music.paused });
+    case 'music.rescan': {
+      const result = await MUSIC_LIBRARY.scan({ probe: true });
+      applyMusicCatalog(result.catalog);
+      const repaired = repairMusicSelection();
+      if (repaired) saveState();
+      const payload = musicRescanPayload(result);
+      publishMusicLibrary(payload);
+      if (repaired) broadcastNotification('music.state', { settings: state.settings.music });
+      broadcastNotification('temple.state', getPublicState());
+      return payload;
+    }
+    case 'music.track.update': {
+      applyMusicCatalog(MUSIC_LIBRARY.updateTrack(params.id, params));
+      const repaired = repairMusicSelection();
+      saveState();
+      const payload = musicCatalogPayload();
+      publishMusicLibrary(payload);
+      if (repaired) broadcastNotification('music.state', { settings: state.settings.music });
+      return { ...payload, repaired };
+    }
+    case 'music.track.remove': {
+      const { catalog, ...removal } = MUSIC_LIBRARY.removeTrack(params.id);
+      applyMusicCatalog(catalog);
+      const repaired = repairMusicSelection();
+      saveState();
+      const payload = { ...musicCatalogPayload(), removed: removal };
+      publishMusicLibrary(payload);
+      if (repaired) broadcastNotification('music.state', { settings: state.settings.music });
+      broadcastNotification('temple.state', getPublicState());
+      return payload;
+    }
 
     // ---- Automated live show ----
     case 'show.status':
@@ -2406,6 +2483,7 @@ app.get('/api/health', (_req, res) => res.json({
   tiktok: state.tiktok,
   backgrounds: BACKGROUNDS.images.length,
   musicTracks: MUSIC.tracks.length,
+  musicLibrary: MUSIC.libraryMeta,
   music: state.settings.music
 }));
 
@@ -2529,6 +2607,17 @@ server.listen(PORT, () => {
   console.log(`🎨 Backgrounds          : ${bgCount} local images (rotation ${state.settings.background.enabled ? 'on' : 'off'})`);
   console.log(`🗣️  Piper voices         : EN ${state.settings.enVoice} | VI ${state.settings.vnVoice}`);
   console.log('============================================================');
+
+  // Pick up audio files added or removed while the server was stopped.
+  MUSIC_LIBRARY.scan({ probe: false }).then((result) => {
+    applyMusicCatalog(result.catalog);
+    const repaired = repairMusicSelection();
+    if (repaired) saveState();
+    if (result.addedCount || result.removedCount) {
+      console.log(`[Music] Library sync: ${result.found} tracks, ${result.addedCount} new, ${result.removedCount} missing.`);
+      if (repaired) broadcastNotification('music.state', { settings: state.settings.music });
+    }
+  }).catch((err) => console.warn(`[Music] Startup library sync failed: ${err.message}`));
 
   configureBackgroundRotation();
   if (state.settings.autoSim) configureAutoSim(true);

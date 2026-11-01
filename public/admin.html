@@ -270,9 +270,19 @@
           <span class="badge" id="musicBadge">Loading</span>
         </div>
         <p class="note">
-          Original ambient worship instrumentals — no vocals, no percussion. Music ducks to about 3% while Piper narrates,
+          Instrumental worship from the local music library. Music ducks to about 3% while Piper narrates,
           then fades back to your set volume. Changes reach the live stage immediately, without a restart.
         </p>
+
+        <div class="music-toolbar">
+          <button class="btn gold" id="btnMusicRescan">🔄 Rescan Music Folder</button>
+          <input class="music-search" type="search" id="musicSearch" placeholder="Search music…" autocomplete="off" />
+          <select class="music-filter" id="musicCategoryFilter" aria-label="Filter by category">
+            <option value="all">All categories</option>
+          </select>
+          <span class="music-summary" id="musicLibrarySummary">Loading library…</span>
+        </div>
+        <p class="note music-rescan-status" id="musicRescanStatus" role="status"></p>
 
         <div class="bg-controls">
           <label class="switch">
@@ -317,8 +327,9 @@
         <div class="music-track-list" id="musicPlaylist"></div>
         <audio id="musicTestAudio" controls preload="none" class="audio-preview"></audio>
         <p class="note small">
-          Tracks are synthesised locally and dedicated to the public domain (CC0) — no third-party recordings.
-          Details: <code>public/assets/christian/audio/music-manifest.json</code>.
+          Track files stay in <code>public/assets/christian/audio/</code>. The rescan reads that folder only, updates
+          <code>music-manifest.json</code> atomically and keeps a backup of the previous manifest.
+          Removed files are moved to <code>docs/backups/music-removed/</code>, so nothing is destroyed.
         </p>
       </section>
 

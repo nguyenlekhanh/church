@@ -931,7 +931,11 @@
     const status = statusOverride || audio.getMusicStatus();
     const track = musicTrackById(status.trackId);
     const nowEl = document.getElementById('musicNowPlaying');
-    if (nowEl) nowEl.textContent = track ? `${track.title} · ${track.bpm} BPM` : 'No worship track selected';
+    if (nowEl) {
+      nowEl.textContent = track
+        ? `${track.title}${track.bpm ? ` · ${track.bpm} BPM` : track.category ? ` · ${track.category}` : ''}`
+        : 'No worship track selected';
+    }
 
     const stateEl = document.getElementById('musicStatus');
     if (stateEl) {
@@ -1195,6 +1199,19 @@
             audio.applyMusicSettings(data.settings);
             renderMusicStatus();
           }
+          break;
+        case 'music.library.updated':
+          if (Array.isArray(data?.tracks)) {
+            musicTracks = data.tracks;
+            audio.setMusicPlaylist(musicTracks);
+          }
+          if (data?.settings) {
+            if (currentState) {
+              currentState.settings = { ...(currentState.settings || {}), music: data.settings };
+            }
+            audio.applyMusicSettings(data.settings);
+          }
+          renderMusicStatus();
           break;
         case 'tts.play':
           if (data?.url) {

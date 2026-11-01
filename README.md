@@ -21,7 +21,7 @@ The room is intentionally **general Christian** — welcoming to viewers across 
 | Live connection | TikTok Live Connector: comments, likes, follows, shares, gifts |
 | API | JSON-RPC 2.0 over HTTP (`/rpc`) and WebSocket (`/ws`) |
 | Narration | Local Piper worker, American English + Vietnamese voices |
-| Music | Five original ambient worship instrumentals, crossfaded playlist, auto-ducking under narration |
+| Music | 21-track instrumental library (3 original CC0 + 18 licensed Mixkit tracks), admin rescan, crossfaded playlist, auto-ducking under narration |
 | Live show | Automated welcome, Scripture, prayer, community and gratitude program with Piper narration |
 | Prayer requests | Moderated queue with approve / hide / remove / pause / clear |
 | Backgrounds | 21 locally served licensed photographs + automatic fade rotation |
@@ -172,42 +172,41 @@ Piper is the active engine because the Windows checkout already contains the ONN
 
 ## Ambient worship music
 
-The livestream has a continuous, low-volume instrumental bed: soft piano, warm pads, gentle strings and a cathedral-style reverb tail. There are **no vocals, no percussion and no third-party recordings** — every track was composed and synthesised for this project and is dedicated to the public domain (CC0 1.0).
+The livestream has a continuous, low-volume instrumental bed: soft piano, warm pads, gentle strings and cathedral-style ambience. The library holds **21 tracks** — 3 original CC0 compositions and 18 licensed Mixkit instrumentals — stored locally in `public/assets/christian/audio/`.
 
-| Track | Mood | Tempo | Length |
-| --- | --- | --- | --- |
-| `peaceful-prayer-01` | Warm pads, soft felt piano | 60 BPM | 3:28 |
-| `peaceful-prayer-02` | String ensemble over slow harmony | 56 BPM | 3:09 |
-| `cathedral-ambient-01` | Deep organ-like ambience, wide stone reverb | 52 BPM | 3:14 |
-| `piano-worship-01` | Solo felt piano, gentle arpeggios | 66 BPM | 3:24 |
-| `morning-prayer-01` | Bright piano with sunrise pads | 72 BPM | 3:20 |
+| Category | Tracks | Notes |
+| --- | --- | --- |
+| Ambient | 11 | Pads, meditation beds and the original Peaceful Prayer |
+| Piano | 7 | Solo piano, reflective and morning themes |
+| Cinematic | 3 | Flowing, hopeful atmospheric beds |
 
-Files live in `public/assets/christian/audio/` as Ogg Opus (112 kb/s, 44.1 kHz stereo) and are documented in [music-manifest.json](public/assets/christian/audio/music-manifest.json).
+Every entry records its title, artist, duration, format, source URL, license and attribution in [music-manifest.json](public/assets/christian/audio/music-manifest.json). The full source/license table is in [docs/music-sources.md](docs/music-sources.md). The two rejected tracks (Quiet Hour, Cathedral Light) were removed from the playlist, dashboard and generator, and their files moved to `docs/backups/music-removed/`.
 
 How playback works:
 
-- The browser fetches and decodes one loop at a time, then repeats it sample-accurately with the Web Audio API — no gap, click or restart at the loop point.
-- A second deck crossfades into the next track during the final 3.5 seconds; the next loop is decoded in advance.
+- The original Ogg tracks are decoded and looped sample-accurately with the Web Audio API. Mixkit MP3 tracks use a 3.5-second crossfade into the next track; the next file is decoded in advance.
 - **Ducking:** music runs at 10% by default; when Piper starts a sentence it glides to 3.5%, then fades back over roughly two seconds. A limiter on the music bus prevents clipping.
 - Track changes, pause/resume, volume, shuffle and repeat are stored in server state and broadcast over the WebSocket, so the OBS source follows the dashboard immediately without a reload.
 - WebSocket events (comments, prayers, gifts) never restart playback; the current deck keeps its position.
-- Autoplay follows the browser policy: OBS browser sources start automatically, regular tabs wait for the **Enable Audio** button. A failure to load a track is reported in the dashboard instead of stopping the show.
+- If the selected file disappears or is disabled during a broadcast, the server selects the next enabled track and the stage crossfades to it; a failed decode also advances instead of leaving silence.
+- Autoplay follows the browser policy: OBS browser sources start automatically, regular tabs wait for the **Enable Audio** button.
 
 Admin controls (**Background Music** panel in `/admin`):
 
-- Enable / disable the music bed.
-- Play / pause, previous, next, and select any track.
-- Volume slider (default 10%), shuffle, and repeat mode (whole playlist / single track / play once).
-- Autoplay with audio, live status text and the full playlist with tempo and length.
-- **Test Audio** plays the selected track locally in the dashboard only; it never starts a second copy on the OBS stage.
+- **🔄 Rescan Music Folder** — rescans only `public/assets/christian/audio/`, reports tracks found/added/removed/updated, rewrites the manifest atomically and keeps the previous version as `music-manifest.backup.json`. The dashboard and OBS playlist refresh without a restart.
+- Search by title, artist, file or category; filter by category.
+- Per-track title editing (display only — the filename is untouched), duration, format, size, category and status.
+- Preview play/pause per track with its own preview volume, enable/disable (kept in the manifest but excluded from playback), and remove (moves the file to `docs/backups/music-removed/`).
+- Play / pause, previous, next, select any enabled track, master volume (default 10%), shuffle, repeat mode and **Test Audio**.
+- Total track count, enabled count and total playlist duration.
 
-Regenerate the tracks (no internet required):
+Regenerate the original tracks (no internet required):
 
 ```bat
 .venv\Scripts\python.exe scripts\generate_music.py
 ```
 
-The generator uses only `numpy` plus `ffmpeg` (for Opus encoding) and writes the manifest automatically.
+The generator uses only `numpy` plus `ffmpeg` (for Opus encoding), rewrites only its own three tracks and preserves the licensed Mixkit entries.
 
 ---
 
@@ -390,7 +389,7 @@ All original RPC method names still work. User-facing labels changed; endpoint n
 | Narration | `temple.speak`, `temple.ttsStatus`, `tts.status`, `tts.voices`, `tts.test` |
 | Prayer | `prayer.list`, `prayer.add`, `prayer.approve`, `prayer.hide`, `prayer.remove`, `prayer.clear`, `prayer.setPaused`, `prayer.setAutoApprove` |
 | Backgrounds | `stage.listBackgrounds`, `stage.setBackground`, `stage.nextBackground`, `stage.updateBackgroundSettings` |
-| Music | `music.get`, `music.update`, `music.next`, `music.previous`, `music.toggle` |
+| Music | `music.get`, `music.update`, `music.next`, `music.previous`, `music.toggle`, `music.rescan`, `music.track.update`, `music.track.remove` |
 | Messages | `messages.get`, `messages.save` |
 | Live show | `show.status`, `show.update`, `show.next`, `show.nextVerse`, `show.nextReflection`, `show.nextPrayer`, `show.testWelcome`, `show.restart` |
 | Bible quiz | `quiz.status`, `quiz.update`, `quiz.next`, `quiz.reveal`, `quiz.answer` |
@@ -400,7 +399,7 @@ All original RPC method names still work. User-facing labels changed; endpoint n
 
 Internal ritual names (`burnIncense`, `strikeWoodenFish`, `drawFortune`) are retained only for wire compatibility. Every label, message and visual shown to viewers is Christian.
 
-WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
+WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `music.library.updated`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
 
 Legacy state fields (`totalIncense`, `woodenFishHits`, `fortuneCount`, `offerings.lotus`, …) are still present alongside the new Christian counters.
 
@@ -417,6 +416,7 @@ config/
   piper/en|vn/             Installed Piper voices (untouched)
 lib/
   show.js                  Program schedule, prayer themes, cue builder, welcomes
+  music-library.js         Audio-folder scanner, manifest writes, enable/disable, removal
   messages.js              Non-repeating message selection
   voices.js                Voice discovery + defaults
 public/
@@ -428,7 +428,7 @@ public/
   js/particles.js          Canvas light particles
   js/admin.js              Dashboard controls
   assets/christian/        Local imagery + manifest
-  assets/christian/audio/  5 original ambient tracks + music manifest
+  assets/christian/audio/  21 instrumental tracks + music manifest
 data/
   prayer-state.json        Persisted state
   tts-cache/               Generated WAV narration (gitignored)
@@ -449,12 +449,13 @@ Run against a live server:
 node scripts\smoke-test.js
 ```
 
-Last run on this machine: **97/97 checks passed**, including:
+Last run on this machine: **112/112 checks passed**, including:
 
 - Bun server startup, health endpoint and brand payload.
 - `temple.getState` compatibility and new counters.
 - Background catalog (21 images, all 7 categories including the new cathedral category), local asset serving, manual change.
-- Music playlist (5 tracks, 3–5 minutes each), default 10% volume with a 3.5% duck level, local Ogg serving, and a track change without a server restart.
+- Music library (21 tracks: 3 original CC0 + 18 licensed Mixkit), 2–6 minutes each, license and source on every entry, default 10% volume with a 3.5% duck level, local serving and a track change without a server restart.
+- Music rescan: a copied MP3 is detected and titled from its filename, marked with an unverified license, served for preview, disabled (leaving the playlist), re-enabled, given a custom title that survives a rescan, then removed through the API with its file moved to `docs/backups/music-removed/`. A second file deleted directly from disk disappears on the next rescan. Directory-traversal ids are rejected and the previous manifest backup exists.
 - Live show: 12-segment program, 8 prayer themes, 20 KJV verses each with a reflection, labelled test welcomes that never count as real viewers, manual verse/prayer/reflection cues, pause/resume, configurable pace and a `show.cue` WebSocket broadcast.
 - Bible quiz: 150 questions with KJV references, hidden answer before the reveal, case-insensitive matching (`  NOAH `), duplicate suppression, wrong answers ignored, reveal payload, answers rejected after the reveal, configurable frequency/reveal delay and a `quiz.start` WebSocket broadcast.
 - Gift pipeline: sender/quantity captured, personalized thank-you without purchase language, announcement and TTS toggles, and silenced gifts keeping an empty TTS payload.
@@ -472,6 +473,7 @@ Last run on this machine: **97/97 checks passed**, including:
 - TikTok connector initialization and graceful failure for a non-live handle (`Failed to retrieve Room ID from all sources.`) without crashing; `live.disconnect` clears the stale channel/error state.
 - Browser rendering at 1080×1920 in headless Chromium, cathedral scene, background rotation within the cathedral category, AMEN overlay, prayer card, live comments/community, photo credit, footer placement and the admin dashboard.
 - Music playback in Chromium: autoplay after load, seamless Web Audio loop, gain 0.10 → 0.035 during Piper narration → 0.10 after it ended, live track switch from the dashboard, pause/resume, admin volume slider, and the dashboard test player.
+- Dashboard music manager in Chromium: rescan status message, search (`piano` → 7 matches), category filter, per-track preview playing past 5 seconds (200 audio/mpeg), per-track volume, disable/enable reflected in the playlist select, and an inline title saved to the manifest. The stage crossfaded to a newly selected track and recovered to the next enabled track when that temporary file was removed.
 - Music continued through AMEN/prayer WebSocket events with no restart (verified by comparing the audio deck start time).
 - Automated show in Chromium: program line, cue card, prayer wall rotation (Grace/Sarah → Emily/David) with first names only, and a `show.cue` narration that ducked music to 0.035 and restored it to 0.10 without restarting the track.
 - A simulated prayer request stayed off the prayer wall and out of the community cue; simulated events carried a `simulated` flag and no welcome was generated from them.
@@ -483,7 +485,8 @@ Last run on this machine: **97/97 checks passed**, including:
 Not tested here:
 
 - A real TikTok LIVE room (no live account/session was available). Connector wiring, event names and payload extraction were reviewed, but comment/like/follow/share/gift events — including the new join welcome — were not observed from TikTok itself. Welcome deduplication and the greeting text were tested through `show.testWelcome` and the engine's unit-level checks only.
-- OBS Studio capture, its audio routing/monitoring and CEF performance (the page was verified in Chromium at the OBS aspect ratio, not inside OBS). Music was heard in the browser tab, but the OBS-side mix was not monitored here.
+- OBS Studio capture, its audio routing/monitoring and CEF performance (the page was verified in Chromium at the OBS aspect ratio, not inside OBS). Music played in the browser tab, but the OBS-side mix was not monitored here.
+- Mixkit tracks were chosen from the Ambient, Piano and Cinematic catalogue categories and are marked as instrumentals by their metadata; vocal absence was not machine-audited with a vocal detector.
 - Long-duration livestream stability/CPU over several hours.
 
 The app starts cleanly and does not require a TikTok connection to render the stage or serve the dashboard.

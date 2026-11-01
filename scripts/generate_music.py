@@ -308,28 +308,6 @@ TRACKS = {
         "piano_skip": 3,
         "reverb": 3.1, "wet": 0.44, "brightness": 0.5,
     },
-    "peaceful-prayer-02": {
-        "title": "Quiet Hour",
-        "mood": "String ensemble over slow harmony",
-        "bpm": 56,
-        "bars": 44,
-        "chords": [CHORDS[n] for n in ("G", "D/F#", "Em", "C", "G", "D/F#", "C", "D/F#")],
-        "pad": 0.26, "bass": 0.08, "piano": 0.16, "strings": 0.11, "lift": 0.03,
-        "piano_pattern": [(0.0, 0, 0.9), (2.0, 2, 0.55), (3.0, 4, 0.4)],
-        "piano_skip": 2,
-        "reverb": 3.4, "wet": 0.5, "brightness": 0.48,
-    },
-    "cathedral-ambient-01": {
-        "title": "Cathedral Light",
-        "mood": "Deep organ-like ambience, wide stone reverb",
-        "bpm": 52,
-        "bars": 42,
-        "chords": [CHORDS[n] for n in ("C", "Am", "F", "G", "C", "Am", "F", "G")],
-        "pad": 0.32, "bass": 0.12, "piano": 0.08, "strings": 0.10, "lift": 0.0,
-        "piano_pattern": [(0.0, 0, 0.7), (2.5, 3, 0.4)],
-        "piano_skip": 3,
-        "reverb": 4.2, "wet": 0.62, "brightness": 0.42, "damp": 0.1,
-    },
     "piano-worship-01": {
         "title": "Piano Worship",
         "mood": "Solo felt piano, gentle arpeggios",
@@ -407,13 +385,26 @@ def main() -> int:
             print(f"[music]   {ogg_path.name}: {metrics['durationSeconds']}s, "
                   f"{ogg_path.stat().st_size / 1048576:.2f} MB, seam {metrics['loopSeamDelta']}")
 
+    # Keep licensed tracks that this synthesiser does not generate (for example
+    # the Mixkit catalog) so re-rendering never wipes the wider music library.
     order = list(TRACKS.keys())
-    tracks = [by_id[i] for i in order if i in by_id]
+    merged = []
+    seen = set()
+    for track in existing.get("tracks", []):
+        track_id = track.get("id")
+        if track_id in TRACKS:
+            if track_id in by_id:
+                merged.append(by_id[track_id])
+                seen.add(track_id)
+        elif track.get("file") and (OUT_DIR / track["file"]).exists():
+            merged.append(track)
+    merged.extend(by_id[i] for i in order if i in by_id and i not in seen)
+    tracks = merged
     manifest = {
         "description": "Original ambient worship instrumentals for Christian Prayer Live.",
         "generatedBy": "scripts/generate_music.py",
-        "license": "CC0 1.0 (public domain dedication) - synthesised from scratch, no samples",
-        "notes": "No vocals, no percussion. Each file loops seamlessly on a circular timeline.",
+        "license": "Generated tracks: CC0 1.0. Other tracks keep their existing license metadata.",
+        "notes": "No vocals, no percussion. Generated files loop seamlessly on a circular timeline.",
         "defaultVolume": 0.1,
         "duckedVolume": 0.035,
         "tracks": tracks,
