@@ -59,11 +59,31 @@ async function main() {
   check('background catalog discovered', catalog.backgrounds.length >= 10, `${catalog.backgrounds.length} images`);
   const categories = ['cathedral', 'church', 'cross', 'bible', 'candles', 'jesus', 'backgrounds'];
   check('required categories present', categories.every((category) => catalog.categories.includes(category)), catalog.categories.join(', '));
-  const firstBackground = catalog.backgrounds[0];
+  check('safe mode annotates every background', catalog.backgrounds.every((image) => image.copyright?.status));
+  const eligibleBackgrounds = catalog.backgrounds.filter((image) => image.copyright?.eligible);
+  const blockedBackground = catalog.backgrounds.find((image) => !image.copyright?.eligible);
+  check('safe mode has eligible backgrounds', eligibleBackgrounds.length > 0, `${eligibleBackgrounds.length} eligible`);
+  check('safe mode has blocked backgrounds to inspect', Boolean(blockedBackground), blockedBackground?.copyright?.status);
+
+  const safety = await rpc('copyright.safety');
+  check('copyright safe mode defaults on', safety.safeMode === true);
+  check('safe mode reports eligible broadcast assets', safety.counts.eligible > 0, `${safety.counts.eligible} eligible`);
+  check('safe mode reports blocked broadcast assets', safety.counts.blocked > 0, `${safety.counts.blocked} blocked`);
+  check('safe mode counts match the pool', safety.counts.eligible + safety.counts.blocked === safety.counts.total,
+    `${safety.counts.eligible} + ${safety.counts.blocked} = ${safety.counts.total}`);
+  check('attribution is available for eligible assets', Array.isArray(safety.attribution));
+
+  const firstBackground = eligibleBackgrounds[0] || catalog.backgrounds[0];
   const backgroundResponse = await fetch(`${BASE}${firstBackground.url}`);
   check('background image served locally', backgroundResponse.status === 200 && backgroundResponse.headers.get('content-type')?.startsWith('image/'));
   const overlayResponse = await fetch(`${BASE}/assets/christian/overlays/golden-light-rays.png`);
   check('overlay assets served locally', overlayResponse.status === 200);
+
+  // A NEEDS_REVIEW / UNKNOWN background must never be selectable while safe mode is on.
+  if (blockedBackground) {
+    const blocked = await rpc('stage.setBackground', { url: blockedBackground.url }).then(() => false).catch(() => true);
+    check('safe mode rejects a blocked background', blocked, blockedBackground.copyright.status);
+  }
 
   // 4. Background selection
   const initialBackground = state.settings.background.current;
@@ -71,9 +91,19 @@ async function main() {
   check('manual background change', changed.image?.url === firstBackground.url);
   const afterChange = await rpc('temple.getState');
   check('state reflects background change', afterChange.settings.background.current === firstBackground.url);
+  const rotated = await rpc('stage.nextBackground');
+  check('background rotation only selects eligible images', rotated.image?.copyright?.eligible === true, rotated.image?.copyright?.status);
   if (initialBackground && initialBackground !== firstBackground.url) {
     await rpc('stage.setBackground', { url: initialBackground });
   }
+
+  // 4b. Safe mode off is an explicit admin-only bypass, then restored immediately.
+  const bypass = await rpc('copyright.setSafeMode', { enabled: false });
+  check('safe mode can be turned off explicitly', bypass.safeMode === false);
+  check('safe mode off exposes all selectable assets', bypass.counts.selectable === bypass.counts.total,
+    `${bypass.counts.selectable}/${bypass.counts.total}`);
+  const restored = await rpc('copyright.setSafeMode', { enabled: true });
+  check('safe mode can be restored', restored.safeMode === true && restored.counts.blocked > 0);
 
   // 5. Prayer requests
   await rpc('prayer.clear');

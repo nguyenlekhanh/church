@@ -212,6 +212,31 @@ The generator uses only `numpy` plus `ffmpeg` (for Opus encoding), rewrites only
 
 ---
 
+## Copyright and licensing audit
+
+The dashboard includes an evidence-based **Copyright & Licensing** panel and a **SCAN COPYRIGHT & REFRESH REPORT** button. The scanner walks only the fixed project asset directories, hashes every file, joins it to the existing source/license records, and refreshes:
+
+- [docs/COPYRIGHT_AUDIT.md](docs/COPYRIGHT_AUDIT.md) — full music/image inventory, evidence, permissions and unresolved questions.
+- [config/copyright-manifest.json](config/copyright-manifest.json) — machine-readable manifest, with a backup at `config/copyright-manifest.backup.json`.
+- [docs/ASSET_ATTRIBUTION.md](docs/ASSET_ATTRIBUTION.md) — copy-ready image credits and music courtesy credits.
+- `public/copyright-audit.json` — the dashboard's read-only copy, so the panel also works before a server restart.
+
+The current audit covers 23 music files (21 active + 2 archived), 24 active Christian images, 12 legacy `public/assets` files and 33 documentation/reference images. Statuses are deliberately conservative: CC BY-SA images and documentation captures are **NEEDS_REVIEW**, not cleared, and files with no provenance are **UNKNOWN**.
+
+### Copyright Safe Broadcast Mode
+
+**Copyright Safe Mode is ON by default.** Automatic background rotation, scene matching, manual background selection, music playback and track changes accept only assets whose manifest entry is **VERIFIED**, is an **active broadcast** asset, and has all four permissions (`commercial`, `livestream`, `tiktok`, `obs`) recorded as allowed. The local file must also exist. A missing manifest entry is blocked; the filename or folder never upgrades an asset.
+
+- **30 eligible broadcast assets:** 6 rotatable backgrounds, 3 fixed stage overlays and 21 music tracks.
+- **15 blocked backgrounds:** all CC BY-SA cathedral/church/Bible/cross images. Their files and manifests are untouched; they simply are not selected while safe mode is on.
+- The OBS page re-checks `/copyright-audit.json` client-side, logs every skip reason, and falls back to an eligible image instead of showing a blocked one.
+- If no eligible background exists, the stage clears safely; if no eligible track exists, music stops and the selection is paused.
+- Only an explicit admin toggle (`copyright.setSafeMode`) can turn safe mode off. Turning it off does not change any asset status.
+
+> A local scan does not prove ownership. This is an inventory and evidence report, not legal advice. Model, property and publicity releases are outside a copyright license; see the unresolved questions in the audit report.
+
+---
+
 ## Automated live show
 
 The prayer room runs itself. A repeating program alternates short segments so the stream always has something gentle happening, and the host can override any part of it from the dashboard.
@@ -428,12 +453,13 @@ All original RPC method names still work. User-facing labels changed; endpoint n
 | Bible quiz | `quiz.status`, `quiz.update`, `quiz.next`, `quiz.reveal`, `quiz.answer` |
 | Gifts | `gift.update` (announce / TTS toggles) |
 | Prayer congregation | `congregation.get`, `congregation.update`, `congregation.reset`, `congregation.demo`, `congregation.demoClear`, `congregation.demoEvent` |
+| Copyright audit / safe mode | `copyright.get`, `copyright.scan`, `copyright.safety`, `copyright.setSafeMode` |
 | TikTok | `live.connect`, `live.disconnect`, `live.status`, `live.setAutoSim` |
 | Settings / health | `settings.get`, `settings.update`, `health.check` |
 
 Internal ritual names (`burnIncense`, `strikeWoodenFish`, `drawFortune`) are retained only for wire compatibility. Every label, message and visual shown to viewers is Christian.
 
-WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `music.library.updated`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end`, `congregation.state` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
+WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `music.library.updated`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end`, `congregation.state`, `copyright.updated` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
 
 Legacy state fields (`totalIncense`, `woodenFishHits`, `fortuneCount`, `offerings.lotus`, …) are still present alongside the new Christian counters.
 

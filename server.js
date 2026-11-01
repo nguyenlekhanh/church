@@ -27,6 +27,8 @@ const { ShowProgram, PRAYER_THEMES } = require('./lib/show');
 const { QuizEngine, QUESTIONS: QUIZ_QUESTIONS } = require('./lib/quiz');
 const { MusicLibrary } = require('./lib/music-library');
 const { Congregation } = require('./lib/congregation');
+const { CopyrightAudit } = require('./lib/copyright-audit');
+const { BroadcastSafety } = require('./lib/broadcast-safety');
 
 const CONFIG = loadConfig();
 const PORT = CONFIG.port || 3000;
@@ -37,6 +39,9 @@ const LEGACY_STATE_FILE = path.join(DATA_DIR, 'merit-state.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const CHRISTIAN_ASSETS_DIR = path.join(PUBLIC_DIR, 'assets', 'christian');
 const ASSET_MANIFEST_FILE = path.join(CHRISTIAN_ASSETS_DIR, 'asset-manifest.json');
+const copyrightAudit = new CopyrightAudit({ root: __dirname });
+const broadcastSafety = new BroadcastSafety({ root: __dirname });
+let broadcastSafeMode = true;
 
 fs.mkdirSync(TTS_CACHE_DIR, { recursive: true });
 
@@ -310,9 +315,11 @@ function loadBackgroundImages() {
   const images = found.map(({ relative }) => {
     const meta = manifest.get(relative) || {};
     const folder = relative.includes('/') ? relative.split('/')[0] : 'backgrounds';
+    const url = `/assets/christian/${relative}`;
     return {
-      url: `/assets/christian/${relative}`,
+      url,
       path: relative,
+      copyright: broadcastSafety.image(url, { safeMode: broadcastSafeMode }),
       category: folder,
       title: String(meta.title || path.basename(relative, path.extname(relative)))
         .replace(/\.(jpe?g|png|webp)$/i, '')
@@ -362,10 +369,10 @@ const MUSIC = {
 
 function applyMusicCatalog(catalog) {
   if (!catalog) return MUSIC;
-  MUSIC.tracks = catalog.tracks;
-  MUSIC.allTracks = catalog.allTracks;
-  MUSIC.byId = catalog.byId;
-  MUSIC.libraryById = catalog.libraryById;
+  MUSIC.tracks = broadcastSafety.annotateMusic(catalog.tracks, broadcastSafeMode);
+  MUSIC.allTracks = broadcastSafety.annotateMusic(catalog.allTracks, broadcastSafeMode);
+  MUSIC.byId = new Map(MUSIC.tracks.map((track) => [track.id, track]));
+  MUSIC.libraryById = new Map(MUSIC.allTracks.map((track) => [track.id, track]));
   MUSIC.manifest = catalog.manifest;
   MUSIC.categories = catalog.categories;
   MUSIC.defaultVolume = catalog.defaultVolume;
@@ -375,21 +382,45 @@ function applyMusicCatalog(catalog) {
   return MUSIC;
 }
 
+function isMusicEligible(track) {
+  if (!track) return false;
+  return broadcastSafety.music(track.file || track.url, { safeMode: broadcastSafeMode }).eligible;
+}
+
+function playableMusicTracks() {
+  return MUSIC.tracks.filter((track) => !broadcastSafeMode || isMusicEligible(track));
+}
+
 applyMusicCatalog(MUSIC_LIBRARY.readCatalog());
 
 const BACKGROUND_LAYER_FILES = ['golden-light-rays.png', 'gold-bokeh-particles.png', 'soft-vignette.png']
   .map((file) => `/assets/christian/overlays/${file}`)
   .filter((url) => fs.existsSync(path.join(PUBLIC_DIR, url.replace('/assets/', 'assets/'))));
 
+// Fixed stage overlays are broadcast assets too, but they are never part of rotation.
+const OVERLAY_IMAGES = BACKGROUND_LAYER_FILES.map((url) => ({
+  url,
+  path: url.replace('/assets/christian/', ''),
+  category: 'overlays',
+  title: path.basename(url, path.extname(url)).replace(/_/g, ' ')
+}));
+
 // ============================================================================
 // 4. STATE
 // ============================================================================
 function defaultSettings() {
-  const firstBackground = BACKGROUNDS.images.find((img) => img.path.includes('cathedral-01'))
-    || BACKGROUNDS.images.find((img) => img.category === 'cathedral')
-    || BACKGROUNDS.images.find((img) => img.path.includes('church-02'))
-    || BACKGROUNDS.images[0];
+  const eligibleBackgrounds = BACKGROUNDS.images.filter((img) => img.copyright?.eligible);
+  const firstBackground = eligibleBackgrounds.find((img) => img.path.includes('cathedral-01'))
+    || eligibleBackgrounds.find((img) => img.category === 'cathedral')
+    || eligibleBackgrounds.find((img) => img.path.includes('church-02'))
+    || eligibleBackgrounds[0]
+    || null;
+  const configuredTrack = MUSIC.byId.get(CONFIG.backgroundMusic.track);
+  const defaultTrack = configuredTrack && isMusicEligible(configuredTrack)
+    ? configuredTrack.id
+    : (MUSIC.tracks.find(isMusicEligible)?.id || '');
   return {
+    copyrightSafeMode: true,
     ttsEnabled: CONFIG.tts.enabled,
     ttsLanguage: CONFIG.language.default,
     enVoice: defaultVoiceId(VOICES, CONFIG, 'en'),
@@ -401,9 +432,7 @@ function defaultSettings() {
       enabled: CONFIG.backgroundMusic.enabled,
       volume: CONFIG.backgroundMusic.volume,
       duckVolume: CONFIG.backgroundMusic.duckVolume,
-      track: MUSIC.byId.has(CONFIG.backgroundMusic.track)
-        ? CONFIG.backgroundMusic.track
-        : (MUSIC.tracks[0]?.id || ''),
+      track: defaultTrack,
       autoplay: CONFIG.backgroundMusic.autoplay,
       shuffle: CONFIG.backgroundMusic.shuffle,
       repeat: CONFIG.backgroundMusic.repeat,
@@ -522,18 +551,54 @@ function loadState() {
 }
 
 const state = loadState();
+broadcastSafeMode = state.settings.copyrightSafeMode !== false;
+applyMusicCatalog(MUSIC_LIBRARY.readCatalog());
+BACKGROUNDS.images = broadcastSafety.annotateImages(BACKGROUNDS.images, broadcastSafeMode);
 
-// Repair a saved background that no longer exists on disk.
-if (BACKGROUNDS.images.length > 0 && !BACKGROUNDS.images.some((img) => img.url === state.settings.background.current)) {
+// Repair a saved background that is missing or blocked by Copyright Safe Mode.
+const savedBackground = BACKGROUNDS.images.find((img) => img.url === state.settings.background.current);
+const eligibleBackground = BACKGROUNDS.images.find((img) => img.copyright?.eligible);
+if (broadcastSafeMode) {
+  if (!savedBackground || !savedBackground.copyright?.eligible) {
+    state.settings.background.current = eligibleBackground?.url || '';
+  }
+} else if (BACKGROUNDS.images.length > 0 && !savedBackground) {
   state.settings.background.current = BACKGROUNDS.images[0].url;
 }
 if (state.settings.background.category !== 'all' && !BACKGROUNDS.categories.includes(state.settings.background.category)) {
   state.settings.background.category = 'all';
 }
+// A category made entirely of blocked assets cannot drive an automatic rotation.
+if (broadcastSafeMode && state.settings.background.category !== 'all') {
+  const hasEligible = BACKGROUNDS.images.some(
+    (img) => img.category === state.settings.background.category && img.copyright?.eligible
+  );
+  if (!hasEligible) state.settings.background.category = 'all';
+}
 
-// Repair a saved music track that is no longer in the manifest.
-if (state.settings.music && !MUSIC.byId.has(state.settings.music.track) && MUSIC.tracks.length > 0) {
-  state.settings.music.track = MUSIC.tracks[0].id;
+// Repair a saved music track that is missing, disabled or blocked.
+if (state.settings.music) {
+  const savedTrack = MUSIC.byId.get(state.settings.music.track);
+  if (!savedTrack) {
+    const playable = playableMusicTracks();
+    state.settings.music.track = playable[0]?.id || '';
+    if (!state.settings.music.track) state.settings.music.paused = true;
+  } else if (broadcastSafeMode && !isMusicEligible(savedTrack)) {
+    const playable = playableMusicTracks();
+    state.settings.music.track = playable[0]?.id || '';
+    if (!state.settings.music.track) state.settings.music.paused = true;
+  }
+}
+
+// Broadcast eligibility summary: blocked media stays on disk and in the audit.
+if (broadcastSafeMode) {
+  const eligibleBackgrounds = BACKGROUNDS.images.filter((img) => img.copyright?.eligible).length;
+  const eligibleTracks = MUSIC.allTracks.filter((track) => track.copyright?.eligible).length;
+  console.log(
+    `[Copyright] Safe Mode ON — ${eligibleBackgrounds}/${BACKGROUNDS.images.length} backgrounds and ${eligibleTracks}/${MUSIC.allTracks.length} music files are eligible for broadcast.`
+  );
+} else {
+  console.warn('[Copyright] Safe Mode OFF — blocked assets can be selected explicitly by an administrator.');
 }
 
 // Prayer congregation is live-session state only: nothing is written to disk.
@@ -816,12 +881,22 @@ function getPublicState() {
     show: showPayload(),
     quiz: quizPayload(),
     congregation: congregation.getPayload(),
+    copyright: (() => {
+      const audit = copyrightAudit.get();
+      return audit ? { generatedAt: audit.generatedAt, counts: audit.counts } : null;
+    })(),
+    copyrightSafeMode: broadcastSafeMode,
+    broadcastSafety: (() => {
+      const safety = getBroadcastSafetyPayload();
+      return { available: safety.available, counts: safety.counts };
+    })(),
     tiktok: state.tiktok,
     tts: ttsManager ? ttsManager.getStatus() : { ready: false, status: 'starting' },
     backgrounds: {
       current: state.settings.background.current,
       categories: BACKGROUNDS.categories,
-      count: BACKGROUNDS.images.length
+      count: BACKGROUNDS.images.length,
+      eligibleCount: BACKGROUNDS.images.filter((img) => img.copyright?.eligible).length
     },
     // ---- Legacy aliases (unchanged keys for existing RPC/OBS consumers) ----
     totalIncense: state.candlesLit,
@@ -1287,27 +1362,42 @@ const Rituals = {
 // ============================================================================
 // 9. SETTINGS / BACKGROUND ROTATION
 // ============================================================================
+function getBroadcastSafetyPayload() {
+  return broadcastSafety.summary(
+    [...BACKGROUNDS.images, ...OVERLAY_IMAGES],
+    MUSIC.allTracks,
+    broadcastSafeMode
+  );
+}
+
 function musicCatalogPayload() {
   return {
-    tracks: MUSIC.tracks,
+    tracks: playableMusicTracks(),
     library: MUSIC.allTracks,
     settings: state.settings.music,
-    meta: MUSIC.libraryMeta
+    meta: MUSIC.libraryMeta,
+    safety: getBroadcastSafetyPayload()
   };
 }
 
-/** If the selected track vanished or was disabled, move to the first playable one. */
+/** If the selected track vanished, was disabled or was blocked, move to the first playable one. */
 function repairMusicSelection() {
   const music = state.settings.music;
   if (!music) return false;
-  if (MUSIC.tracks.length === 0) {
-    if (!music.track) return false;
+  const playable = playableMusicTracks();
+  if (playable.length === 0) {
+    if (!music.track && music.paused) return false;
     music.track = '';
     music.paused = true;
     return true;
   }
-  if (MUSIC.byId.has(music.track)) return false;
-  music.track = MUSIC.tracks[0].id;
+  if (playable.some((track) => track.id === music.track)) return false;
+  if (music.track) {
+    const previous = MUSIC.libraryById.get(music.track) || MUSIC.byId.get(music.track);
+    const decision = broadcastSafety.music(previous?.file || music.track, { safeMode: broadcastSafeMode });
+    console.warn('[Copyright] Skipped music selection:', music.track, decision.reason);
+  }
+  music.track = playable[0].id;
   return true;
 }
 
@@ -1333,7 +1423,7 @@ function publishMusicLibrary(payload) {
 }
 
 function musicOrder() {
-  return MUSIC.tracks.map((track) => track.id);
+  return playableMusicTracks().map((track) => track.id);
 }
 
 function pickAdjacentTrack(direction = 1) {
@@ -1360,6 +1450,13 @@ function patchMusicSettings(patch = {}) {
     if (id && !MUSIC.byId.has(id)) {
       if (MUSIC.libraryById.has(id)) throw new Error('That track is disabled. Enable it in the music library first.');
       throw new Error(`Unknown music track: ${id}`);
+    }
+    if (id) {
+      const decision = broadcastSafety.music(MUSIC.byId.get(id)?.file || id, { safeMode: broadcastSafeMode });
+      if (!decision.selectable) {
+        console.warn('[Copyright] Blocked music selection:', id, decision.reason);
+        throw new Error(`Copyright Safe Mode blocks that track: ${decision.reason}`);
+      }
     }
     if (id) {
       music.track = id;
@@ -1394,6 +1491,53 @@ function applyMusicUpdate(params = {}) {
   broadcastNotification('music.state', { settings: state.settings.music });
   broadcastNotification('temple.state', getPublicState());
   return musicCatalogPayload();
+}
+
+function refreshBroadcastMedia() {
+  applyMusicCatalog(MUSIC_LIBRARY.readCatalog());
+  BACKGROUNDS.images = broadcastSafety.annotateImages(BACKGROUNDS.images, broadcastSafeMode);
+
+  if (broadcastSafeMode && state.settings.background.category !== 'all') {
+    const hasEligible = BACKGROUNDS.images.some(
+      (img) => img.category === state.settings.background.category && img.copyright?.eligible
+    );
+    if (!hasEligible) state.settings.background.category = 'all';
+  }
+
+  if (broadcastSafeMode) {
+    const current = BACKGROUNDS.images.find((img) => img.url === state.settings.background.current);
+    if (!current || !current.copyright?.eligible) {
+      const fallback = BACKGROUNDS.images.find((img) => img.copyright?.eligible);
+      if (fallback) {
+        setCurrentBackground(fallback.url, { rotate: false });
+      } else {
+        console.warn('[Copyright] No verified background available; clearing the stage background.');
+        state.settings.background.current = '';
+        broadcastNotification('stage.background', {
+          url: '',
+          clear: true,
+          reason: 'No VERIFIED background is available in Copyright Safe Mode'
+        });
+      }
+    }
+  }
+
+  const musicChanged = repairMusicSelection();
+  configureBackgroundRotation();
+  saveState();
+  if (musicChanged) broadcastNotification('music.state', { settings: state.settings.music });
+  return getBroadcastSafetyPayload();
+}
+
+function applyCopyrightSafeMode(enabled) {
+  const next = Boolean(enabled);
+  if (next === broadcastSafeMode) return getBroadcastSafetyPayload();
+  state.settings.copyrightSafeMode = next;
+  broadcastSafeMode = next;
+  const safety = refreshBroadcastMedia();
+  broadcastNotification('copyright.updated', { safety });
+  broadcastNotification('temple.state', getPublicState());
+  return safety;
 }
 
 function applySettingsUpdate(params = {}) {
@@ -1431,9 +1575,15 @@ function applySettingsUpdate(params = {}) {
       settings.background.transitionMs = clampNumber(bg.transitionMs, 400, 6000, settings.background.transitionMs);
     }
     if (typeof bg.category === 'string') {
-      const category = bg.category === 'all' || BACKGROUNDS.categories.includes(bg.category)
+      let category = bg.category === 'all' || BACKGROUNDS.categories.includes(bg.category)
         ? bg.category
         : settings.background.category;
+      if (broadcastSafeMode && category !== 'all') {
+        const hasEligible = BACKGROUNDS.images.some(
+          (img) => img.category === category && img.copyright?.eligible
+        );
+        if (!hasEligible) category = 'all';
+      }
       settings.background.category = category;
     }
     if (typeof bg.sceneMatch === 'boolean') settings.background.sceneMatch = bg.sceneMatch;
@@ -1685,9 +1835,14 @@ function applySceneForCue(cue) {
   const category = sceneCategoryForCue(cue);
   if (!category || !BACKGROUNDS.categories.includes(category)) return;
   const pool = BACKGROUNDS.images.filter(
-    (image) => image.category === category && image.url !== background.current
+    (image) => image.category === category
+      && image.url !== background.current
+      && (!broadcastSafeMode || image.copyright?.eligible)
   );
-  if (pool.length === 0) return;
+  if (pool.length === 0) {
+    console.warn('[Copyright] No eligible background in scene category:', category);
+    return;
+  }
   const next = pool[Math.floor(Math.random() * pool.length)];
   background.category = category;
   setCurrentBackground(next.url, { rotate: true });
@@ -1698,10 +1853,14 @@ let backgroundTimer = null;
 
 function backgroundPool() {
   const category = state.settings.background.category;
-  const pool = category === 'all'
-    ? BACKGROUNDS.images
-    : BACKGROUNDS.images.filter((img) => img.category === category);
-  return pool.length > 0 ? pool : BACKGROUNDS.images;
+  const eligible = (img) => !broadcastSafeMode || img.copyright?.eligible;
+  let pool = category === 'all'
+    ? BACKGROUNDS.images.filter(eligible)
+    : BACKGROUNDS.images.filter((img) => img.category === category && eligible(img));
+  if (pool.length === 0 && category !== 'all') {
+    pool = BACKGROUNDS.images.filter(eligible);
+  }
+  return pool;
 }
 
 function pickNextBackground() {
@@ -1720,6 +1879,11 @@ function pickNextBackground() {
 function setCurrentBackground(url, { rotate = false } = {}) {
   const image = BACKGROUNDS.images.find((img) => img.url === url);
   if (!image) throw new Error('Background image not found');
+  const decision = broadcastSafety.image(image.url, { safeMode: broadcastSafeMode });
+  if (!decision.selectable) {
+    console.warn('[Copyright] Blocked background:', image.url, decision.reason);
+    throw new Error(`Copyright Safe Mode blocks that background: ${decision.reason}`);
+  }
   state.settings.background.current = image.url;
   saveState();
   broadcastNotification('stage.background', {
@@ -1739,7 +1903,7 @@ function configureBackgroundRotation() {
     backgroundTimer = null;
   }
   const bg = state.settings.background;
-  if (!bg.enabled || BACKGROUNDS.images.length < 2) return;
+  if (!bg.enabled || backgroundPool().length < 2) return;
   const intervalMs = clampNumber(bg.intervalSeconds, 10, 3600, 60) * 1000;
   backgroundTimer = setInterval(() => {
     try {
@@ -2347,7 +2511,8 @@ async function handleRpcCall(method, params = {}) {
         backgrounds: BACKGROUNDS.images,
         categories: BACKGROUNDS.categories,
         overlays: BACKGROUND_LAYER_FILES,
-        settings: state.settings.background
+        settings: state.settings.background,
+        safety: getBroadcastSafetyPayload()
       };
     case 'stage.setBackground': {
       const image = setCurrentBackground(String(params.url || params.path || ''));
@@ -2451,6 +2616,26 @@ async function handleRpcCall(method, params = {}) {
     // ---- Gift announcements ----
     case 'gift.update':
       return applyGiftUpdate(params);
+
+    // ---- Copyright & licensing audit (fixed directories only) ----
+    case 'copyright.get':
+      return copyrightAudit.summary();
+    case 'copyright.safety':
+      return getBroadcastSafetyPayload();
+    case 'copyright.setSafeMode':
+      return applyCopyrightSafeMode(params.enabled !== false);
+    case 'copyright.scan': {
+      const result = await copyrightAudit.scan();
+      const safety = refreshBroadcastMedia();
+      broadcastNotification('copyright.updated', {
+        generatedAt: result.generatedAt,
+        counts: result.counts,
+        changes: result.changes,
+        safety
+      });
+      broadcastNotification('temple.state', getPublicState());
+      return { ...result, safety };
+    }
 
     // ---- Prayer congregation (live-session only, never persisted) ----
     case 'congregation.get':
@@ -2564,18 +2749,23 @@ app.get('/api/backgrounds', (_req, res) => res.json({
   backgrounds: BACKGROUNDS.images,
   categories: BACKGROUNDS.categories,
   overlays: BACKGROUND_LAYER_FILES,
-  settings: state.settings.background
+  settings: state.settings.background,
+  safety: getBroadcastSafetyPayload()
 }));
 app.get('/api/messages', (_req, res) => res.json(messageLibrary.snapshot()));
 app.get('/api/music', (_req, res) => res.json(musicCatalogPayload()));
+app.get('/api/copyright', (_req, res) => res.json(copyrightAudit.summary()));
 app.get('/api/health', (_req, res) => res.json({
   ok: true,
   brand: BRAND,
   tts: ttsManager.getStatus(),
   tiktok: state.tiktok,
   backgrounds: BACKGROUNDS.images.length,
+  eligibleBackgrounds: BACKGROUNDS.images.filter((img) => img.copyright?.eligible).length,
   musicTracks: MUSIC.tracks.length,
   musicLibrary: MUSIC.libraryMeta,
+  copyrightSafeMode: broadcastSafeMode,
+  broadcastSafety: getBroadcastSafetyPayload().counts,
   music: state.settings.music,
   congregation: congregation.getPayload().counts
 }));

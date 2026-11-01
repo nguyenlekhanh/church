@@ -8,7 +8,7 @@
  *  - AMEN / devotional / gift animations
  *  - quick control dock for narration, backgrounds and prayer moderation
  */
-(function () {
+(async function () {
   'use strict';
 
   const params = new URLSearchParams(window.location.search);
@@ -124,6 +124,80 @@
   document.getElementById('btnUnlockAudio')?.addEventListener('click', unlockAudio);
 
   /* ---------------------------------------------------------------------
+     Copyright safe broadcast mode
+     --------------------------------------------------------------------- */
+  let copyrightSafeMode = true;
+  const copyrightIndex = {
+    ready: false,
+    images: new Map(),
+    music: new Map()
+  };
+
+  function permissionAllowed(value) {
+    const text = String(value || '').toLowerCase();
+    return text.startsWith('allowed') && !text.includes('unverified') && !text.includes('not permitted');
+  }
+
+  function copyrightAllowed(entry) {
+    return Boolean(entry)
+      && entry.status === 'VERIFIED'
+      && entry.usage === 'broadcast'
+      && ['commercial', 'livestream', 'tiktok', 'obs'].every((field) => permissionAllowed(entry[field]));
+  }
+
+  function imageCopyrightKey(url) {
+    const pathValue = String(url || '').split('?')[0];
+    const marker = '/assets/christian/';
+    const index = pathValue.indexOf(marker);
+    if (index < 0) return '';
+    return `public/assets/christian/${pathValue.slice(index + marker.length)}`;
+  }
+
+  function musicCopyrightKey(trackOrFile) {
+    const file = String(trackOrFile?.file || trackOrFile || '').split('?')[0];
+    if (!file) return '';
+    return `public/assets/christian/audio/${file.split('/').pop()}`;
+  }
+
+  function copyrightImageCheck(url) {
+    if (!copyrightSafeMode) return { eligible: true, reason: 'Copyright Safe Mode is off' };
+    if (!copyrightIndex.ready) return { eligible: false, reason: 'Copyright manifest is not available' };
+    const entry = copyrightIndex.images.get(imageCopyrightKey(url));
+    if (!entry) return { eligible: false, reason: 'No copyright manifest entry' };
+    if (!copyrightAllowed(entry)) return { eligible: false, reason: `Blocked: ${entry.status || 'UNKNOWN'}` };
+    return { eligible: true, reason: 'VERIFIED' };
+  }
+
+  function copyrightMusicCheck(track) {
+    if (!copyrightSafeMode) return { eligible: true, reason: 'Copyright Safe Mode is off' };
+    if (!copyrightIndex.ready) return { eligible: false, reason: 'Copyright manifest is not available' };
+    const entry = copyrightIndex.music.get(musicCopyrightKey(track));
+    if (!entry) return { eligible: false, reason: 'No copyright manifest entry' };
+    if (!copyrightAllowed(entry)) return { eligible: false, reason: `Blocked: ${entry.status || 'UNKNOWN'}` };
+    return { eligible: true, reason: 'VERIFIED' };
+  }
+
+  async function loadCopyrightIndex() {
+    try {
+      const response = await fetch('/copyright-audit.json', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      copyrightIndex.images = new Map();
+      copyrightIndex.music = new Map();
+      (data.assets || []).forEach((asset) => {
+        if (!asset?.file) return;
+        if (asset.kind === 'image') copyrightIndex.images.set(asset.file, asset);
+        if (asset.kind === 'music') copyrightIndex.music.set(asset.file, asset);
+      });
+      copyrightIndex.ready = true;
+      console.info(`[Copyright] Manifest loaded — ${copyrightIndex.images.size} images, ${copyrightIndex.music.size} music entries`);
+    } catch (error) {
+      copyrightIndex.ready = false;
+      console.warn('[Copyright] Manifest unavailable; blocking background and music selection:', error.message);
+    }
+  }
+
+  /* ---------------------------------------------------------------------
      Backgrounds
      --------------------------------------------------------------------- */
   const bgLayers = [document.getElementById('bgLayerA'), document.getElementById('bgLayerB')];
@@ -143,8 +217,25 @@
     });
   }
 
+  function clearBackground(reason = '') {
+    bgLayers.forEach((layer) => {
+      layer.classList.remove('visible');
+      layer.removeAttribute('src');
+    });
+    backgroundUrl = '';
+    updateBackgroundCredit(null);
+    if (reason) console.warn('[Copyright] Background cleared:', reason);
+  }
+
   function applyBackground(url, transitionMs = 1600) {
     if (!url || url === backgroundUrl) return;
+    const decision = copyrightImageCheck(url);
+    if (!decision.eligible) {
+      console.warn('[Copyright] Background blocked:', url, decision.reason);
+      const fallback = backgroundList.find((item) => copyrightImageCheck(item.url).eligible);
+      if (fallback && fallback.url !== backgroundUrl) applyBackground(fallback.url, 0);
+      return;
+    }
     const outgoing = bgLayers[activeBgLayer];
     const incoming = bgLayers[1 - activeBgLayer];
     const meta = backgroundMeta(url);
@@ -184,6 +275,13 @@
 
   function setInitialBackground(url) {
     if (!url || backgroundUrl) return;
+    const decision = copyrightImageCheck(url);
+    if (!decision.eligible) {
+      console.warn('[Copyright] Initial background blocked:', url, decision.reason);
+      const fallback = backgroundList.find((item) => copyrightImageCheck(item.url).eligible);
+      if (!fallback) return;
+      url = fallback.url;
+    }
     const layer = bgLayers[activeBgLayer];
     layer.style.transitionDuration = '0ms';
     layer.src = url;
@@ -201,8 +299,13 @@
     try {
       const res = await fetch('/api/backgrounds');
       const data = await res.json();
-      backgroundList = Array.isArray(data.backgrounds) ? data.backgrounds : [];
-      backgroundCategories = Array.isArray(data.categories) ? data.categories : [];
+      const allBackgrounds = Array.isArray(data.backgrounds) ? data.backgrounds : [];
+      backgroundList = allBackgrounds.filter((item) => copyrightImageCheck(item.url).eligible);
+      const blocked = allBackgrounds.filter((item) => !copyrightImageCheck(item.url).eligible);
+      if (blocked.length > 0) {
+        console.info(`[Copyright] ${blocked.length} background(s) hidden from the OBS stage.`);
+      }
+      backgroundCategories = [...new Set(backgroundList.map((item) => item.category).filter(Boolean))];
       // The first background may render before this catalog arrives; credit it now.
       if (backgroundUrl) updateBackgroundCredit(backgroundMeta(backgroundUrl));
 
@@ -966,7 +1069,10 @@
     try {
       const res = await fetch('/api/music');
       const data = await res.json();
-      musicTracks = Array.isArray(data.tracks) ? data.tracks : [];
+      const allTracks = Array.isArray(data.tracks) ? data.tracks : [];
+      musicTracks = allTracks.filter((track) => copyrightMusicCheck(track).eligible);
+      const blocked = allTracks.length - musicTracks.length;
+      if (blocked > 0) console.info(`[Copyright] ${blocked} music track(s) hidden from the OBS stage.`);
       audio.setMusicPlaylist(musicTracks);
       if (currentState?.settings?.music) audio.applyMusicSettings(currentState.settings.music);
       else if (data.settings) audio.applyMusicSettings(data.settings);
@@ -1289,6 +1395,13 @@
     if (!state) return;
     const firstState = !currentState;
     currentState = state;
+    const nextSafeMode = state.settings?.copyrightSafeMode !== false;
+    if (nextSafeMode !== copyrightSafeMode) {
+      copyrightSafeMode = nextSafeMode;
+      console.info(`[Copyright] Safe Mode ${copyrightSafeMode ? 'enabled' : 'disabled'} by server setting.`);
+      loadBackgroundCatalog();
+      loadMusicCatalog();
+    }
 
     renderStats(state);
     renderChat(state.chatFeed);
@@ -1380,7 +1493,8 @@
           }
           break;
         case 'stage.background':
-          if (data?.url) applyBackground(data.url, data.transitionMs ?? 1600);
+          if (data?.clear) clearBackground(data.reason || 'No eligible background');
+          else if (data?.url) applyBackground(data.url, data.transitionMs ?? 1600);
           break;
         case 'tts.status':
           if (currentState) currentState.tts = data;
@@ -1397,7 +1511,7 @@
           break;
         case 'music.library.updated':
           if (Array.isArray(data?.tracks)) {
-            musicTracks = data.tracks;
+            musicTracks = data.tracks.filter((track) => copyrightMusicCheck(track).eligible);
             audio.setMusicPlaylist(musicTracks);
           }
           if (data?.settings) {
@@ -1653,8 +1767,9 @@
   defaultPrayerTexts();
   renderEventFeed([]);
   renderStageActivity([]);
-  loadBackgroundCatalog();
-  loadMusicCatalog();
+  await loadCopyrightIndex();
+  await loadBackgroundCatalog();
+  await loadMusicCatalog();
   // OBS browser sources can autoplay; regular browsers stay silent until a click.
   audio.ensureContext();
   connectWebSocket();

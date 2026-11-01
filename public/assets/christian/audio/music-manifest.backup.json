@@ -414,27 +414,8 @@
       "catalogUrl": "https://mixkit.co/free-stock-music/cinematic/",
       "attribution": "Not required. Courtesy credit: Eugenio Mininni via Mixkit.",
       "enabled": true
-    },
-    {
-      "id": "zz-smoke-deleted",
-      "title": "Zz Smoke Deleted",
-      "file": "zz-smoke-deleted.mp3",
-      "category": "Uncategorized",
-      "artist": "",
-      "mood": "",
-      "bpm": null,
-      "durationSeconds": 146.95,
-      "format": "MP3 · 256 kb/s · 48 kHz · stereo",
-      "bytes": 4702534,
-      "license": "Unknown — verify the license before publishing",
-      "source": "Local file (added outside the catalog)",
-      "sourceUrl": "",
-      "attribution": "",
-      "titleSource": "filename",
-      "enabled": true,
-      "addedAt": "2026-11-01T03:28:18.831Z"
     }
   ],
   "licenseSummary": "Original tracks: CC0 1.0. Mixkit tracks: Mixkit Stock Music Free License (see docs/music-sources.md).",
-  "updatedAt": "2026-11-01T03:28:18.831Z"
+  "updatedAt": "2026-11-01T04:38:04.330Z"
 }

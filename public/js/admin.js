@@ -16,6 +16,8 @@
   const previewVolumes = new Map();
   let currentShow = null;
   let currentQuiz = null;
+  let copyrightData = null;
+  let copyrightSafety = null;
   let messagesLoaded = false;
   let assetSignature = '';
 
@@ -120,6 +122,7 @@
     renderChat(state.chatFeed);
     renderActivity(state.recentEvents);
     markActiveBackground(state.settings?.background?.current);
+    if (copyrightData) renderCopyright(copyrightData);
   }
 
   function renderOverview(state, queueCount) {
@@ -243,6 +246,7 @@
     const settings = currentState?.settings?.music || {};
     const player = $('musicTestAudio');
     if (previewTrackId === track.id && player && !player.paused) return 'Previewing';
+    if (!musicTrackEligible(track)) return 'Copyright blocked';
     if (!track.enabled) return 'Disabled';
     if (settings.track === track.id) return settings.paused ? 'Selected · paused' : 'Playing on stage';
     return 'Ready';
@@ -283,6 +287,7 @@
       row.dataset.id = track.id;
       if (settings.track === track.id) row.classList.add('is-current');
       if (!track.enabled) row.classList.add('is-disabled');
+      if (!musicTrackEligible(track)) row.classList.add('is-blocked');
 
       const head = document.createElement('div');
       head.className = 'music-track-head';
@@ -311,6 +316,10 @@
       preview.className = 'btn mini';
       preview.dataset.action = 'preview';
       preview.textContent = previewTrackId === track.id && $('musicTestAudio') && !$('musicTestAudio').paused ? 'Pause' : 'Preview';
+      if (!musicTrackEligible(track)) {
+        preview.disabled = true;
+        preview.title = 'Blocked by Copyright Safe Mode. Manual review or safe-mode off is required.';
+      }
       const toggle = document.createElement('button');
       toggle.type = 'button';
       toggle.className = 'btn mini';
@@ -493,6 +502,10 @@
   function previewMusicTrack(track) {
     const player = $('musicTestAudio');
     if (!player || !track) return;
+    if (!musicTrackEligible(track)) {
+      setMusicRescanStatus('Blocked by Copyright Safe Mode. Manual review or safe-mode off is required.', 'error');
+      return;
+    }
     if (previewTrackId === track.id && !player.paused) {
       player.pause();
       previewTrackId = null;
@@ -1028,6 +1041,32 @@
   /* ---------------------------------------------------------------------
      Backgrounds
      --------------------------------------------------------------------- */
+  function backgroundAssetForUrl(url) {
+    const marker = '/assets/christian/';
+    const index = String(url || '').indexOf(marker);
+    if (index < 0) return null;
+    const file = `public/assets/christian/${url.slice(index + marker.length)}`;
+    return (copyrightData?.assets || []).find((asset) => asset.kind === 'image' && asset.file === file) || null;
+  }
+
+  function backgroundSafety(item) {
+    if (item?.copyright && typeof item.copyright.eligible === 'boolean') return item.copyright;
+    const asset = backgroundAssetForUrl(item?.url);
+    if (!asset) return { eligible: false, status: 'UNKNOWN', reason: 'No copyright manifest entry' };
+    return {
+      eligible: isBroadcastEligible(asset),
+      status: asset.status,
+      reason: isBroadcastEligible(asset) ? 'VERIFIED' : `Blocked: ${asset.status}`
+    };
+  }
+
+  function renderBackgroundHint() {
+    const hint = $('backgroundHint');
+    if (!hint) return;
+    const eligibleCount = backgrounds.filter((item) => backgroundSafety(item).eligible).length;
+    hint.textContent = `${eligibleCount} eligible · ${backgrounds.length} total images · ${categories.length} categories`;
+  }
+
   function renderBackgroundCatalog() {
     const grid = $('backgroundGrid');
     if (!grid) return;
@@ -1036,11 +1075,12 @@
     grid.innerHTML = '';
 
     list.forEach((item) => {
+      const safety = backgroundSafety(item);
       const card = document.createElement('button');
       card.type = 'button';
-      card.className = 'bg-card';
+      card.className = `bg-card${safety.eligible ? '' : ' is-blocked'}`;
       card.dataset.url = item.url;
-      card.title = `${item.title}\n${item.license}\n${item.attribution || ''}`;
+      card.title = `${item.title}\n${item.license}\n${item.attribution || ''}\n${safety.eligible ? 'Copyright Safe Mode: eligible' : `Copyright Safe Mode: blocked — ${safety.reason}`}`;
 
       const image = document.createElement('img');
       image.loading = 'lazy';
@@ -1054,11 +1094,17 @@
       title.textContent = item.title || item.path;
       const meta = document.createElement('span');
       meta.className = 'bg-card-meta';
-      meta.textContent = `${item.category} · ${item.license}`;
+      meta.textContent = safety.eligible
+        ? `${item.category} · ${item.license}`
+        : `${item.category} · BLOCKED · ${safety.status}`;
       copy.append(title, meta);
 
       card.append(image, copy);
       card.addEventListener('click', async () => {
+        if (safeModeEnabled() && !safety.eligible) {
+          reportError('Background blocked', new Error(`${safety.reason}. Manual review is required.`));
+          return;
+        }
         try {
           await callRpc('stage.setBackground', { url: item.url });
           markActiveBackground(item.url);
@@ -1110,8 +1156,7 @@
         select.value = current;
       }
 
-      const hint = $('backgroundHint');
-      if (hint) hint.textContent = `${backgrounds.length} licensed local images · ${categories.length} categories`;
+      renderBackgroundHint();
       renderBackgroundCatalog();
       if (data.settings?.current) markActiveBackground(data.settings.current);
     } catch (error) {
@@ -1141,6 +1186,305 @@
     el.textContent = text;
     el.className = `save-status ${isError ? 'error' : 'ok'}`;
   }
+
+  /* ---------------------------------------------------------------------
+     Copyright & licensing inventory
+     --------------------------------------------------------------------- */
+  function copyrightStatusClass(status) {
+    if (status === 'VERIFIED') return 'verified';
+    if (status === 'REJECTED') return 'rejected';
+    if (status === 'NEEDS_REVIEW') return 'review';
+    return 'unknown';
+  }
+
+  function copyrightUsage(asset) {
+    if (asset.kind === 'music') {
+      if (asset.usage === 'archive') return 'Archived music';
+      return asset.enabled === false ? 'Playlist · disabled' : 'Active playlist';
+    }
+    if (asset.usage === 'legacy') return 'Legacy public/assets';
+    if (asset.usage === 'documentation') return 'Documentation capture';
+    if (asset.usage === 'reference') return 'Reference only';
+    return 'Active image';
+  }
+
+  function permissionAllowed(value) {
+    const text = String(value || '').toLowerCase();
+    return text.startsWith('allowed') && !text.includes('unverified') && !text.includes('not permitted');
+  }
+
+  function isBroadcastEligible(asset) {
+    if (!asset || asset.status !== 'VERIFIED' || asset.usage !== 'broadcast') return false;
+    return ['commercial', 'livestream', 'tiktok', 'obs'].every((field) => permissionAllowed(asset[field]));
+  }
+
+  function safeModeEnabled() {
+    return currentState?.settings?.copyrightSafeMode !== false;
+  }
+
+  function musicTrackEligible(track) {
+    if (!safeModeEnabled()) return true;
+    if (track?.copyright && typeof track.copyright.eligible === 'boolean') return track.copyright.eligible;
+    return true;
+  }
+
+  function renderCopyrightList() {
+    const list = $('copyrightList');
+    if (!list) return;
+    const query = String($('copyrightSearch')?.value || '').trim().toLowerCase();
+    const kind = $('copyrightKind')?.value || 'all';
+    const status = $('copyrightStatus')?.value || 'all';
+    const visibility = $('copyrightVisibility')?.value || 'all';
+    const assets = Array.isArray(copyrightData?.assets) ? copyrightData.assets : [];
+    const visible = assets.filter((asset) => {
+      if (kind !== 'all' && asset.kind !== kind) return false;
+      if (status !== 'all' && asset.status !== status) return false;
+      if (visibility === 'broadcast' && asset.usage !== 'broadcast') return false;
+      if (visibility === 'eligible' && !isBroadcastEligible(asset)) return false;
+      if (visibility === 'blocked' && !(asset.usage === 'broadcast' && !isBroadcastEligible(asset))) return false;
+      if (!query) return true;
+      return `${asset.title} ${asset.file} ${asset.artist} ${asset.license} ${asset.source}`.toLowerCase().includes(query);
+    });
+
+    list.innerHTML = '';
+    if (visible.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = assets.length === 0
+        ? 'No audit data yet. Run the scan after the audit module is loaded.'
+        : 'No assets match these filters.';
+      list.appendChild(empty);
+      return;
+    }
+
+    visible.forEach((asset) => {
+      const item = document.createElement('article');
+      item.className = 'copyright-item';
+
+      const head = document.createElement('div');
+      head.className = 'copyright-item-head';
+      const title = document.createElement('strong');
+      title.textContent = asset.title || asset.file;
+      const file = document.createElement('span');
+      file.className = 'copyright-file';
+      file.textContent = asset.file;
+      const badge = document.createElement('span');
+      badge.className = `copyright-status ${copyrightStatusClass(asset.status)}`;
+      badge.textContent = String(asset.status || 'UNKNOWN').replace('_', ' ');
+      head.append(title, file, badge);
+      if (asset.usage === 'broadcast') {
+        const safeBadge = document.createElement('span');
+        safeBadge.className = `copyright-status ${isBroadcastEligible(asset) ? 'eligible' : 'blocked'}`;
+        safeBadge.textContent = isBroadcastEligible(asset) ? 'ELIGIBLE' : 'BLOCKED';
+        head.appendChild(safeBadge);
+      }
+
+      const meta = document.createElement('div');
+      meta.className = 'copyright-meta';
+      const addMeta = (label, value) => {
+        if (!value) return;
+        const span = document.createElement('span');
+        const b = document.createElement('b');
+        b.textContent = `${label}: `;
+        span.append(b, document.createTextNode(String(value)));
+        meta.appendChild(span);
+      };
+      addMeta('Type', copyrightUsage(asset));
+      addMeta('License', asset.license || 'Unknown');
+      addMeta('Author', asset.artist || 'Unknown');
+      addMeta('Commercial', asset.commercial || 'Unverified');
+      addMeta('TikTok', asset.tiktok || 'Unverified');
+      addMeta('Attribution', asset.attributionRequired === true ? 'Required' : asset.attributionRequired === false ? 'Not required' : 'Unknown');
+      if (asset.usage === 'broadcast') {
+        addMeta('Safe mode', isBroadcastEligible(asset) ? 'Eligible' : 'Blocked');
+        addMeta('Manual review', asset.status === 'VERIFIED' ? 'Cleared by audit' : 'Required');
+      }
+      if (asset.sourceUrl && /^https?:\/\//i.test(asset.sourceUrl)) {
+        const span = document.createElement('span');
+        const b = document.createElement('b');
+        b.textContent = 'Source: ';
+        const link = document.createElement('a');
+        link.href = asset.sourceUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Open original';
+        span.append(b, link);
+        meta.appendChild(span);
+      }
+
+      const note = document.createElement('div');
+      note.className = 'copyright-note';
+      note.textContent = asset.statusReason || asset.notes || '';
+      if (asset.notes && asset.statusReason && asset.notes !== asset.statusReason) {
+        note.textContent += ` ${asset.notes}`;
+      }
+
+      item.append(head, meta, note);
+      list.appendChild(item);
+    });
+  }
+
+  function renderCopyright(data) {
+    if (!data) return;
+    copyrightData = data;
+    const totals = data.totals || data.counts || {};
+    const counts = {
+      cpMusic: totals.music ?? 0,
+      cpImages: totals.images ?? 0,
+      cpVerified: totals.verified ?? 0,
+      cpReview: totals.needsReview ?? 0,
+      cpRejected: totals.rejected ?? 0,
+      cpUnknown: totals.unknown ?? 0
+    };
+    Object.entries(counts).forEach(([id, value]) => {
+      const el = $(id);
+      if (el) el.textContent = formatNumber(value);
+    });
+
+    const assets = Array.isArray(data.assets) ? data.assets : [];
+    const activeBroadcast = assets.filter((asset) => asset.usage === 'broadcast');
+    const eligible = activeBroadcast.filter(isBroadcastEligible);
+    const blocked = activeBroadcast.filter((asset) => !isBroadcastEligible(asset));
+    copyrightSafety = { eligible, blocked, safeMode: safeModeEnabled() };
+    const safeCounts = {
+      safeEligible: eligible.length,
+      safeBlocked: blocked.length,
+      safeSelectable: safeModeEnabled() ? eligible.length : activeBroadcast.length
+    };
+    Object.entries(safeCounts).forEach(([id, value]) => {
+      const el = $(id);
+      if (el) el.textContent = formatNumber(value);
+    });
+    const safeToggle = $('copyrightSafeMode');
+    if (safeToggle && document.activeElement !== safeToggle) safeToggle.checked = safeModeEnabled();
+    const safeBadge = $('safeModeBadge');
+    if (safeBadge) {
+      safeBadge.textContent = safeModeEnabled() ? 'Protected' : 'Off';
+      safeBadge.className = `badge ${safeModeEnabled() ? 'ok' : 'error'}`;
+    }
+    const safeNote = $('safeReviewNote');
+    if (safeNote) {
+      safeNote.textContent = blocked.length
+        ? `${blocked.length} active assets are blocked; manual review is required before they can be eligible.`
+        : 'All active broadcast assets are currently eligible.';
+    }
+    const badge = $('copyrightBadge');
+    if (badge) {
+      badge.textContent = totals.total ? `${formatNumber(totals.total)} assets` : 'No data';
+      badge.className = `badge ${totals.needsReview ? '' : 'ok'}`;
+    }
+    const summary = $('copyrightSummary');
+    if (summary) {
+      const generated = data.generatedAt
+        ? new Date(data.generatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+        : 'not scanned';
+      summary.textContent = `${formatNumber(totals.total || 0)} assets · ${formatNumber(totals.verified || 0)} verified · ${formatNumber(totals.needsReview || 0)} need review · ${formatNumber(totals.unknown || 0)} unknown · ${generated}`;
+    }
+    renderCopyrightList();
+    renderAttributionPreview();
+  }
+
+  function renderAttributionPreview() {
+    const preview = $('attributionPreview');
+    const button = $('btnAttributionPreview');
+    if (!preview) return;
+    const eligible = copyrightSafety?.eligible || [];
+    const credits = eligible.filter((asset) => asset.attributionRequired);
+    const lines = credits.length
+      ? credits.map((asset) => `• ${asset.title} — ${asset.artist} — ${asset.license}${asset.sourceUrl ? ` — ${asset.sourceUrl}` : ''}`)
+      : ['No attribution is required for the currently eligible assets.'];
+    preview.textContent = lines.join('\n');
+    if (button) button.textContent = preview.hidden ? 'Attribution preview' : 'Hide attribution';
+  }
+
+  function setCopyrightStatus(text, tone = '') {
+    const el = $('copyrightScanStatus');
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.tone = tone;
+  }
+
+  async function loadCopyrightAudit() {
+    let lastError = null;
+    for (const url of ['/copyright-audit.json', '/api/copyright']) {
+      try {
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`${url} returned ${response.status}`);
+        const data = await response.json();
+        if (!data || !Array.isArray(data.assets)) throw new Error(`${url} returned no asset list`);
+        renderCopyright(data);
+        renderBackgroundCatalog();
+        renderBackgroundHint();
+        setCopyrightStatus('Audit data loaded. Scan again after adding or replacing files.');
+        return data;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    const badge = $('copyrightBadge');
+    if (badge) {
+      badge.textContent = 'Unavailable';
+      badge.className = 'badge error';
+    }
+    setCopyrightStatus(`Could not load audit data: ${lastError?.message || 'unknown error'}`, 'error');
+    return null;
+  }
+
+  $('btnCopyrightScan')?.addEventListener('click', async () => {
+    const button = $('btnCopyrightScan');
+    if (button) button.disabled = true;
+    setCopyrightStatus('Scanning local audio and image folders…');
+    try {
+      const result = await callRpc('copyright.scan');
+      renderCopyright(result);
+      const changes = result?.changes || {};
+      const totals = result?.totals || {};
+      setCopyrightStatus(
+        `Scan complete — ${formatNumber(totals.total || 0)} assets: ${formatNumber(changes.added || 0)} added, ` +
+        `${formatNumber(changes.removed || 0)} removed, ${formatNumber(changes.changed || 0)} changed. Reports refreshed.`
+      );
+    } catch (error) {
+      setCopyrightStatus(
+        `Scanner unavailable: ${error.message}. The audit data above is the last written report; restart the server to load the new RPC method.`,
+        'error'
+      );
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+
+  ['copyrightKind', 'copyrightStatus', 'copyrightVisibility'].forEach((id) => {
+    $(id)?.addEventListener('change', renderCopyrightList);
+  });
+  $('copyrightSearch')?.addEventListener('input', renderCopyrightList);
+
+  $('copyrightSafeMode')?.addEventListener('change', async (event) => {
+    const enabled = Boolean(event.target.checked);
+    try {
+      const result = await callRpc('copyright.setSafeMode', { enabled });
+      if (currentState) {
+        currentState.settings = { ...(currentState.settings || {}), copyrightSafeMode: enabled };
+      }
+      if (result?.counts) {
+        copyrightSafety = { ...(copyrightSafety || {}), safeMode: enabled };
+      }
+      renderCopyright(copyrightData);
+      setCopyrightStatus(`Copyright Safe Mode ${enabled ? 'enabled' : 'disabled'} by administrator.`);
+    } catch (error) {
+      event.target.checked = !enabled;
+      setCopyrightStatus(
+        `Could not change Copyright Safe Mode: ${error.message}. Restart the server to load the new control.`,
+        'error'
+      );
+    }
+  });
+
+  $('btnAttributionPreview')?.addEventListener('click', () => {
+    const preview = $('attributionPreview');
+    if (!preview) return;
+    preview.hidden = !preview.hidden;
+    renderAttributionPreview();
+  });
 
   /* ---------------------------------------------------------------------
      WebSocket updates
@@ -1191,6 +1535,8 @@
       } else if (method === 'congregation.state') {
         if (currentState) currentState.congregation = params;
         renderCongregation(params);
+      } else if (method === 'copyright.updated') {
+        loadCopyrightAudit();
       } else if (method === 'show.cue') {
         const cue = params?.cue;
         if (cue) {
@@ -1766,6 +2112,7 @@
   loadInitialState();
   loadBackgroundCatalog();
   loadMusicCatalog();
+  loadCopyrightAudit();
   if (!messagesLoaded) loadMessages();
   connectSocket();
 })();

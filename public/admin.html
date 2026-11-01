@@ -504,6 +504,81 @@
         <div class="save-status" id="messagesStatus"></div>
       </section>
 
+      <!-- Copyright & licensing -->
+      <section class="panel span-2" id="copyright">
+        <div class="panel-head">
+          <h2>Copyright &amp; Licensing</h2>
+          <span class="badge" id="copyrightBadge">Loading</span>
+        </div>
+        <p class="note">
+          Evidence-based inventory of local music and image assets. A status describes only the recorded copyright evidence;
+          it is not legal clearance and does not cover model, property or publicity releases.
+        </p>
+
+        <div class="safe-mode-banner">
+          <label class="switch">
+            <input type="checkbox" id="copyrightSafeMode" />
+            <span>Copyright Safe Mode</span>
+          </label>
+          <span class="badge ok" id="safeModeBadge">Protected</span>
+          <span class="note" id="safeModeNote">Only VERIFIED broadcast assets may be selected while safe mode is on.</span>
+        </div>
+
+        <div class="copyright-stats safe-stats">
+          <div class="copyright-stat verified"><strong id="safeEligible">0</strong><span>Eligible assets</span></div>
+          <div class="copyright-stat rejected"><strong id="safeBlocked">0</strong><span>Blocked assets</span></div>
+          <div class="copyright-stat"><strong id="safeSelectable">0</strong><span>Selectable now</span></div>
+        </div>
+
+        <div class="safe-mode-actions">
+          <button class="btn" id="btnAttributionPreview">Attribution preview</button>
+          <span class="note small" id="safeReviewNote">Manual review is required for every blocked asset.</span>
+        </div>
+
+        <div class="copyright-stats">
+          <div class="copyright-stat"><strong id="cpMusic">0</strong><span>Music files</span></div>
+          <div class="copyright-stat"><strong id="cpImages">0</strong><span>Image files</span></div>
+          <div class="copyright-stat verified"><strong id="cpVerified">0</strong><span>Verified</span></div>
+          <div class="copyright-stat review"><strong id="cpReview">0</strong><span>Needs review</span></div>
+          <div class="copyright-stat rejected"><strong id="cpRejected">0</strong><span>Rejected</span></div>
+          <div class="copyright-stat unknown"><strong id="cpUnknown">0</strong><span>Unknown</span></div>
+        </div>
+
+        <div class="copyright-toolbar">
+          <button class="btn gold" id="btnCopyrightScan">SCAN COPYRIGHT &amp; REFRESH REPORT</button>
+          <select class="music-filter" id="copyrightKind" aria-label="Filter by asset type">
+            <option value="all">All assets</option>
+            <option value="music">Music</option>
+            <option value="image">Images</option>
+          </select>
+          <select class="music-filter" id="copyrightStatus" aria-label="Filter by license status">
+            <option value="all">All statuses</option>
+            <option value="VERIFIED">Verified</option>
+            <option value="NEEDS_REVIEW">Needs review</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="UNKNOWN">Unknown</option>
+          </select>
+          <select class="music-filter" id="copyrightVisibility" aria-label="Filter by broadcast eligibility">
+            <option value="all">All catalog assets</option>
+            <option value="broadcast">Active broadcast assets</option>
+            <option value="eligible">Eligible only</option>
+            <option value="blocked">Blocked only</option>
+          </select>
+          <input class="music-search" type="search" id="copyrightSearch" placeholder="Search filename, author, license…" autocomplete="off" />
+          <span class="music-summary" id="copyrightSummary">Loading audit…</span>
+        </div>
+        <p class="note music-rescan-status" id="copyrightScanStatus" role="status"></p>
+
+        <div class="copyright-list" id="copyrightList"><div class="empty">Loading the licensing inventory…</div></div>
+        <pre class="attribution-preview" id="attributionPreview" hidden></pre>
+
+        <p class="note small">
+          Reports: <code>docs/COPYRIGHT_AUDIT.md</code> · Manifest: <code>config/copyright-manifest.json</code> · Credits:
+          <code>docs/ASSET_ATTRIBUTION.md</code>. Local scanning finds files and compares recorded evidence; it cannot prove
+          copyright ownership or grant clearance.
+        </p>
+      </section>
+
       <!-- RPC console -->
       <section class="panel span-2" id="rpc">
         <div class="panel-head">
