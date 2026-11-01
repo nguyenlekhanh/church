@@ -1834,3 +1834,318 @@ body.demo-mode .demo-badge { display: block; }
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+
+/* ==========================================================================
+   Prayer congregation — cathedral nave, one seat per real TikTok joiner
+   ========================================================================== */
+.congregation-scene {
+  position: absolute;
+  top: 932px;
+  left: 26px;
+  right: 26px;
+  height: 328px;
+  z-index: 14;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+.congregation-scene[hidden] { display: none !important; }
+
+.congregation-scene::before {
+  content: '';
+  position: absolute;
+  inset: 30px -12px 0;
+  border-radius: 50% 50% 6% 6% / 24% 24% 6% 6%;
+  background: linear-gradient(180deg, rgba(3, 8, 15, 0) 0%, rgba(3, 8, 15, 0.2) 24%, rgba(3, 8, 15, 0.46) 100%);
+}
+
+.congregation-floor {
+  position: absolute;
+  inset: 44px -26px -6px;
+  border-radius: 50% 50% 4% 4% / 22% 22% 4% 4%;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 202, 128, 0.2), rgba(255, 180, 90, 0.05) 42%, transparent 68%),
+    repeating-linear-gradient(180deg, rgba(104, 58, 32, 0.16) 0 2px, transparent 2px 22px),
+    linear-gradient(180deg, rgba(40, 20, 12, 0.04) 0%, rgba(63, 31, 17, 0.32) 38%, rgba(31, 14, 8, 0.72) 100%);
+}
+
+/* A soft red aisle runner between the rows, leading toward the altar. */
+.congregation-floor::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 150px;
+  height: 74%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent, rgba(126, 44, 40, 0.24) 55%, rgba(112, 36, 34, 0.34));
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+}
+
+.congregation-floor::after {
+  content: '';
+  position: absolute;
+  inset: 34% 2% 0;
+  background: repeating-linear-gradient(180deg, rgba(150, 92, 52, 0.18) 0 2px, transparent 2px 24px);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 55%);
+  mask-image: linear-gradient(180deg, transparent, #000 55%);
+  transform: perspective(420px) rotateX(24deg);
+  transform-origin: 50% 0;
+}
+
+.congregation-head {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.congregation-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 3.6px;
+  color: rgba(232, 200, 122, 0.86);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+}
+
+.congregation-mark { font-size: 17px; color: var(--gold-bright); }
+
+.congregation-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.congregation-count {
+  padding: 4px 14px;
+  border: 1px solid rgba(232, 200, 122, 0.32);
+  border-radius: 999px;
+  background: rgba(5, 11, 21, 0.45);
+  font-size: 15px;
+  letter-spacing: 2.2px;
+  color: var(--ivory);
+}
+
+.congregation-rows {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.congregation-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: var(--row-h, 60px);
+}
+
+.participant {
+  position: relative;
+  width: var(--slot-w, 96px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  transition: opacity 0.6s ease;
+}
+
+.participant.leaving { opacity: 0; }
+
+.participant-aura {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: calc(var(--fig-h, 52px) * 1.6);
+  height: calc(var(--fig-h, 52px) * 1.6);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.participant-figure {
+  position: relative;
+  display: block;
+  width: calc(var(--fig-h, 52px) * 0.84);
+  height: var(--fig-h, 52px);
+  transform-origin: 50% 100%;
+}
+
+.participant-figure svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: prayerSway 9.5s ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
+}
+
+.participant.arriving .participant-figure {
+  animation: kneelIn 1.15s cubic-bezier(0.22, 0.7, 0.28, 1) both;
+}
+
+.participant-name {
+  max-width: calc(var(--slot-w, 96px) - 6px);
+  margin-top: 1px;
+  font-size: 11.5px;
+  line-height: 1.15;
+  letter-spacing: 0.2px;
+  color: rgba(247, 236, 214, 0.74);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.participant.demo .participant-name {
+  font-size: 10px;
+  letter-spacing: 0;
+  color: rgba(255, 205, 195, 0.86);
+}
+
+/* Prefix, not suffix: the DEMO label stays visible even when a long name clips. */
+.participant.demo .participant-name::before {
+  content: 'DEMO ';
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: rgba(255, 168, 158, 0.95);
+}
+
+.congregation-scene.no-names .participant-name { display: none; }
+
+.participant-prayer {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--fig-h, 52px) + 2px);
+  transform: translateX(-50%) translateY(8px);
+  font-size: 15px;
+  line-height: 1;
+  color: #ffe6ae;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  text-shadow: 0 0 12px rgba(255, 214, 150, 0.85);
+}
+
+.participant.has-prayer .participant-prayer {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  animation: prayerFloat 4.2s ease-in-out infinite;
+}
+
+.congregation-demo {
+  display: none;
+  padding: 4px 12px;
+  border: 1px solid rgba(240, 163, 155, 0.55);
+  border-radius: 999px;
+  background: rgba(96, 32, 32, 0.6);
+  color: #ffd9d4;
+  font-size: 11.5px;
+  letter-spacing: 2.2px;
+  text-indent: 2.2px;
+  white-space: nowrap;
+}
+
+.congregation-scene.has-demo .congregation-demo { display: inline-flex; }
+
+.congregation-empty {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 128px;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 19px;
+  letter-spacing: 0.4px;
+  color: rgba(232, 214, 180, 0.5);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.congregation-scene.is-empty .congregation-empty { opacity: 1; }
+
+.participant.amen .participant-aura {
+  opacity: 1;
+  background: radial-gradient(circle, rgba(255, 219, 150, 0.6) 0%, rgba(255, 190, 100, 0.2) 45%, transparent 70%);
+  animation: amenPulse 2.8s ease-out;
+}
+
+.participant.amen .participant-figure svg {
+  animation: prayerSway 9.5s ease-in-out infinite, amenFigure 2.8s ease-out;
+}
+
+.participant.gift .participant-aura {
+  opacity: 1;
+  background: radial-gradient(circle, rgba(255, 236, 190, 0.7) 0%, rgba(255, 180, 80, 0.26) 46%, transparent 72%);
+  animation: giftBurst 3.4s ease-out;
+}
+
+.participant.gift::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 58%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffe9b8;
+  box-shadow: 22px -16px 0 -1px #ffd98a, -24px -10px 0 -1px #ffeec2, 8px -34px 0 -1px #fff3d0;
+  animation: giftSparks 3.4s ease-out;
+}
+
+@keyframes kneelIn {
+  from { opacity: 0; transform: translateY(24px) scaleY(1.2) scaleX(0.94); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: translateY(0) scaleY(1) scaleX(1); }
+}
+
+@keyframes prayerSway {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-1.5px) rotate(0.7deg); }
+}
+
+@keyframes amenPulse {
+  0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  22% { opacity: 1; }
+  100% { transform: translateX(-50%) scale(1.3); opacity: 0; }
+}
+
+@keyframes amenFigure {
+  0%, 100% { filter: none; }
+  30% { filter: drop-shadow(0 0 14px rgba(255, 216, 150, 0.9)); }
+}
+
+@keyframes giftBurst {
+  0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateX(-50%) scale(1.4); opacity: 0; }
+}
+
+@keyframes giftSparks {
+  0% { transform: translateY(6px) scale(0.6); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateY(-16px) scale(1.1); opacity: 0; }
+}
+
+@keyframes prayerFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .participant-figure svg,
+  .participant.arriving .participant-figure { animation: none !important; }
+}

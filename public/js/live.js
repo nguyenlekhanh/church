@@ -63,6 +63,10 @@
   const prayerInvite = document.getElementById('prayerInvite');
   const prayerInviteTitle = document.getElementById('prayerInviteTitle');
   const prayerInviteSub = document.getElementById('prayerInviteSub');
+  const congregationScene = document.getElementById('congregationScene');
+  const congregationRows = document.getElementById('congregationRows');
+  const congregationCount = document.getElementById('congregationCount');
+  const congregationDemoBadge = document.getElementById('congregationDemoBadge');
 
   const particleEngine = new window.PrayerParticleEngine(document.getElementById('prayerCanvas'));
   const audio = new window.PrayerAudioEngine();
@@ -1093,6 +1097,192 @@
   }
 
   /* ---------------------------------------------------------------------
+     Prayer congregation — one reusable figure per seated viewer
+     --------------------------------------------------------------------- */
+  const CONGREGATION_SKIN = ['#f1d3b6', '#e3b88f', '#c98f63', '#a86c46', '#81512f', '#5f3a24'];
+  const CONGREGATION_ROBES = [
+    ['#2b3d59', '#1d2b40', '#3d5474'],
+    ['#3a3c44', '#272930', '#50535e'],
+    ['#5b2f36', '#412126', '#74414a'],
+    ['#2d433a', '#1f3029', '#456257'],
+    ['#b6a88d', '#95876e', '#d1c3a8'],
+    ['#465264', '#303a49', '#5d6d83'],
+    ['#5a4456', '#402f3d', '#756073'],
+    ['#4a382b', '#33261d', '#64503f']
+  ];
+  const CONGREGATION_HAIR = ['#241b17', '#151313', '#4a2c1d', '#6a5344', '#8b8177', '#c9b79a'];
+  const CONGREGATION_VEIL = ['#d9cebb', '#b8a68f', '#8f7f6d'];
+  const congregationElements = new Map();
+  const congregationTimers = new Map();
+  let congregationLayout = '';
+  let congregationColumns = 13;
+
+  function hashString(value) {
+    let hash = 2166136261;
+    const text = String(value || '');
+    for (let i = 0; i < text.length; i += 1) {
+      hash ^= text.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function congregationFigure(participant) {
+    const hash = hashString(`${participant.id}:${participant.name}`);
+    const skin = CONGREGATION_SKIN[hash % CONGREGATION_SKIN.length];
+    const robe = CONGREGATION_ROBES[(hash >>> 3) % CONGREGATION_ROBES.length];
+    const hair = CONGREGATION_HAIR[(hash >>> 7) % CONGREGATION_HAIR.length];
+    const veil = hash % 7 === 0 ? CONGREGATION_VEIL[(hash >>> 4) % CONGREGATION_VEIL.length] : null;
+    const headY = hash % 3 === 0 ? 20 : 18.2;
+    return `<svg viewBox="0 0 64 76" role="presentation" focusable="false" aria-hidden="true">
+      <ellipse cx="32" cy="71" rx="22" ry="4.2" fill="rgba(0,0,0,0.38)"/>
+      <path d="M13 54 Q32 47 51 54 L55 67 Q32 73 9 67 Z" fill="${robe[1]}"/>
+      <path d="M23 27 Q32 21 41 27 L46 55 Q32 62 18 55 Z" fill="${robe[0]}"/>
+      <path d="M23 27 Q32 22 41 27 Q37.5 31.5 32 31.5 Q26.5 31.5 23 27 Z" fill="${robe[2]}" opacity="0.55"/>
+      <path d="M21.5 37 Q18.5 46 22.5 50.5" stroke="${robe[1]}" stroke-width="6.5" stroke-linecap="round" fill="none"/>
+      <path d="M42.5 37 Q45.5 46 41.5 50.5" stroke="${robe[1]}" stroke-width="6.5" stroke-linecap="round" fill="none"/>
+      <circle cx="23" cy="51" r="3.1" fill="${skin}"/>
+      <circle cx="41" cy="51" r="3.1" fill="${skin}"/>
+      ${veil ? `<path d="M21.5 21 Q19 4.5 32 4 Q45 4.5 42.5 21 L45.5 36 Q38 29 32 29 Q26 29 18.5 36 Z" fill="${veil}" opacity="0.96"/>` : ''}
+      <circle cx="32" cy="${headY}" r="8.6" fill="${skin}"/>
+      <path d="M22.8 ${headY - 1} Q23.5 ${headY - 10} 32 ${headY - 10} Q40.5 ${headY - 10} 41.2 ${headY - 1} Q37 ${headY - 6} 32 ${headY - 6} Q27 ${headY - 6} 22.8 ${headY - 1} Z" fill="${hair}" opacity="${veil ? '0.55' : '1'}"/>
+      ${hash % 5 === 0 ? `<path d="M20 32 Q32 25 44 32 L46 40 Q32 34 18 40 Z" fill="${robe[2]}" opacity="0.22"/>` : ''}
+    </svg>`;
+  }
+
+  function createCongregationElement(participant) {
+    const element = document.createElement('div');
+    element.className = `participant${participant.source === 'demo' ? ' demo' : ''}`;
+    element.dataset.id = participant.id;
+    const hash = hashString(participant.id);
+    element.style.setProperty('--sway-delay', `${-((hash % 90) / 10).toFixed(1)}s`);
+    element.innerHTML = `<span class="participant-aura" aria-hidden="true"></span>
+      <span class="participant-prayer" aria-hidden="true">✝</span>
+      <span class="participant-figure">${congregationFigure(participant)}</span>
+      <span class="participant-name"></span>`;
+    element.querySelector('.participant-name').textContent = participant.name;
+    element.title = participant.name;
+    return element;
+  }
+
+  function buildCongregationRows(maxVisible) {
+    if (!congregationRows) return;
+    for (const timer of congregationTimers.values()) clearTimeout(timer);
+    congregationTimers.clear();
+    congregationRows.replaceChildren();
+    congregationElements.clear();
+    congregationLayout = String(maxVisible);
+    congregationColumns = 13;
+    const rows = Math.max(1, Math.ceil(maxVisible / congregationColumns));
+    const rowHeight = Math.floor(292 / rows);
+    for (let index = 0; index < rows; index += 1) {
+      const row = document.createElement('div');
+      row.className = 'congregation-row';
+      const scale = 0.72 + (rows > 1 ? (index / (rows - 1)) * 0.34 : 0.34);
+      row.style.setProperty('--row-h', `${rowHeight}px`);
+      row.style.setProperty('--fig-h', `${Math.min(64, Math.max(22, Math.round((rowHeight - 17) * scale)))}px`);
+      row.style.setProperty('--slot-w', `${Math.min(92, Math.floor(1040 / congregationColumns))}px`);
+      congregationRows.appendChild(row);
+    }
+  }
+
+  function syncCongregationMark(element, participant, kind, timestamp, durationMs) {
+    if (!timestamp) return;
+    const last = Number(element.dataset[`${kind}At`] || 0);
+    if (timestamp <= last) return;
+    element.dataset[`${kind}At`] = String(timestamp);
+    element.classList.remove(kind);
+    void element.offsetWidth;
+    element.classList.add(kind);
+    const key = `${participant.id}:${kind}`;
+    clearTimeout(congregationTimers.get(key));
+    congregationTimers.set(key, setTimeout(() => {
+      element.classList.remove(kind);
+      congregationTimers.delete(key);
+    }, durationMs));
+  }
+
+  function renderCongregation(payload) {
+    if (!congregationScene || !congregationRows || !payload?.settings) return;
+    const enabled = payload.settings.enabled !== false;
+    congregationScene.hidden = !enabled;
+    if (!enabled) return;
+
+    const maxVisible = Number(payload.settings.maxVisible) || 50;
+    if (congregationLayout !== String(maxVisible)) buildCongregationRows(maxVisible);
+    congregationScene.classList.toggle('no-names', payload.settings.showNames === false);
+
+    const participants = Array.isArray(payload.participants)
+      ? payload.participants.filter((participant) => participant && participant.seat !== null)
+      : [];
+    congregationScene.classList.toggle('is-empty', participants.length === 0);
+    const real = Number(payload.counts?.real) || 0;
+    if (congregationCount) congregationCount.textContent = `${real} PRAYING`;
+    const demo = Number(payload.counts?.demo) || 0;
+    congregationScene.classList.toggle('has-demo', demo > 0);
+    if (congregationDemoBadge && demo > 0) {
+      congregationDemoBadge.textContent = `DEMO PREVIEW · ${demo}`;
+    }
+
+    const seen = new Set();
+    for (const participant of participants) {
+      const rowIndex = Math.min(congregationRows.children.length - 1, Math.floor(participant.seat / congregationColumns));
+      const row = congregationRows.children[rowIndex];
+      if (!row) continue;
+      let element = congregationElements.get(participant.id);
+      const isNew = !element;
+      if (!element) {
+        element = createCongregationElement(participant);
+        congregationElements.set(participant.id, element);
+      }
+      if (element.parentElement !== row) row.appendChild(element);
+      const name = element.querySelector('.participant-name');
+      if (name && name.textContent !== participant.name) name.textContent = participant.name;
+      if (element.title !== participant.name) element.title = participant.name;
+      element.classList.toggle('demo', participant.source === 'demo');
+
+      syncCongregationMark(element, participant, 'amen', participant.marks?.amenAt, 2900);
+      syncCongregationMark(element, participant, 'gift', participant.marks?.giftAt, 3500);
+      const prayerAt = Number(participant.marks?.prayerAt) || 0;
+      const lastPrayer = Number(element.dataset.prayerAt || 0);
+      const prayerKey = `${participant.id}:prayer`;
+      if (prayerAt > lastPrayer) {
+        element.dataset.prayerAt = String(prayerAt);
+        clearTimeout(congregationTimers.get(prayerKey));
+        const remaining = Math.max(0, 120000 - (Date.now() - prayerAt));
+        if (remaining > 0) {
+          element.classList.add('has-prayer');
+          congregationTimers.set(prayerKey, setTimeout(() => {
+            element.classList.remove('has-prayer');
+            congregationTimers.delete(prayerKey);
+          }, remaining));
+        }
+      } else if (prayerAt === 0 || Date.now() - prayerAt >= 120000) {
+        element.classList.remove('has-prayer');
+      }
+
+      if (isNew) {
+        element.classList.add('arriving');
+        setTimeout(() => element.classList.remove('arriving'), 1200);
+      }
+      seen.add(participant.id);
+    }
+
+    for (const [id, element] of congregationElements) {
+      if (seen.has(id)) continue;
+      element.classList.add('leaving');
+      setTimeout(() => element.remove(), 620);
+      congregationElements.delete(id);
+      for (const [key, timer] of congregationTimers) {
+        if (key.startsWith(`${id}:`)) {
+          clearTimeout(timer);
+          congregationTimers.delete(key);
+        }
+      }
+    }
+  }
+
+  /* ---------------------------------------------------------------------
      State updates
      --------------------------------------------------------------------- */
   function updateState(state) {
@@ -1109,6 +1299,7 @@
     updateConnectionStatus(state);
     renderShow(state.show);
     renderQuiz(state.quiz);
+    renderCongregation(state.congregation);
     renderPrayerWall(state.prayerRequests);
     renderEventFeed(state.recentEvents);
     renderStageActivity(state.recentEvents);
@@ -1169,6 +1360,10 @@
           break;
         case 'prayer.state':
           if (data?.state) updateState(data.state);
+          break;
+        case 'congregation.state':
+          if (currentState) currentState.congregation = data;
+          renderCongregation(data);
           break;
         case 'prayer.hide': {
           const current = currentState?.currentPrayer;

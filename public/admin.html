@@ -263,6 +263,57 @@
         </p>
       </section>
 
+      <!-- Prayer congregation -->
+      <section class="panel span-2" id="congregation">
+        <div class="panel-head">
+          <h2>Prayer Congregation</h2>
+          <span class="badge" id="congregationBadge">Loading</span>
+        </div>
+        <p class="note">
+          Each real TikTok <strong>MEMBER</strong> join takes one seat in the cathedral nave. TikTok Live Connector has no
+          viewer-leave event, so seats are released only after the inactivity window — never by a fabricated exit.
+          Demo seats are clearly labelled and are never counted as viewers or used for real interactions.
+        </p>
+
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="congEnabled" />
+            <span>Show congregation</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="congShowNames" />
+            <span>Show usernames</span>
+          </label>
+          <label class="field compact">
+            <span>Inactive after (min)</span>
+            <input type="number" id="congInactivity" min="1" max="180" step="1" value="20" />
+          </label>
+          <label class="field compact">
+            <span>Maximum seats</span>
+            <input type="number" id="congMaxVisible" min="10" max="80" step="5" value="50" />
+          </label>
+          <button class="btn" id="btnCongDemo">Add 10 demo seats</button>
+          <button class="btn" id="btnCongDemoClear">Clear demo</button>
+          <button class="btn" id="btnCongReset">Reset congregation</button>
+          <button class="btn" id="btnCongDemoAmen">Demo AMEN</button>
+          <button class="btn" id="btnCongDemoPrayer">Demo prayer</button>
+          <button class="btn" id="btnCongDemoGift">Demo gift</button>
+        </div>
+
+        <div class="cong-summary">
+          <div class="cong-stat"><strong id="congReal">0</strong><span>Real viewers</span></div>
+          <div class="cong-stat"><strong id="congDemoCount">0</strong><span>Demo seats</span></div>
+          <div class="cong-stat"><strong id="congSeated">0 / 50</strong><span>Seats used</span></div>
+          <div class="cong-stat"><strong id="congIdle">20m</strong><span>Inactivity</span></div>
+        </div>
+
+        <div class="cong-roster" id="congregationRoster"><div class="empty">No participants yet.</div></div>
+        <p class="note small" id="congregationNote">
+          Seats are session-only and are not written to <code>data/prayer-state.json</code>. AMEN glows, approved-prayer symbols
+          and gift celebrations only animate participants seated from real TikTok events; demo events stay on demo seats.
+        </p>
+      </section>
+
       <!-- Background music -->
       <section class="panel span-2" id="music">
         <div class="panel-head">

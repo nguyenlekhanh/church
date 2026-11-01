@@ -280,7 +280,7 @@
       "sourceUrl": "https://assets.mixkit.co/music/839/839.mp3",
       "catalogUrl": "https://mixkit.co/free-stock-music/piano/",
       "attribution": "Not required. Courtesy credit: Michael Ramir C. via Mixkit.",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "skyline",
@@ -414,8 +414,27 @@
       "catalogUrl": "https://mixkit.co/free-stock-music/cinematic/",
       "attribution": "Not required. Courtesy credit: Eugenio Mininni via Mixkit.",
       "enabled": true
+    },
+    {
+      "id": "zz-smoke-deleted",
+      "title": "Zz Smoke Deleted",
+      "file": "zz-smoke-deleted.mp3",
+      "category": "Uncategorized",
+      "artist": "",
+      "mood": "",
+      "bpm": null,
+      "durationSeconds": 146.95,
+      "format": "MP3 · 256 kb/s · 48 kHz · stereo",
+      "bytes": 4702534,
+      "license": "Unknown — verify the license before publishing",
+      "source": "Local file (added outside the catalog)",
+      "sourceUrl": "",
+      "attribution": "",
+      "titleSource": "filename",
+      "enabled": true,
+      "addedAt": "2026-11-01T03:28:18.831Z"
     }
   ],
   "licenseSummary": "Original tracks: CC0 1.0. Mixkit tracks: Mixkit Stock Music Free License (see docs/music-sources.md).",
-  "updatedAt": "2026-11-01T02:44:31.770Z"
+  "updatedAt": "2026-11-01T03:28:18.831Z"
 }

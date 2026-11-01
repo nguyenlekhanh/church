@@ -115,6 +115,7 @@
     renderMusic(state.settings?.music);
     renderShow(state.show);
     renderEngagement(state.settings, state.quiz);
+    renderCongregation(state.congregation);
     renderPrayerQueue(state.prayerRequests, state.settings?.prayer);
     renderChat(state.chatFeed);
     renderActivity(state.recentEvents);
@@ -669,6 +670,94 @@
     renderShowLog(show.history);
   }
 
+  function renderCongregation(payload) {
+    if (!payload?.settings) return;
+    const settings = payload.settings;
+    const counts = payload.counts || {};
+    const enabled = settings.enabled !== false;
+
+    const badge = $('congregationBadge');
+    if (badge) {
+      const hasDemo = counts.demo > 0;
+      badge.textContent = !enabled
+        ? 'Hidden'
+        : counts.real > 0
+          ? `${counts.real} seated`
+          : hasDemo
+            ? `${counts.demo} demo`
+            : 'Waiting';
+      badge.className = `badge ${!enabled ? '' : counts.real > 0 ? 'ok' : hasDemo ? 'demo' : ''}`;
+    }
+
+    const setChecked = (id, value) => {
+      const el = $(id);
+      if (el && document.activeElement !== el) el.checked = Boolean(value);
+    };
+    setChecked('congEnabled', enabled);
+    setChecked('congShowNames', settings.showNames !== false);
+
+    const inactivity = $('congInactivity');
+    if (inactivity && document.activeElement !== inactivity) inactivity.value = String(settings.inactivityMinutes || 20);
+    const maxVisible = $('congMaxVisible');
+    if (maxVisible && document.activeElement !== maxVisible) maxVisible.value = String(settings.maxVisible || 50);
+
+    const setText = (id, value) => {
+      const el = $(id);
+      if (el) el.textContent = String(value);
+    };
+    setText('congReal', formatNumber(counts.real || 0));
+    setText('congDemoCount', formatNumber(counts.demo || 0));
+    setText('congSeated', `${counts.seated || 0} / ${counts.capacity || settings.maxVisible || 50}`);
+    setText('congIdle', `${settings.inactivityMinutes || 20}m`);
+
+    const note = $('congregationNote');
+    if (note) {
+      note.textContent = `Real seats release after ${settings.inactivityMinutes || 20} minutes without a join, comment, like, follow, share or approval. `
+        + `TikTok sends no leave event, so no participant is ever shown as having left.`;
+    }
+
+    const roster = $('congregationRoster');
+    if (!roster) return;
+    const participants = Array.isArray(payload.participants) ? payload.participants : [];
+    if (participants.length === 0) {
+      roster.innerHTML = '<div class="empty">No participants yet.</div>';
+      return;
+    }
+
+    roster.replaceChildren();
+    for (const participant of participants) {
+      const row = document.createElement('div');
+      row.className = `cong-person${participant.source === 'demo' ? ' demo' : ''}`;
+
+      const seat = document.createElement('span');
+      seat.className = 'cong-seat';
+      seat.textContent = String(Number(participant.seat) + 1).padStart(2, '0');
+
+      const copy = document.createElement('div');
+      copy.className = 'cong-person-copy';
+      const name = document.createElement('strong');
+      name.textContent = participant.name || 'Friend';
+      const meta = document.createElement('small');
+      meta.textContent = `Joined ${relativeTime(participant.joinedAt)} · last seen ${relativeTime(participant.lastSeen)}`
+        + (participant.marks?.giftName ? ` · gift: ${participant.marks.giftName}` : '');
+      copy.append(name, meta);
+
+      const tag = document.createElement('span');
+      tag.className = `badge ${participant.source === 'demo' ? 'demo' : 'ok'}`;
+      tag.textContent = participant.source === 'demo' ? 'DEMO' : 'LIVE';
+
+      const marks = document.createElement('span');
+      marks.className = 'cong-marks';
+      const now = Date.now();
+      if (participant.marks?.prayerAt && now - participant.marks.prayerAt < 120000) marks.textContent += '✝';
+      if (participant.marks?.amenAt && now - participant.marks.amenAt < 10000) marks.textContent += ' AMEN';
+      if (participant.marks?.giftAt && now - participant.marks.giftAt < 15000) marks.textContent += ' ✦';
+
+      row.append(seat, copy, marks, tag);
+      roster.appendChild(row);
+    }
+  }
+
   function renderEngagement(settings, quiz) {
     if (!settings) return;
     const setChecked = (id, value) => {
@@ -1099,6 +1188,9 @@
         renderShow(params?.show);
       } else if (method === 'quiz.state' || method === 'quiz.start' || method === 'quiz.reveal' || method === 'quiz.end') {
         if (params?.quiz) renderEngagement(currentState?.settings, params.quiz);
+      } else if (method === 'congregation.state') {
+        if (currentState) currentState.congregation = params;
+        renderCongregation(params);
       } else if (method === 'show.cue') {
         const cue = params?.cue;
         if (cue) {
@@ -1492,6 +1584,71 @@
       reportError('Background change failed', error);
     }
   });
+
+  async function updateCongregation(patch) {
+    try {
+      const payload = await callRpc('congregation.update', patch);
+      renderCongregation(payload);
+      printOutput(payload);
+      return payload;
+    } catch (error) {
+      reportError('Congregation update failed', error);
+      return null;
+    }
+  }
+
+  $('congEnabled')?.addEventListener('change', (event) => updateCongregation({ enabled: event.target.checked }));
+  $('congShowNames')?.addEventListener('change', (event) => updateCongregation({ showNames: event.target.checked }));
+  $('congInactivity')?.addEventListener('change', (event) => updateCongregation({ inactivityMinutes: Number(event.target.value) }));
+  $('congMaxVisible')?.addEventListener('change', (event) => updateCongregation({ maxVisible: Number(event.target.value) }));
+
+  $('btnCongDemo')?.addEventListener('click', async () => {
+    try {
+      const result = await callRpc('congregation.demo', { count: 10 });
+      renderCongregation(result?.payload);
+      printOutput(result);
+      if (result?.added === 0) {
+        reportError('Demo seats', new Error('No free seats. Reset the congregation or raise the maximum.'));
+      }
+    } catch (error) {
+      reportError('Demo seats failed', error);
+    }
+  });
+
+  $('btnCongDemoClear')?.addEventListener('click', async () => {
+    try {
+      const result = await callRpc('congregation.demoClear');
+      renderCongregation(result?.payload);
+      printOutput(result);
+    } catch (error) {
+      reportError('Clear demo failed', error);
+    }
+  });
+
+  $('btnCongReset')?.addEventListener('click', async () => {
+    if (!window.confirm('Clear every seat in the prayer congregation? Real viewers will reappear only when TikTok sends a new join event.')) return;
+    try {
+      const result = await callRpc('congregation.reset');
+      renderCongregation(result?.payload);
+      printOutput(result);
+    } catch (error) {
+      reportError('Congregation reset failed', error);
+    }
+  });
+
+  async function runDemoCongregationEvent(action) {
+    try {
+      const result = await callRpc('congregation.demoEvent', { action });
+      renderCongregation(result?.payload);
+      printOutput(result);
+    } catch (error) {
+      reportError('Demo preview failed', error);
+    }
+  }
+
+  $('btnCongDemoAmen')?.addEventListener('click', () => runDemoCongregationEvent('amen'));
+  $('btnCongDemoPrayer')?.addEventListener('click', () => runDemoCongregationEvent('prayer'));
+  $('btnCongDemoGift')?.addEventListener('click', () => runDemoCongregationEvent('gift'));
 
   $('prayerAutoApprove')?.addEventListener('change', (event) => callRpc('prayer.setAutoApprove', { enabled: event.target.checked }).catch((error) => reportError('Auto-approve failed', error)));
   $('prayerPaused')?.addEventListener('change', (event) => callRpc('prayer.setPaused', { paused: event.target.checked }).catch((error) => reportError('Pause failed', error)));

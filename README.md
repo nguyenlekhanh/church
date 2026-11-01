@@ -24,6 +24,7 @@ The room is intentionally **general Christian** — welcoming to viewers across 
 | Music | 21-track instrumental library (3 original CC0 + 18 licensed Mixkit tracks), admin rescan, crossfaded playlist, auto-ducking under narration |
 | Live show | Automated welcome, Scripture, prayer, community and gratitude program with Piper narration |
 | Prayer requests | Moderated queue with approve / hide / remove / pause / clear |
+| Prayer congregation | 50-seat cathedral nave fed by real TikTok `MEMBER` joins; session-only, inactivity expiry, labelled demo preview |
 | Backgrounds | 21 locally served licensed photographs + automatic fade rotation |
 | Default scene | Licensed Gothic cathedral Mass with altar crucifix and praying congregation |
 | Admin | English dashboard for connection, prayer queue, voices, backgrounds, messages |
@@ -40,6 +41,7 @@ The room is intentionally **general Christian** — welcoming to viewers across 
 - Counter strip for prayers, candles, amens, followers and gifts.
 - Event overlays: AMEN, prayer invitation, gratitude, welcome and tiered gift celebrations.
 - Optional quick-controls dock on desktop; `?obs=1` hides it for a clean broadcast.
+- **Prayer congregation** overlay above the lower panels: up to 50 seated viewers in scaled rows facing the altar, with a participant counter, AMEN glow, prayer symbol and gift celebration.
 - Small on-stream photo credit for CC BY / CC BY-SA backgrounds.
 
 ![Ministry dashboard](docs/screenshots/admin-dashboard.png)
@@ -274,6 +276,37 @@ Admin controls (**Community Engagement** panel in `/admin`): quiz on/off, answer
 
 ---
 
+## Prayer congregation
+
+Every real TikTok **MEMBER** join takes one seat in the cathedral nave. This is the original temple-congregation idea rebuilt for a general Christian audience: no statues, rituals, robes or Buddhist symbols, and no text baked into any image.
+
+**Real joins only.** `WebcastEvent.MEMBER` is the only join source. Each TikTok `uniqueId` owns exactly one seat, so duplicate/replayed `MEMBER` frames update the existing participant instead of creating a second one. The seat is assigned from the first free position and arrives with a short kneeling animation; repeated joins do not re-animate or re-greet the viewer.
+
+**There is no leave event.** TikTok Live Connector 2.5.0 exposes `MEMBER` with `MemberMessageAction.JOINED` / `SUBSCRIBED` but no viewer-left message, so the app never claims that someone left. A real seat is released only after the configured inactivity window (20 minutes by default), and the UI simply stops showing it. Comments, likes, follows, shares, joins, approved prayer requests and gifts refresh the last-seen time. An explicit **Disconnect** or a TikTok `STREAM_END` clears the session.
+
+**Interactions.** These are driven by the real event pipeline, never by the logo or a timer:
+
+| Event | Stage reaction |
+| --- | --- |
+| Real AMEN comment | short golden glow around that viewer's seat |
+| Approved prayer request | small ✝ above the viewer's seat for two minutes |
+| Real gift | warm golden burst around the sender's seat, tier animation continues elsewhere on stage |
+| Like / follow / share / comment | quietly refreshes presence, so an active viewer is not expired |
+
+**Layout.** One reusable inline SVG figure per seat, varied deterministically by a hash of the participant id (six skin tones, eight muted robe palettes, six hair tones, occasional veil). No image is generated or downloaded per viewer and no remote asset is requested. Seats are laid out in 13 columns with row scaling from back to front; 50 seats fill four rows on the 1080×1920 stage, and the dashboard can raise capacity to 80 (seven rows). Names are optional, truncated and discreet, and the row order keeps the cross and altar visible above the congregation.
+
+**Session-only.** Participants live in memory in `lib/congregation.js`; they are deliberately **not** written to `data/prayer-state.json`, and only `name`, a hashed display id, seat, source and timestamps are kept. Nothing survives a server restart.
+
+**Demo preview.** Dashboard buttons add labelled demo seats, which are shown with a pink `DEMO` prefix and a `DEMO PREVIEW` badge. Demo seats never increment the real viewer count and simulated AMEN/prayer/gift events are rejected for real seats, so a rehearsal can never impersonate a viewer.
+
+Admin controls (**Prayer Congregation** panel in `/admin`): show/hide congregation, show/hide usernames, inactivity minutes (1–180), maximum seats (10–80), Add 10 demo seats, Clear demo, Reset congregation, Demo AMEN, Demo prayer and Demo gift.
+
+![Prayer congregation](docs/screenshots/congregation-stage.png)
+
+![Congregation admin panel](docs/screenshots/congregation-admin.png)
+
+---
+
 ## Backgrounds and licensing
 
 All broadcast images are served locally from `public/assets/christian/`. No remote image is requested during the stream.
@@ -394,12 +427,13 @@ All original RPC method names still work. User-facing labels changed; endpoint n
 | Live show | `show.status`, `show.update`, `show.next`, `show.nextVerse`, `show.nextReflection`, `show.nextPrayer`, `show.testWelcome`, `show.restart` |
 | Bible quiz | `quiz.status`, `quiz.update`, `quiz.next`, `quiz.reveal`, `quiz.answer` |
 | Gifts | `gift.update` (announce / TTS toggles) |
+| Prayer congregation | `congregation.get`, `congregation.update`, `congregation.reset`, `congregation.demo`, `congregation.demoClear`, `congregation.demoEvent` |
 | TikTok | `live.connect`, `live.disconnect`, `live.status`, `live.setAutoSim` |
 | Settings / health | `settings.get`, `settings.update`, `health.check` |
 
 Internal ritual names (`burnIncense`, `strikeWoodenFish`, `drawFortune`) are retained only for wire compatibility. Every label, message and visual shown to viewers is Christian.
 
-WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `music.library.updated`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
+WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `music.library.updated`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end`, `congregation.state` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
 
 Legacy state fields (`totalIncense`, `woodenFishHits`, `fortuneCount`, `offerings.lotus`, …) are still present alongside the new Christian counters.
 
@@ -416,6 +450,7 @@ config/
   piper/en|vn/             Installed Piper voices (untouched)
 lib/
   show.js                  Program schedule, prayer themes, cue builder, welcomes
+  congregation.js          Session-only seats, interactions, inactivity expiry, demo preview
   music-library.js         Audio-folder scanner, manifest writes, enable/disable, removal
   messages.js              Non-repeating message selection
   voices.js                Voice discovery + defaults
@@ -449,7 +484,7 @@ Run against a live server:
 node scripts\smoke-test.js
 ```
 
-Last run on this machine: **112/112 checks passed**, including:
+Last run on this machine: **129/129 checks passed**, including:
 
 - Bun server startup, health endpoint and brand payload.
 - `temple.getState` compatibility and new counters.
@@ -460,6 +495,7 @@ Last run on this machine: **112/112 checks passed**, including:
 - Bible quiz: 150 questions with KJV references, hidden answer before the reveal, case-insensitive matching (`  NOAH `), duplicate suppression, wrong answers ignored, reveal payload, answers rejected after the reveal, configurable frequency/reveal delay and a `quiz.start` WebSocket broadcast.
 - Gift pipeline: sender/quantity captured, personalized thank-you without purchase language, announcement and TTS toggles, and silenced gifts keeping an empty TTS payload.
 - Prayer interaction toggle (disabled comments do not queue) and scene matching (healing prayer → candles category), then both restored.
+- Prayer congregation: 60 joins fill exactly 50 seats with 50 unique positions; a duplicate join keeps one seat; simulated AMEN cannot animate a real seat; an approved prayer marks the seat; demo seats stay out of real counts; inactivity releases a silent seat; capacity clamps to 10–80; settings persist; reset clears every seat; demo AMEN/prayer/gift update only demo seats; `congregation.state` is broadcast over WebSocket.
 - Prayer text and cue bodies checked for promised outcomes (healing, wealth, miracles, salvation).
 - Prayer queue add / display / first-name privacy / pause / hide / remove.
 - AMEN and PRAY comment commands, prayer-request detection and sanitization.

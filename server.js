@@ -26,6 +26,7 @@ const { discoverVoices, resolveVoice, defaultVoiceId } = require('./lib/voices')
 const { ShowProgram, PRAYER_THEMES } = require('./lib/show');
 const { QuizEngine, QUESTIONS: QUIZ_QUESTIONS } = require('./lib/quiz');
 const { MusicLibrary } = require('./lib/music-library');
+const { Congregation } = require('./lib/congregation');
 
 const CONFIG = loadConfig();
 const PORT = CONFIG.port || 3000;
@@ -443,6 +444,12 @@ function defaultSettings() {
       maxQueue: CONFIG.prayer.maxQueue,
       cooldownSeconds: CONFIG.prayer.cooldownSeconds,
       interactionEnabled: CONFIG.prayer.interactionEnabled
+    },
+    congregation: {
+      enabled: true,
+      showNames: true,
+      inactivityMinutes: 20,
+      maxVisible: 50
     }
   };
 }
@@ -499,7 +506,8 @@ function loadState() {
           music: { ...DEFAULT_STATE.settings.music, ...((saved.settings || {}).music || {}) },
           show: { ...DEFAULT_STATE.settings.show, ...((saved.settings || {}).show || {}) },
           quiz: { ...DEFAULT_STATE.settings.quiz, ...((saved.settings || {}).quiz || {}) },
-          gifts: { ...DEFAULT_STATE.settings.gifts, ...((saved.settings || {}).gifts || {}) }
+          gifts: { ...DEFAULT_STATE.settings.gifts, ...((saved.settings || {}).gifts || {}) },
+          congregation: { ...DEFAULT_STATE.settings.congregation, ...((saved.settings || {}).congregation || {}) }
         },
         tiktok: { ...DEFAULT_STATE.tiktok }
       };
@@ -527,6 +535,19 @@ if (state.settings.background.category !== 'all' && !BACKGROUNDS.categories.incl
 if (state.settings.music && !MUSIC.byId.has(state.settings.music.track) && MUSIC.tracks.length > 0) {
   state.settings.music.track = MUSIC.tracks[0].id;
 }
+
+// Prayer congregation is live-session state only: nothing is written to disk.
+const congregation = new Congregation();
+congregation.configure(state.settings.congregation);
+state.settings.congregation = { ...congregation.getPayload().settings };
+congregation.onChange = (payload, meta) => {
+  broadcastNotification('congregation.state', {
+    ...payload,
+    reason: meta.reason,
+    changedId: meta.id || null,
+    changedSource: meta.source || null
+  });
+};
 
 let saveTimer = null;
 function saveState() {
@@ -794,6 +815,7 @@ function getPublicState() {
     settings: state.settings,
     show: showPayload(),
     quiz: quizPayload(),
+    congregation: congregation.getPayload(),
     tiktok: state.tiktok,
     tts: ttsManager ? ttsManager.getStatus() : { ready: false, status: 'starting' },
     backgrounds: {
@@ -865,6 +887,12 @@ function displayPrayerRequest(request) {
   request.status = 'approved';
   request.approvedAt = request.approvedAt || new Date().toISOString();
   request.displayedAt = new Date().toISOString();
+  // An approved request places a small prayer symbol above the viewer's seat.
+  congregation.markPrayer({
+    uniqueId: request.uniqueId,
+    // Only a genuine TikTok request may mark a real seat; admin/test entries stay visual-free.
+    simulated: request.source !== 'tiktok'
+  });
 
   const payload = buildPrayerPayload(request);
   const event = pushEventLog({
@@ -1148,6 +1176,11 @@ const Rituals = {
     state.candlesLit += tier === 'small' ? 1 : 2;
     state.activeCandles = Math.min(24, state.activeCandles + 1);
     const member = recordMember(name, uniqueId, params.avatar, merit, { gifts: 1 });
+    congregation.markGift({
+      uniqueId: member.uniqueId,
+      giftName,
+      simulated: Boolean(params.simulated) || params.source !== 'tiktok'
+    });
 
     const event = pushEventLog({
       type: tier === 'large' ? 'grandCeremony' : 'offerGift',
@@ -1613,6 +1646,14 @@ function applyGiftUpdate(params = {}) {
   return gifts;
 }
 
+function applyCongregationUpdate(params = {}) {
+  const payload = congregation.configure(params);
+  state.settings.congregation = { ...payload.settings };
+  saveState();
+  broadcastNotification('temple.state', getPublicState());
+  return payload;
+}
+
 /** Visual theme for each program cue, using only the locally stored categories. */
 const SCENE_BY_THEME = {
   morning: 'backgrounds',
@@ -1768,7 +1809,13 @@ function chatFeedForList() {
   }));
 }
 
-function handleCommand(command, { user, uniqueId, avatar, simulated = false }) {
+function handleCommand(command, { user, uniqueId, avatar, simulated = false, real = false }) {
+  // AMEN glows on the viewer's congregation seat even while the spoken
+  // acknowledgement is rate-limited. Only a real TikTok comment qualifies.
+  if (command === 'AMEN' && real) {
+    congregation.markAmen({ uniqueId, simulated });
+  }
+
   const key = `${uniqueId || user}:${command}`;
   const now = Date.now();
   const last = commandCooldowns.get(key) || 0;
@@ -1808,6 +1855,7 @@ function handleViewerComment(commentText, user, uniqueId, avatar, options = {}) 
   const raw = String(commentText || '').trim();
   if (!raw || isBlockedContent(raw)) return null;
 
+  if (options.source === 'tiktok') congregation.touch({ uniqueId });
   const memberName = sanitizeDisplayName(user || uniqueId);
 
   // Quiz answers are checked first so the correct answer is never printed in
@@ -1843,7 +1891,8 @@ function handleViewerComment(commentText, user, uniqueId, avatar, options = {}) 
       user: memberName,
       uniqueId,
       avatar,
-      simulated: options.source === 'simulation'
+      simulated: options.source === 'simulation',
+      real: options.source === 'tiktok'
     });
     return event || { skipped: true };
   }
@@ -1964,9 +2013,14 @@ async function connectTikTokLive(usernameOrUrl) {
   tiktokConn.on(WebcastEvent.MEMBER, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     recordMember(user, uniqueId, avatar, 0);
+    // One seat per uniqueId; duplicate MEMBER frames update the same viewer.
+    // The connector has no leave event, so seats expire by inactivity only.
+    const joined = congregation.join({ uniqueId, name: user, source: 'tiktok' });
     broadcastNotification('temple.state', getPublicState());
     // Real TikTok joins only. Simulation and test paths never reach this handler.
-    showProgram?.welcome({ name: firstNameForDisplay(user), uniqueId }, 'tiktok');
+    if (joined.created) {
+      showProgram?.welcome({ name: firstNameForDisplay(user), uniqueId }, 'tiktok');
+    }
   });
 
   tiktokConn.on(WebcastEvent.CHAT, (data) => {
@@ -1978,6 +2032,7 @@ async function connectTikTokLive(usernameOrUrl) {
 
   tiktokConn.on(WebcastEvent.LIKE, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
+    congregation.touch({ uniqueId });
     const likeCount = clampNumber(data?.count ?? data?.likeCount, 1, 15, 1);
     state.likeCount += likeCount;
     Rituals.strikeWoodenFish({ user, uniqueId, avatar, count: likeCount });
@@ -1985,6 +2040,7 @@ async function connectTikTokLive(usernameOrUrl) {
 
   tiktokConn.on(WebcastEvent.FOLLOW, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
+    congregation.touch({ uniqueId });
     state.followCount += 1;
     Rituals.ringBell({
       user,
@@ -1999,6 +2055,7 @@ async function connectTikTokLive(usernameOrUrl) {
 
   tiktokConn.on(WebcastEvent.SHARE, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
+    congregation.touch({ uniqueId });
     state.shareCount += 1;
     Rituals.ringBell({
       user,
@@ -2038,6 +2095,13 @@ async function connectTikTokLive(usernameOrUrl) {
     }
   });
 
+  tiktokConn.on(WebcastEvent.STREAM_END, () => {
+    // The LIVE session really ended: seats from that room are no longer live.
+    console.log('[TikTok Live] Stream ended — clearing the prayer congregation.');
+    congregation.reset('stream-ended');
+    broadcastNotification('temple.state', getPublicState());
+  });
+
   tiktokConn.on(WebcastEvent.GIFT, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     const giftObj = data?.gift || data?.giftDetails || {};
@@ -2068,7 +2132,8 @@ async function connectTikTokLive(usernameOrUrl) {
       avatar,
       coins: totalCoins,
       giftName: rawGiftName,
-      quantity: deltaCount
+      quantity: deltaCount,
+      source: 'tiktok'
     });
   });
 
@@ -2104,6 +2169,7 @@ function disconnectTikTokLive() {
     viewerCount: 0,
     lastError: null
   };
+  congregation.reset('live-disconnected');
   broadcastNotification('temple.state', getPublicState());
   return state.tiktok;
 }
@@ -2386,6 +2452,32 @@ async function handleRpcCall(method, params = {}) {
     case 'gift.update':
       return applyGiftUpdate(params);
 
+    // ---- Prayer congregation (live-session only, never persisted) ----
+    case 'congregation.get':
+      return congregation.getPayload();
+    case 'congregation.update':
+      return applyCongregationUpdate(params);
+    case 'congregation.reset': {
+      const result = congregation.reset('admin-reset');
+      broadcastNotification('temple.state', getPublicState());
+      return result;
+    }
+    case 'congregation.demo': {
+      const result = congregation.additiveDemo(params.count);
+      broadcastNotification('temple.state', getPublicState());
+      return result;
+    }
+    case 'congregation.demoClear': {
+      const result = congregation.clearDemo();
+      broadcastNotification('temple.state', getPublicState());
+      return result;
+    }
+    case 'congregation.demoEvent': {
+      const result = congregation.demoAction(params);
+      broadcastNotification('temple.state', getPublicState());
+      return result;
+    }
+
     // ---- Message library ----
     case 'messages.get':
       return messageLibrary.snapshot();
@@ -2484,7 +2576,8 @@ app.get('/api/health', (_req, res) => res.json({
   backgrounds: BACKGROUNDS.images.length,
   musicTracks: MUSIC.tracks.length,
   musicLibrary: MUSIC.libraryMeta,
-  music: state.settings.music
+  music: state.settings.music,
+  congregation: congregation.getPayload().counts
 }));
 
 const server = http.createServer(app);
@@ -2606,6 +2699,7 @@ server.listen(PORT, () => {
   console.log(`🔌 JSON-RPC 2.0         : http://localhost:${PORT}/rpc (ws://localhost:${PORT}/ws)`);
   console.log(`🎨 Backgrounds          : ${bgCount} local images (rotation ${state.settings.background.enabled ? 'on' : 'off'})`);
   console.log(`🗣️  Piper voices         : EN ${state.settings.enVoice} | VI ${state.settings.vnVoice}`);
+  console.log(`🪑 Prayer congregation   : ${state.settings.congregation.maxVisible} seats · names ${state.settings.congregation.showNames ? 'on' : 'off'} · inactivity ${state.settings.congregation.inactivityMinutes}m`);
   console.log('============================================================');
 
   // Pick up audio files added or removed while the server was stopped.
@@ -2649,6 +2743,9 @@ process.on('SIGINT', () => {
   } catch (_) {}
   try {
     if (ttsManager && ttsManager.proc) ttsManager.proc.kill();
+  } catch (_) {}
+  try {
+    congregation.stop();
   } catch (_) {}
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 1500);

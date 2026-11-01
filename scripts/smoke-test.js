@@ -316,6 +316,49 @@ async function main() {
   check('scene matching can be disabled', sceneOff.settings.background.sceneMatch === false);
   await rpc('stage.updateSettings', { sceneMatch: true });
 
+  // 10f. Prayer congregation (session-only seats, no fabricated leave events)
+  const { Congregation } = require('../lib/congregation.js');
+  const seats = new Congregation({ pruneIntervalMs: 600000 });
+  let duplicateCreated = 0;
+  for (let i = 0; i < 60; i += 1) {
+    if (seats.join({ uniqueId: `smoke.cong.${i}`, name: `Viewer ${i}` }).created) duplicateCreated += 1;
+  }
+  const seatNumbers = new Set([...seats.participants.values()].map((participant) => participant.seat));
+  check('congregation seats at least 50 participants', duplicateCreated === 50 && seats.participants.size === 50, `${duplicateCreated} created`);
+  check('congregation assigns one unique seat per viewer', seatNumbers.size === 50, `${seatNumbers.size} unique seats`);
+  const duplicateJoin = seats.join({ uniqueId: 'smoke.cong.0', name: 'Viewer 0' });
+  check('duplicate MEMBER join keeps one seat', duplicateJoin.created === false && seats.participants.size === 50);
+  check('simulated AMEN never animates a real seat', seats.markAmen({ uniqueId: 'smoke.cong.0', simulated: true }) === null);
+  check('real AMEN marks a real seat', Boolean(seats.markAmen({ uniqueId: 'smoke.cong.0' })?.marks.amenAt));
+  seats.configure({ maxVisible: 80 });
+  const demoSeats = seats.additiveDemo(3);
+  check('demo seats are labelled and excluded from viewer counts', demoSeats.added === 3 && seats.getPayload().counts.real === 50 && seats.getPayload().counts.demo === 3);
+  check('demo AMEN stays on a demo seat', Boolean(seats.demoAction({ action: 'amen' })?.participant?.marks?.amenAt));
+  const silentSeat = [...seats.participants.values()].find((participant) => participant.source === 'tiktok');
+  silentSeat.lastSeen = Date.now() - 21 * 60 * 1000;
+  check('inactivity timeout releases a silent seat', seats.prune() === 1 && seats.participants.size === 52);
+  check('maximum seats are clamped to 10-80', seats.configure({ maxVisible: 99 }).settings.maxVisible === 80
+    && seats.configure({ maxVisible: 1 }).settings.maxVisible === 10);
+  seats.stop();
+
+  await rpc('congregation.reset');
+  const demoPayload = await rpc('congregation.demo', { count: 10 });
+  check('dashboard demo seats are created', demoPayload.added === 10 && demoPayload.payload.counts.demo === 10);
+  check('demo seats are never counted as real viewers', demoPayload.payload.counts.real === 0);
+  const demoAmen = await rpc('congregation.demoEvent', { action: 'amen' });
+  check('demo AMEN updates the demo participant', Boolean(demoAmen.participant?.marks?.amenAt));
+  const demoPrayer = await rpc('congregation.demoEvent', { action: 'prayer' });
+  check('demo prayer places a prayer symbol', Boolean(demoPrayer.participant?.marks?.prayerAt));
+  const demoGift = await rpc('congregation.demoEvent', { action: 'gift', giftName: 'Prayer candle' });
+  check('demo gift records a tasteful celebration', demoGift.participant?.marks?.giftName === 'Prayer candle');
+  const congConfig = await rpc('congregation.update', { enabled: false, showNames: false, inactivityMinutes: 5, maxVisible: 20 });
+  check('congregation settings persist and clamp', congConfig.settings.enabled === false
+    && congConfig.settings.showNames === false && congConfig.settings.maxVisible === 20
+    && congConfig.settings.inactivityMinutes === 5);
+  await rpc('congregation.update', { enabled: true, showNames: true, inactivityMinutes: 20, maxVisible: 50 });
+  await rpc('congregation.reset');
+  check('congregation reset clears every seat', (await rpc('congregation.get')).counts.total === 0);
+
   // 11. Message library editable + command responses avoid overuse
   const messages = await rpc('messages.get');
   check('message library exposes commands', Array.isArray(messages.commands?.AMEN) && messages.commands.AMEN.length >= 3);
@@ -409,6 +452,7 @@ async function main() {
       check('websocket notified about prayer request', seen.has('prayer.request'), [...seen].join(', '));
       check('websocket notified about AMEN event', seen.has('temple.event'));
       check('websocket notified about a new quiz question', seen.has('quiz.start'), [...seen].join(', '));
+      check('websocket notified about the prayer congregation', seen.has('congregation.state'), [...seen].join(', '));
       ws.close();
       resolve();
     }, 9000);
@@ -419,6 +463,7 @@ async function main() {
         await rpc('prayer.add', { name: 'David K.', text: 'Please pray for wisdom and peace.', source: 'admin' });
         await rpc('temple.comment', { comment: 'AMEN', user: 'WebSocket Tester', uniqueId: 'smoke.ws' });
         await rpc('quiz.next', { source: 'test' }).catch(() => {});
+        await rpc('congregation.demo', { count: 2 }).catch(() => {});
       }, 350);
     });
 
@@ -443,6 +488,7 @@ async function main() {
   await rpc('prayer.add', { name: 'Michael R.', text: 'Please pray for my mother as she recovers.', source: 'admin' });
   await rpc('temple.updateSettings', { ttsVolume: 0.95, ttsRate: 1.0 });
   await rpc('show.update', { paused: false });
+  await rpc('congregation.reset');
 
   const failures = results.filter((result) => !result.ok);
   console.log('\n--------------------------------------------------------------');

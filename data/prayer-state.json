@@ -1,15 +1,15 @@
 {
-  "candlesLit": 21,
-  "prayerCount": 46,
-  "amenCount": 28,
-  "blessingsCount": 10,
+  "candlesLit": 33,
+  "prayerCount": 66,
+  "amenCount": 36,
+  "blessingsCount": 14,
   "verseCount": 1,
-  "giftCount": 13,
+  "giftCount": 21,
   "followCount": 0,
   "shareCount": 0,
   "likeCount": 7,
-  "totalMerit": 2805,
-  "activeCandles": 14,
+  "totalMerit": 4357,
+  "activeCandles": 22,
   "community": {
     "Test Visitor": {
       "name": "Test Visitor",
@@ -59,12 +59,12 @@
       "name": "Sarah M.",
       "uniqueId": "",
       "avatar": "",
-      "merit": 115,
-      "prayers": 17,
+      "merit": 131,
+      "prayers": 25,
       "candles": 1,
       "gifts": 1,
       "lastWish": "my family and for peace this week",
-      "lastSeen": "2026-11-01T02:40:04.013Z"
+      "lastSeen": "2026-11-01T03:28:32.208Z"
     },
     "brandidisires3": {
       "name": "BrandiDisires",
@@ -290,12 +290,12 @@
       "name": "David K.",
       "uniqueId": "",
       "avatar": "",
-      "merit": 18,
-      "prayers": 9,
+      "merit": 26,
+      "prayers": 13,
       "candles": 0,
       "gifts": 0,
       "lastWish": "wisdom and peace",
-      "lastSeen": "2026-11-01T02:39:55.352Z"
+      "lastSeen": "2026-11-01T03:28:23.554Z"
     },
     "Emily T.": {
       "name": "Emily T.",
@@ -345,56 +345,56 @@
       "name": "Michael R.",
       "uniqueId": "smoke.michael",
       "avatar": "",
-      "merit": 8,
+      "merit": 12,
       "prayers": 0,
       "candles": 0,
       "gifts": 0,
       "lastWish": "",
-      "lastSeen": "2026-11-01T02:39:40.037Z"
+      "lastSeen": "2026-11-01T03:28:10.189Z"
     },
     "smoke.grace": {
       "name": "Grace L.",
       "uniqueId": "smoke.grace",
       "avatar": "",
-      "merit": 8,
+      "merit": 12,
       "prayers": 0,
       "candles": 0,
       "gifts": 0,
       "lastWish": "",
-      "lastSeen": "2026-11-01T02:39:42.747Z"
+      "lastSeen": "2026-11-01T03:28:12.897Z"
     },
     "smoke.emily": {
       "name": "Emily T.",
       "uniqueId": "smoke.emily",
       "avatar": "",
-      "merit": 16,
-      "prayers": 8,
+      "merit": 24,
+      "prayers": 12,
       "candles": 0,
       "gifts": 0,
       "lastWish": "my family is struggling",
-      "lastSeen": "2026-11-01T02:39:42.763Z"
+      "lastSeen": "2026-11-01T03:28:12.922Z"
     },
     "smoke.ws": {
       "name": "WebSocket Tester",
       "uniqueId": "smoke.ws",
       "avatar": "",
-      "merit": 8,
+      "merit": 12,
       "prayers": 0,
       "candles": 0,
       "gifts": 0,
       "lastWish": "",
-      "lastSeen": "2026-11-01T02:39:55.358Z"
+      "lastSeen": "2026-11-01T03:28:23.564Z"
     },
     "Michael R.": {
       "name": "Michael R.",
       "uniqueId": "",
       "avatar": "",
-      "merit": 91,
-      "prayers": 8,
+      "merit": 159,
+      "prayers": 12,
       "candles": 0,
-      "gifts": 5,
+      "gifts": 9,
       "lastWish": "my mother as she recovers",
-      "lastSeen": "2026-11-01T02:40:04.018Z"
+      "lastSeen": "2026-11-01T03:28:32.213Z"
     },
     "demo.mike.cdp": {
       "name": "Michael R.",
@@ -433,12 +433,12 @@
       "name": "Grace L.",
       "uniqueId": "smoke.gift.grace",
       "avatar": "",
-      "merit": 1800,
+      "merit": 3240,
       "prayers": 0,
       "candles": 0,
-      "gifts": 5,
+      "gifts": 9,
       "lastWish": "",
-      "lastSeen": "2026-11-01T02:39:42.962Z"
+      "lastSeen": "2026-11-01T03:28:13.131Z"
     },
     "smoke.toggle": {
       "name": "Toggle Tester",
@@ -449,16 +449,16 @@
       "candles": 0,
       "gifts": 0,
       "lastWish": "",
-      "lastSeen": "2026-11-01T02:39:42.989Z"
+      "lastSeen": "2026-11-01T03:28:13.158Z"
     }
   },
   "featuredVerse": {
-    "text": "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the Lord thy God is with thee whithersoever thou goest.",
-    "reference": "Joshua 1:9 (KJV)"
+    "text": "Cast thy burden upon the Lord, and he shall sustain thee: he shall never suffer the righteous to be moved.",
+    "reference": "Psalm 55:22 (KJV)"
   },
   "prayerRequests": [
     {
-      "id": "prayer_1793500804018_t2fk",
+      "id": "prayer_1793503712213_jwb5",
       "name": "Michael R.",
       "displayName": "Michael",
       "uniqueId": "",
@@ -466,12 +466,12 @@
       "text": "my mother as she recovers",
       "status": "approved",
       "source": "admin",
-      "createdAt": "2026-11-01T02:40:04.018Z",
-      "approvedAt": "2026-11-01T02:40:04.018Z",
-      "displayedAt": "2026-11-01T02:40:04.018Z"
+      "createdAt": "2026-11-01T03:28:32.213Z",
+      "approvedAt": "2026-11-01T03:28:32.213Z",
+      "displayedAt": "2026-11-01T03:28:32.213Z"
     },
     {
-      "id": "prayer_1793500804013_xtyo",
+      "id": "prayer_1793503712208_vjrt",
       "name": "Sarah M.",
       "displayName": "Sarah",
       "uniqueId": "",
@@ -479,73 +479,73 @@
       "text": "my family and for peace this week",
       "status": "approved",
       "source": "admin",
-      "createdAt": "2026-11-01T02:40:04.013Z",
-      "approvedAt": "2026-11-01T02:40:04.013Z",
-      "displayedAt": "2026-11-01T02:40:04.013Z"
+      "createdAt": "2026-11-01T03:28:32.208Z",
+      "approvedAt": "2026-11-01T03:28:32.208Z",
+      "displayedAt": "2026-11-01T03:28:32.208Z"
     }
   ],
   "chatFeed": [
     {
-      "id": "chat_1793500795358_ja2",
+      "id": "chat_1793503703563_px6",
       "user": "WebSocket",
       "text": "AMEN",
       "avatar": "",
-      "at": "2026-11-01T02:39:55.358Z"
+      "at": "2026-11-01T03:28:23.563Z"
     },
     {
-      "id": "chat_1793500782989_0de",
+      "id": "chat_1793503693158_3zf",
       "user": "Toggle",
       "text": "pray for my family please",
       "avatar": "",
-      "at": "2026-11-01T02:39:42.989Z"
+      "at": "2026-11-01T03:28:13.158Z"
     },
     {
-      "id": "chat_1793500782762_q25",
+      "id": "chat_1793503692921_vpw",
       "user": "Emily",
       "text": "pray for me please my family is struggling",
       "avatar": "",
-      "at": "2026-11-01T02:39:42.762Z"
+      "at": "2026-11-01T03:28:12.921Z"
     },
     {
-      "id": "chat_1793500782746_oy5",
+      "id": "chat_1793503692896_vd1",
       "user": "Grace",
       "text": "PRAY",
       "avatar": "",
-      "at": "2026-11-01T02:39:42.746Z"
+      "at": "2026-11-01T03:28:12.896Z"
     },
     {
-      "id": "chat_1793500780037_y3r",
+      "id": "chat_1793503690188_6y7",
       "user": "Michael",
       "text": "AMEN",
       "avatar": "",
-      "at": "2026-11-01T02:39:40.037Z"
+      "at": "2026-11-01T03:28:10.188Z"
     },
     {
-      "id": "chat_1793500574667_gmg",
+      "id": "chat_1793503625019_vty",
       "user": "WebSocket",
       "text": "AMEN",
       "avatar": "",
-      "at": "2026-11-01T02:36:14.667Z"
+      "at": "2026-11-01T03:27:05.019Z"
     },
     {
-      "id": "chat_1793500565917_fgt",
+      "id": "chat_1793503605152_9vn",
       "user": "Toggle",
       "text": "pray for my family please",
       "avatar": "",
-      "at": "2026-11-01T02:36:05.917Z"
+      "at": "2026-11-01T03:26:45.152Z"
     },
     {
-      "id": "chat_1793500565732_xxv",
+      "id": "chat_1793503604726_jyp",
       "user": "Emily",
       "text": "pray for me please my family is struggling",
       "avatar": "",
-      "at": "2026-11-01T02:36:05.732Z"
+      "at": "2026-11-01T03:26:44.726Z"
     }
   ],
   "recentEvents": [
     {
-      "id": "evt_1793500804018_3fqm",
-      "timestamp": "2026-11-01T02:40:04.018Z",
+      "id": "evt_1793503712213_na48",
+      "timestamp": "2026-11-01T03:28:32.213Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "Michael R.",
@@ -553,15 +553,15 @@
       "avatar": "",
       "wish": "my mother as she recovers",
       "prayerText": "Michael is asking for prayer: “my mother as she recovers”",
-      "communityText": "Let us lift Michael up in prayer.",
+      "communityText": "Let us keep Michael in our prayers.",
       "simulated": false,
-      "ttsText": "",
+      "ttsText": "Let us pray for Michael and everyone carrying a heavy heart today.",
       "ttsLang": "en",
       "merit": 2
     },
     {
-      "id": "evt_1793500804013_6ix3",
-      "timestamp": "2026-11-01T02:40:04.013Z",
+      "id": "evt_1793503712208_4v29",
+      "timestamp": "2026-11-01T03:28:32.208Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "Sarah M.",
@@ -569,30 +569,30 @@
       "avatar": "",
       "wish": "my family and for peace this week",
       "prayerText": "Sarah is asking for prayer: “my family and for peace this week”",
-      "communityText": "Let us lift Sarah up in prayer.",
+      "communityText": "Let us keep Sarah in our prayers.",
       "simulated": false,
-      "ttsText": "",
+      "ttsText": "Sarah is asking for prayers. Let us keep Sarah in our prayers.",
       "ttsLang": "en",
       "merit": 2
     },
     {
-      "id": "evt_1793500795358_fhxm",
-      "timestamp": "2026-11-01T02:39:55.358Z",
+      "id": "evt_1793503703564_xsbx",
+      "timestamp": "2026-11-01T03:28:23.564Z",
       "type": "commentCommand",
       "kind": "command",
       "command": "AMEN",
       "user": "WebSocket Tester",
       "uniqueId": "smoke.ws",
       "avatar": "",
-      "message": "Amen. God is with you.",
+      "message": "Amen, and amen.",
       "simulated": false,
-      "ttsText": "",
+      "ttsText": "Amen, and amen.",
       "ttsLang": "en",
       "merit": 1
     },
     {
-      "id": "evt_1793500795352_u2v5",
-      "timestamp": "2026-11-01T02:39:55.352Z",
+      "id": "evt_1793503703554_huky",
+      "timestamp": "2026-11-01T03:28:23.554Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "David K.",
@@ -600,15 +600,15 @@
       "avatar": "",
       "wish": "wisdom and peace",
       "prayerText": "David is asking for prayer: “wisdom and peace”",
-      "communityText": "Together, let us pray for David.",
+      "communityText": "Let us lift David up in prayer.",
       "simulated": false,
-      "ttsText": "",
+      "ttsText": "Let us pray for David and everyone carrying a heavy heart today.",
       "ttsLang": "en",
       "merit": 2
     },
     {
-      "id": "evt_1793500782974_yq97",
-      "timestamp": "2026-11-01T02:39:42.974Z",
+      "id": "evt_1793503693141_gji2",
+      "timestamp": "2026-11-01T03:28:13.141Z",
       "type": "offerGift",
       "kind": "gift",
       "tier": "small",
@@ -628,8 +628,8 @@
       "ttsLang": "en"
     },
     {
-      "id": "evt_1793500782962_k5o5",
-      "timestamp": "2026-11-01T02:39:42.962Z",
+      "id": "evt_1793503693131_4n5r",
+      "timestamp": "2026-11-01T03:28:13.131Z",
       "type": "offerGift",
       "kind": "gift",
       "tier": "medium",
@@ -644,13 +644,13 @@
       "merit": 360,
       "simulated": false,
       "announce": true,
-      "message": "Thank you, Grace L, for the Prayer candle. Your kindness is a blessing to this community.",
-      "ttsText": "Thank you, Grace L, for the Prayer candle. Your kindness is a blessing to this community.",
+      "message": "Grace L, thank you for your generous heart and for the Prayer candle. God bless you.",
+      "ttsText": "Grace L, thank you for your generous heart and for the Prayer candle. God bless you.",
       "ttsLang": "en"
     },
     {
-      "id": "evt_1793500782763_xak8",
-      "timestamp": "2026-11-01T02:39:42.763Z",
+      "id": "evt_1793503692922_we9f",
+      "timestamp": "2026-11-01T03:28:12.922Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "Emily T.",
@@ -658,15 +658,15 @@
       "avatar": "",
       "wish": "my family is struggling",
       "prayerText": "Emily is asking for prayer: “my family is struggling”",
-      "communityText": "Let us lift Emily up in prayer.",
+      "communityText": "Let us keep Emily in our prayers.",
       "simulated": false,
-      "ttsText": "Let us pray for Emily and everyone carrying a heavy heart today.",
+      "ttsText": "Emily is asking for prayers. Let us keep Emily in our prayers.",
       "ttsLang": "en",
       "merit": 2
     },
     {
-      "id": "evt_1793500782747_a1ih",
-      "timestamp": "2026-11-01T02:39:42.747Z",
+      "id": "evt_1793503692897_k02h",
+      "timestamp": "2026-11-01T03:28:12.897Z",
       "type": "commentCommand",
       "kind": "command",
       "command": "PRAY",
@@ -680,8 +680,8 @@
       "merit": 1
     },
     {
-      "id": "evt_1793500780037_391p",
-      "timestamp": "2026-11-01T02:39:40.037Z",
+      "id": "evt_1793503690189_uk0a",
+      "timestamp": "2026-11-01T03:28:10.189Z",
       "type": "commentCommand",
       "kind": "command",
       "command": "AMEN",
@@ -695,8 +695,8 @@
       "merit": 1
     },
     {
-      "id": "evt_1793500780024_824b",
-      "timestamp": "2026-11-01T02:39:40.024Z",
+      "id": "evt_1793503690169_j6a7",
+      "timestamp": "2026-11-01T03:28:10.169Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "Sarah M.",
@@ -704,15 +704,31 @@
       "avatar": "",
       "wish": "my family and for peace this week",
       "prayerText": "Sarah is asking for prayer: “my family and for peace this week”",
-      "communityText": "Let us keep Sarah in our prayers.",
+      "communityText": "Together, let us pray for Sarah.",
+      "simulated": false,
+      "ttsText": "Let us pray for Sarah and everyone carrying a heavy heart today.",
+      "ttsLang": "en",
+      "merit": 2
+    },
+    {
+      "id": "evt_1793503641059_c8qa",
+      "timestamp": "2026-11-01T03:27:21.059Z",
+      "type": "sendPrayer",
+      "kind": "prayerRequest",
+      "user": "Sarah M.",
+      "uniqueId": "",
+      "avatar": "",
+      "wish": "my family and for peace this week",
+      "prayerText": "Sarah is asking for prayer: “my family and for peace this week”",
+      "communityText": "Let us lift Sarah up in prayer.",
       "simulated": false,
       "ttsText": "Sarah is asking for prayers. Let us keep Sarah in our prayers.",
       "ttsLang": "en",
       "merit": 2
     },
     {
-      "id": "evt_1793500583325_kezd",
-      "timestamp": "2026-11-01T02:36:23.325Z",
+      "id": "evt_1793503639676_23v4",
+      "timestamp": "2026-11-01T03:27:19.676Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "Michael R.",
@@ -727,8 +743,24 @@
       "merit": 2
     },
     {
-      "id": "evt_1793500583318_fvql",
-      "timestamp": "2026-11-01T02:36:23.318Z",
+      "id": "evt_1793503633669_wxyb",
+      "timestamp": "2026-11-01T03:27:13.669Z",
+      "type": "sendPrayer",
+      "kind": "prayerRequest",
+      "user": "Michael R.",
+      "uniqueId": "",
+      "avatar": "",
+      "wish": "my mother as she recovers",
+      "prayerText": "Michael is asking for prayer: “my mother as she recovers”",
+      "communityText": "Together, let us pray for Michael.",
+      "simulated": false,
+      "ttsText": "Let us pray for Michael and everyone carrying a heavy heart today.",
+      "ttsLang": "en",
+      "merit": 2
+    },
+    {
+      "id": "evt_1793503633663_zlsb",
+      "timestamp": "2026-11-01T03:27:13.663Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "Sarah M.",
@@ -736,30 +768,30 @@
       "avatar": "",
       "wish": "my family and for peace this week",
       "prayerText": "Sarah is asking for prayer: “my family and for peace this week”",
-      "communityText": "Let us keep Sarah in our prayers.",
+      "communityText": "Together, let us pray for Sarah.",
       "simulated": false,
-      "ttsText": "Let us pray for Sarah and everyone carrying a heavy heart today.",
+      "ttsText": "Sarah is asking for prayers. Let us keep Sarah in our prayers.",
       "ttsLang": "en",
       "merit": 2
     },
     {
-      "id": "evt_1793500574668_p6ww",
-      "timestamp": "2026-11-01T02:36:14.668Z",
+      "id": "evt_1793503625023_04hk",
+      "timestamp": "2026-11-01T03:27:05.023Z",
       "type": "commentCommand",
       "kind": "command",
       "command": "AMEN",
       "user": "WebSocket Tester",
       "uniqueId": "smoke.ws",
       "avatar": "",
-      "message": "Amen.",
+      "message": "Amen. God is with you.",
       "simulated": false,
-      "ttsText": "Amen.",
+      "ttsText": "Amen. God is with you.",
       "ttsLang": "en",
       "merit": 1
     },
     {
-      "id": "evt_1793500574663_jc8d",
-      "timestamp": "2026-11-01T02:36:14.663Z",
+      "id": "evt_1793503625009_rcqo",
+      "timestamp": "2026-11-01T03:27:05.009Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "David K.",
@@ -767,15 +799,15 @@
       "avatar": "",
       "wish": "wisdom and peace",
       "prayerText": "David is asking for prayer: “wisdom and peace”",
-      "communityText": "Together, let us pray for David.",
+      "communityText": "Let us keep David in our prayers.",
       "simulated": false,
       "ttsText": "Let us pray for David and everyone carrying a heavy heart today.",
       "ttsLang": "en",
       "merit": 2
     },
     {
-      "id": "evt_1793500565903_b1f1",
-      "timestamp": "2026-11-01T02:36:05.903Z",
+      "id": "evt_1793503605115_e8tq",
+      "timestamp": "2026-11-01T03:26:45.115Z",
       "type": "offerGift",
       "kind": "gift",
       "tier": "small",
@@ -795,8 +827,8 @@
       "ttsLang": "en"
     },
     {
-      "id": "evt_1793500565894_w21t",
-      "timestamp": "2026-11-01T02:36:05.894Z",
+      "id": "evt_1793503605097_d2by",
+      "timestamp": "2026-11-01T03:26:45.097Z",
       "type": "offerGift",
       "kind": "gift",
       "tier": "medium",
@@ -811,13 +843,13 @@
       "merit": 360,
       "simulated": false,
       "announce": true,
-      "message": "Thank you, Grace L. Your gift of Prayer candle helps keep this prayer room going.",
-      "ttsText": "Thank you, Grace L. Your gift of Prayer candle helps keep this prayer room going.",
+      "message": "What a kind gift, Grace L. May your generosity inspire hope and love.",
+      "ttsText": "What a kind gift, Grace L. May your generosity inspire hope and love.",
       "ttsLang": "en"
     },
     {
-      "id": "evt_1793500565733_sgav",
-      "timestamp": "2026-11-01T02:36:05.733Z",
+      "id": "evt_1793503604727_ondl",
+      "timestamp": "2026-11-01T03:26:44.727Z",
       "type": "sendPrayer",
       "kind": "prayerRequest",
       "user": "Emily T.",
@@ -825,262 +857,243 @@
       "avatar": "",
       "wish": "my family is struggling",
       "prayerText": "Emily is asking for prayer: “my family is struggling”",
-      "communityText": "Let us lift Emily up in prayer.",
+      "communityText": "Together, let us pray for Emily.",
       "simulated": false,
       "ttsText": "Emily is asking for prayers. Let us keep Emily in our prayers.",
       "ttsLang": "en",
       "merit": 2
     },
     {
-      "id": "evt_1793500565715_38no",
-      "timestamp": "2026-11-01T02:36:05.715Z",
+      "id": "evt_1793503604692_4yut",
+      "timestamp": "2026-11-01T03:26:44.692Z",
       "type": "commentCommand",
       "kind": "command",
       "command": "PRAY",
       "user": "Grace L.",
       "uniqueId": "smoke.grace",
       "avatar": "",
-      "message": "Let us pray together.",
+      "message": "Join me in prayer, wherever you are.",
       "simulated": false,
-      "ttsText": "Let us pray together.",
+      "ttsText": "Join me in prayer, wherever you are.",
       "ttsLang": "en",
       "merit": 1
-    },
-    {
-      "id": "evt_1793500563009_y3fa",
-      "timestamp": "2026-11-01T02:36:03.009Z",
-      "type": "commentCommand",
-      "kind": "command",
-      "command": "AMEN",
-      "user": "Michael R.",
-      "uniqueId": "smoke.michael",
-      "avatar": "",
-      "message": "Amen. May peace fill your heart today.",
-      "simulated": false,
-      "ttsText": "Amen. May peace fill your heart today.",
-      "ttsLang": "en",
-      "merit": 1
-    },
-    {
-      "id": "evt_1793500562997_dc8o",
-      "timestamp": "2026-11-01T02:36:02.997Z",
-      "type": "sendPrayer",
-      "kind": "prayerRequest",
-      "user": "Sarah M.",
-      "uniqueId": "",
-      "avatar": "",
-      "wish": "my family and for peace this week",
-      "prayerText": "Sarah is asking for prayer: “my family and for peace this week”",
-      "communityText": "Let us keep Sarah in our prayers.",
-      "simulated": false,
-      "ttsText": "Let us pray for Sarah and everyone carrying a heavy heart today.",
-      "ttsLang": "en",
-      "merit": 2
     }
   ],
   "showHistory": [
     {
-      "id": "cue_1793501622884",
-      "kind": "prayer",
-      "eyebrow": "PRAYER FOR HEALING",
-      "title": "For Those Who Are Hurting",
-      "body": "Lord, we lift up everyone watching who is hurting in body, mind, or spirit. Be near to them in this moment, and give them comfort, patient strength, and good care. Hold their families close, and let them know they are not alone. Amen.",
-      "at": "2026-11-01T02:53:42.884Z",
-      "source": "auto",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793501472882",
-      "kind": "verse",
-      "eyebrow": "VERSE OF THE MOMENT",
-      "title": "A Word for Today",
-      "body": "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the Lord thy God is with thee whithersoever thou goest.",
-      "at": "2026-11-01T02:51:12.882Z",
-      "source": "auto",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793501292879",
+      "id": "cue_1793504533059",
       "kind": "community",
       "eyebrow": "PRAYER WALL",
-      "title": "Carrying Each Other",
-      "body": "Sarah has asked for prayer: “my family and for peace this week”",
-      "at": "2026-11-01T02:48:12.879Z",
+      "title": "Our Community in Prayer",
+      "body": "Michael has asked for prayer: “my mother as she recovers”",
+      "at": "2026-11-01T03:42:13.059Z",
       "source": "auto",
       "simulated": false
     },
     {
-      "id": "cue_1793501082877",
-      "kind": "prayer",
-      "eyebrow": "PRAYER OF GRATITUDE",
-      "title": "Thank You for This Community",
-      "body": "God, thank You for every person watching right now, and for the faith, hope, and love they bring here. Bless them as they have blessed this community. Amen.",
-      "at": "2026-11-01T02:44:42.877Z",
-      "source": "auto",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500932875",
-      "kind": "verse",
-      "eyebrow": "VERSE OF THE MOMENT",
-      "title": "A Word for Today",
-      "body": "The Lord is nigh unto them that are of a broken heart; and saveth such as be of a contrite spirit.",
-      "at": "2026-11-01T02:42:12.875Z",
-      "source": "auto",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500783003",
+      "id": "cue_1793504323052",
       "kind": "prayer",
       "eyebrow": "PRAYER FOR HEALING",
       "title": "When the Body Is Weak",
       "body": "God of all comfort, You know the pain that words cannot carry. We ask for Your presence to be felt in hospital rooms, at home, and in quiet hours. Sustain the weary, and remind them that they are deeply loved. Amen.",
-      "at": "2026-11-01T02:39:43.003Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500782908",
-      "kind": "verse",
-      "eyebrow": "VERSE OF THE MOMENT",
-      "title": "A Word for Today",
-      "body": "Take therefore no thought for the morrow: for the morrow shall take thought for the things of itself.",
-      "at": "2026-11-01T02:39:42.908Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500782864",
-      "kind": "reflection",
-      "eyebrow": "BIBLE REFLECTION",
-      "title": "John 14:27 (KJV)",
-      "body": "The peace Jesus gives is not dependent on circumstances. It can hold you in the middle of them.",
-      "at": "2026-11-01T02:39:42.864Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500782843",
-      "kind": "prayer",
-      "eyebrow": "PRAYER FOR FAMILY",
-      "title": "For Parents and Children",
-      "body": "Lord, we pray for parents carrying heavy responsibilities and for children trying to find their way. Give wisdom where words are hard, and gentleness where hearts are tender. Let our homes be places of safety and grace. Amen.",
-      "at": "2026-11-01T02:39:42.843Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500782835",
-      "kind": "verse",
-      "eyebrow": "VERSE OF THE MOMENT",
-      "title": "A Word for Today",
-      "body": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
-      "at": "2026-11-01T02:39:42.835Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500782829_test",
-      "kind": "welcome",
-      "eyebrow": "WELCOME · TEST",
-      "title": "Welcome, Smoke Viewer (demo)",
-      "body": "Thank you for joining us in prayer. You are not alone here.",
-      "at": "2026-11-01T02:39:42.829Z",
-      "source": "test",
-      "simulated": true
-    },
-    {
-      "id": "cue_1793500745823",
-      "kind": "prayer",
-      "eyebrow": "PRAYER FOR FINANCIAL HARDSHIP",
-      "title": "For Those Carrying Financial Weight",
-      "body": "Lord, You see every bill, every worry, and every sleepless night about money. Provide what is needed, one day at a time, and give wisdom for the decisions ahead. Remind us that our worth is not measured by what we have. Amen.",
-      "at": "2026-11-01T02:39:05.823Z",
+      "at": "2026-11-01T03:38:43.052Z",
       "source": "auto",
       "simulated": false
     },
     {
-      "id": "cue_1793500565929",
-      "kind": "prayer",
-      "eyebrow": "PRAYER FOR HEALING",
-      "title": "Strength for Recovery",
-      "body": "Father, we pray for those walking through illness and recovery. Grant them rest when rest is needed and courage for each new day. Guide the hands of those who care for them, and surround them with peace. Amen.",
-      "at": "2026-11-01T02:36:05.929Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500565851",
-      "kind": "verse",
-      "eyebrow": "VERSE OF THE MOMENT",
-      "title": "A Word for Today",
-      "body": "And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
-      "at": "2026-11-01T02:36:05.851Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500565810",
-      "kind": "reflection",
-      "eyebrow": "BIBLE REFLECTION",
-      "title": "Psalm 46:10 (KJV)",
-      "body": "Stillness is not giving up. It is remembering who holds the world, and who holds you.",
-      "at": "2026-11-01T02:36:05.810Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500565804",
-      "kind": "prayer",
-      "eyebrow": "PRAYER FOR FAMILY",
-      "title": "For Those Missing Someone",
-      "body": "God, You see the empty chair and the unanswered message. We pray for everyone grieving a separation within their family. Comfort them in the quiet, and give them strength to take the next step. Amen.",
-      "at": "2026-11-01T02:36:05.804Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500565799",
+      "id": "cue_1793504173049",
       "kind": "verse",
       "eyebrow": "VERSE OF THE MOMENT",
       "title": "A Word for Today",
       "body": "Cast thy burden upon the Lord, and he shall sustain thee: he shall never suffer the righteous to be moved.",
-      "at": "2026-11-01T02:36:05.799Z",
-      "source": "manual",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793500565793_test",
-      "kind": "welcome",
-      "eyebrow": "WELCOME · TEST",
-      "title": "Welcome, Smoke Viewer (demo)",
-      "body": "Welcome to the prayer community, Smoke Viewer (demo). May you find peace in this moment.",
-      "at": "2026-11-01T02:36:05.793Z",
-      "source": "test",
-      "simulated": true
-    },
-    {
-      "id": "cue_1793500441573",
-      "kind": "verse",
-      "eyebrow": "VERSE OF THE MOMENT",
-      "title": "A Word for Today",
-      "body": "The Lord is my light and my salvation; whom shall I fear?",
-      "at": "2026-11-01T02:34:01.573Z",
+      "at": "2026-11-01T03:36:13.049Z",
       "source": "auto",
       "simulated": false
     },
     {
-      "id": "cue_1793500291658",
+      "id": "cue_1793503993044",
+      "kind": "prayer",
+      "eyebrow": "PRAYER FOR STRENGTH",
+      "title": "Strength for the Weary",
+      "body": "Lord, we pray for everyone who is tired in a way that sleep does not fix. Renew their strength from the inside out. Give them one clear step for today and the grace to keep going. Amen.",
+      "at": "2026-11-01T03:33:13.044Z",
+      "source": "auto",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503843041",
+      "kind": "verse",
+      "eyebrow": "VERSE OF THE MOMENT",
+      "title": "A Word for Today",
+      "body": "Be still, and know that I am God.",
+      "at": "2026-11-01T03:30:43.041Z",
+      "source": "auto",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503693176",
       "kind": "prayer",
       "eyebrow": "PRAYER FOR HEALING",
       "title": "For Those Who Are Hurting",
       "body": "Lord, we lift up everyone watching who is hurting in body, mind, or spirit. Be near to them in this moment, and give them comfort, patient strength, and good care. Hold their families close, and let them know they are not alone. Amen.",
-      "at": "2026-11-01T02:31:31.658Z",
+      "at": "2026-11-01T03:28:13.176Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503693078",
+      "kind": "verse",
+      "eyebrow": "VERSE OF THE MOMENT",
+      "title": "A Word for Today",
+      "body": "But they that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.",
+      "at": "2026-11-01T03:28:13.078Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503693027",
+      "kind": "reflection",
+      "eyebrow": "BIBLE REFLECTION",
+      "title": "Matthew 6:34 (KJV)",
+      "body": "Tomorrow will ask for your attention soon enough. Let today have your whole heart.",
+      "at": "2026-11-01T03:28:13.027Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503693020",
+      "kind": "prayer",
+      "eyebrow": "PRAYER FOR FAMILY",
+      "title": "For Those Missing Someone",
+      "body": "God, You see the empty chair and the unanswered message. We pray for everyone grieving a separation within their family. Comfort them in the quiet, and give them strength to take the next step. Amen.",
+      "at": "2026-11-01T03:28:13.020Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503693013",
+      "kind": "verse",
+      "eyebrow": "VERSE OF THE MOMENT",
+      "title": "A Word for Today",
+      "body": "Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid.",
+      "at": "2026-11-01T03:28:13.013Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503693006_test",
+      "kind": "welcome",
+      "eyebrow": "WELCOME · TEST",
+      "title": "Welcome, Smoke Viewer (demo)",
+      "body": "Faith, hope and love are stronger when we gather. God bless you.",
+      "at": "2026-11-01T03:28:13.006Z",
+      "source": "test",
+      "simulated": true
+    },
+    {
+      "id": "cue_1793503683330",
+      "kind": "welcome",
+      "eyebrow": "WELCOME",
+      "title": "Peace Be With You",
+      "body": "Welcome to Christian Prayer Live. Thank you for pausing here. Wherever this day has taken you, you are welcome in this moment of prayer. Let us begin together.",
+      "at": "2026-11-01T03:28:03.330Z",
+      "source": "auto",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503605183",
+      "kind": "prayer",
+      "eyebrow": "PRAYER FOR HEALING",
+      "title": "Strength for Recovery",
+      "body": "Father, we pray for those walking through illness and recovery. Grant them rest when rest is needed and courage for each new day. Guide the hands of those who care for them, and surround them with peace. Amen.",
+      "at": "2026-11-01T03:26:45.183Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503605000",
+      "kind": "verse",
+      "eyebrow": "VERSE OF THE MOMENT",
+      "title": "A Word for Today",
+      "body": "I can do all things through Christ which strengtheneth me.",
+      "at": "2026-11-01T03:26:45.000Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503604942",
+      "kind": "welcome",
+      "eyebrow": "WELCOME",
+      "title": "Peace Be With You",
+      "body": "Welcome to Christian Prayer Live. Thank you for pausing here. Wherever this day has taken you, you are welcome in this moment of prayer. Let us begin together.",
+      "at": "2026-11-01T03:26:44.942Z",
+      "source": "auto",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503604917",
+      "kind": "reflection",
+      "eyebrow": "BIBLE REFLECTION",
+      "title": "John 3:16 (KJV)",
+      "body": "Love moved first. Before you had anything to offer, God loved you.",
+      "at": "2026-11-01T03:26:44.917Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503604906",
+      "kind": "prayer",
+      "eyebrow": "PRAYER FOR FAMILY",
+      "title": "For Parents and Children",
+      "body": "Lord, we pray for parents carrying heavy responsibilities and for children trying to find their way. Give wisdom where words are hard, and gentleness where hearts are tender. Let our homes be places of safety and grace. Amen.",
+      "at": "2026-11-01T03:26:44.906Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503604897",
+      "kind": "verse",
+      "eyebrow": "VERSE OF THE MOMENT",
+      "title": "A Word for Today",
+      "body": "The Lord is my shepherd; I shall not want.",
+      "at": "2026-11-01T03:26:44.897Z",
+      "source": "manual",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793503604885_test",
+      "kind": "welcome",
+      "eyebrow": "WELCOME · TEST",
+      "title": "Welcome, Smoke Viewer (demo)",
+      "body": "Faith, hope and love are stronger when we gather. God bless you.",
+      "at": "2026-11-01T03:26:44.885Z",
+      "source": "test",
+      "simulated": true
+    },
+    {
+      "id": "cue_1793503315880",
+      "kind": "prayer",
+      "eyebrow": "PRAYER FOR HEALING",
+      "title": "For Those Who Are Hurting",
+      "body": "Lord, we lift up everyone watching who is hurting in body, mind, or spirit. Be near to them in this moment, and give them comfort, patient strength, and good care. Hold their families close, and let them know they are not alone. Amen.",
+      "at": "2026-11-01T03:21:55.880Z",
       "source": "manual",
       "simulated": false
     }
   ],
   "quizRecent": [
+    "q037",
+    "q094",
+    "q116",
+    "q080",
+    "q029",
+    "q079",
+    "q109",
+    "q051",
+    "q020",
+    "q092",
+    "q124",
+    "q069",
     "q128",
     "q136",
     "q077",
@@ -1119,7 +1132,7 @@
     "ttsRate": 1,
     "sfxEnabled": true,
     "music": {
-      "enabled": false,
+      "enabled": true,
       "volume": 0.1,
       "duckVolume": 0.035,
       "track": "peaceful-prayer-01",
@@ -1151,11 +1164,11 @@
     "background": {
       "enabled": true,
       "intervalSeconds": 20,
-      "category": "candles",
+      "category": "church",
       "randomize": true,
       "transitionMs": 1600,
       "sceneMatch": true,
-      "current": "/assets/christian/candles/candles-01-montserrat-prayer-candles.jpg"
+      "current": "/assets/christian/church/church-01-nave-of-basilica-saint-sernin-2012-08-24.jpg"
     },
     "prayer": {
       "autoApprove": true,
@@ -1163,6 +1176,12 @@
       "maxQueue": 30,
       "cooldownSeconds": 30,
       "interactionEnabled": true
+    },
+    "congregation": {
+      "enabled": true,
+      "showNames": true,
+      "inactivityMinutes": 20,
+      "maxVisible": 50
     },
     "bgMusicEnabled": false,
     "musicVolume": 0.45
