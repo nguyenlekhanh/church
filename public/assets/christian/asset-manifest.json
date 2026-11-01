@@ -1,5 +1,51 @@
 [
   {
+    "id": "img_backgrounds_ai-peaceful-landscape-at-sunrise-15c87dfd",
+    "file": "backgrounds/AI_Peaceful_landscape_at_sunrise_15c87dfd.jpg",
+    "category": "backgrounds",
+    "title": "Peaceful landscape at sunrise 15c87dfd",
+    "width": 768,
+    "height": 1376,
+    "bytes": 832521,
+    "sha256": "9fd43098bbb21ef1d08bcd1a17f3a84ef6241feefcc5876822b20c29c9906438",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
+  },
+  {
+    "id": "img_backgrounds_ai-sunlight-illuminating-landscape-42e43441",
+    "file": "backgrounds/AI_Sunlight_illuminating_landscape_…_42e43441.jpg",
+    "category": "backgrounds",
+    "title": "Sunlight illuminating landscape … 42e43441",
+    "width": 768,
+    "height": 1376,
+    "bytes": 827077,
+    "sha256": "ed6f9f64b08fc35fa5c31e269fb78b7bd22e8fd2986b2639b2f579abb20f2981",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
+  },
+  {
     "file": "backgrounds/backgrounds-01-golden-clouds.jpg",
     "category": "backgrounds",
     "title": "Golden Clouds.JPG",
@@ -15,7 +61,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 900,
-    "bytes": 247657
+    "bytes": 247657,
+    "id": "img_backgrounds_backgrounds-01-golden-clouds",
+    "sha256": "fe09cfba76d048d8bca8617425a6cdc33dbd082c0dcdeea633a5e1f84a91ea39"
   },
   {
     "file": "backgrounds/backgrounds-02-d-lmen-umland-sonnenaufgang-2012-8084.jpg",
@@ -33,7 +81,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1066,
     "height": 1600,
-    "bytes": 287749
+    "bytes": 287749,
+    "id": "img_backgrounds_backgrounds-02-d-lmen-umland-sonnenaufgang-2012-8084",
+    "sha256": "fdfbcc74b7d4aa302129d6aceb028d7de767f676eead1f9e78a43790d2801e8c"
   },
   {
     "file": "backgrounds/backgrounds-03-d-lmen-umland-sonnenaufgang-2012-8069.jpg",
@@ -51,7 +101,55 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1066,
-    "bytes": 316721
+    "bytes": 316721,
+    "id": "img_backgrounds_backgrounds-03-d-lmen-umland-sonnenaufgang-2012-8069",
+    "sha256": "f9f01591eb74c3cebca00c8fcd503bdfba980480567482717ad3cdb5138c8658"
+  },
+  {
+    "id": "img_bible_ai-bible-resting-on-wooden-table-395f2590",
+    "file": "bible/AI_Bible_resting_on_wooden_table_395f2590.jpg",
+    "category": "bible",
+    "title": "Bible resting on wooden table 395f2590",
+    "width": 768,
+    "height": 1376,
+    "bytes": 702981,
+    "sha256": "b07100e570ab1cfe8c3eca1bfedd395bba0c7b8c732307bc4a43e6840a988f08",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
+  },
+  {
+    "id": "img_bible_ai-bible-resting-on-wooden-table-5c55bf43",
+    "file": "bible/AI_Bible_resting_on_wooden_table_5c55bf43.jpg",
+    "category": "bible",
+    "title": "Bible resting on wooden table 5c55bf43",
+    "width": 768,
+    "height": 1376,
+    "bytes": 669734,
+    "sha256": "d8d51a7ad94f1550d1bcbd2083dd4bd259a71ad65a62648180bad54a652446a4",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
   },
   {
     "file": "bible/bible-03-bible-on-a-coffee-table.jpg",
@@ -69,7 +167,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1200,
     "height": 1600,
-    "bytes": 193753
+    "bytes": 193753,
+    "id": "img_bible_bible-03-bible-on-a-coffee-table",
+    "sha256": "7f500200549e1d7e6fe7de99a35cd20c4a2f1de0e39beeb5646f615305f97120"
   },
   {
     "file": "bible/bible-04-communion-table.jpg",
@@ -87,7 +187,55 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1200,
-    "bytes": 615949
+    "bytes": 615949,
+    "id": "img_bible_bible-04-communion-table",
+    "sha256": "06ae222cd86b1d76767e6b321897d3817a372392cfd887d67f0309aa2a922433"
+  },
+  {
+    "id": "img_candles_ai-glowing-prayer-candles-inside-ch-073b7c51",
+    "file": "candles/AI_Glowing_prayer_candles_inside_ch…_073b7c51.jpg",
+    "category": "candles",
+    "title": "Glowing prayer candles inside ch… 073b7c51",
+    "width": 768,
+    "height": 1376,
+    "bytes": 743677,
+    "sha256": "454ea1927ddcdd6f1bd793f483907b8c1627a853c0ac1e2af5f5c5f39a33b0e6",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
+  },
+  {
+    "id": "img_candles_ai-prayer-candles-glowing-inside-ch-310bb196",
+    "file": "candles/AI_Prayer_candles_glowing_inside_ch…_310bb196.jpg",
+    "category": "candles",
+    "title": "Prayer candles glowing inside ch… 310bb196",
+    "width": 768,
+    "height": 1376,
+    "bytes": 714300,
+    "sha256": "a2411ce93d383135cd49afc73c28016c389d7b6eaede1df16c7f5cc53c155ac8",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
   },
   {
     "file": "candles/candles-01-montserrat-prayer-candles.jpg",
@@ -105,7 +253,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1070,
-    "bytes": 441929
+    "bytes": 441929,
+    "id": "img_candles_candles-01-montserrat-prayer-candles",
+    "sha256": "46745c6b14664e0aec6cac48fd058c57480d5b94785fe692ca4993a365846cb7"
   },
   {
     "file": "candles/candles-02-prayer-candles-at-sarrat.jpg",
@@ -123,7 +273,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1066,
-    "bytes": 161486
+    "bytes": 161486,
+    "id": "img_candles_candles-02-prayer-candles-at-sarrat",
+    "sha256": "41786479a1cdd1c5241d930a504bb4b7993184c67538fc66d0953a12e80af49f"
   },
   {
     "file": "candles/candles-03-prayer-candles-5406060261.jpg",
@@ -141,7 +293,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1062,
-    "bytes": 210467
+    "bytes": 210467,
+    "id": "img_candles_candles-03-prayer-candles-5406060261",
+    "sha256": "80d5acd68f92402f93fb0e3f44099e9213a36437e05352b0ba421e14c65a69d9"
   },
   {
     "file": "candles/candles-04-bolton-abbey-mmb-06.jpg",
@@ -159,7 +313,55 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1033,
-    "bytes": 332487
+    "bytes": 332487,
+    "id": "img_candles_candles-04-bolton-abbey-mmb-06",
+    "sha256": "307a8ff65e979522314b1df50f135fd3c6aaf4b6d88720f52d439e70cd3d2e7a"
+  },
+  {
+    "id": "img_cathedral_ai-congregation-kneeling-in-prayer-9a0c363f",
+    "file": "cathedral/AI_Congregation_kneeling_in_prayer_…_9a0c363f.jpg",
+    "category": "cathedral",
+    "title": "Congregation kneeling in prayer … 9a0c363f",
+    "width": 768,
+    "height": 1376,
+    "bytes": 916196,
+    "sha256": "4959f555919034ae4f1111e129e9bcc60fba5fdac5d8327364856bbc2d003270",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
+  },
+  {
+    "id": "img_cathedral_ai-congregation-praying-in-gothic-c-bf512f0e",
+    "file": "cathedral/AI_Congregation_praying_in_Gothic_c…_bf512f0e.jpg",
+    "category": "cathedral",
+    "title": "Congregation praying in Gothic c… bf512f0e",
+    "width": 768,
+    "height": 1376,
+    "bytes": 947029,
+    "sha256": "95161e857ce02be9c1be788138ef8f2d59e9e16c9a5c9253b32496c8c2ca92f9",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
   },
   {
     "file": "cathedral/cathedral-01-cathedral-mass.jpg",
@@ -178,7 +380,9 @@
     "processing": "Center 9:16 crop, deeper warm cinematic grade, light sharpening",
     "width": 1080,
     "height": 1920,
-    "bytes": 533123
+    "bytes": 533123,
+    "id": "img_cathedral_cathedral-01-cathedral-mass",
+    "sha256": "2297f32ca392982817ab46cbc4f382a9b497003b97289ecf9910ed2510a29dd2"
   },
   {
     "file": "cathedral/cathedral-02-sanctuary-service.jpg",
@@ -197,7 +401,9 @@
     "processing": "Center 9:16 crop, warm cinematic grade",
     "width": 1080,
     "height": 1920,
-    "bytes": 707111
+    "bytes": 707111,
+    "id": "img_cathedral_cathedral-02-sanctuary-service",
+    "sha256": "a991370868c9bcc14ec7254ae31c8d0f5f1054a14d69dfed67f7acaad0032206"
   },
   {
     "file": "church/church-01-nave-of-basilica-saint-sernin-2012-08-24.jpg",
@@ -215,7 +421,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 751,
-    "bytes": 327200
+    "bytes": 327200,
+    "id": "img_church_church-01-nave-of-basilica-saint-sernin-2012-08-24",
+    "sha256": "209138ae4bf9afccd61f83b0a9f2a2b982bc3b2506d0c5400aeea1540c39d0cb"
   },
   {
     "file": "church/church-02-holy-trinity-sloane-street-church-nave-2-diliff.jpg",
@@ -233,7 +441,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1067,
-    "bytes": 498025
+    "bytes": 498025,
+    "id": "img_church_church-02-holy-trinity-sloane-street-church-nave-2-diliff",
+    "sha256": "93a0172822eaf9d9d4b0f90ea75172841aa6db8ec9b30ce1f37152ae18886b8a"
   },
   {
     "file": "church/church-03-st-peter-s-church-nave-1-drogheda-ireland-diliff.jpg",
@@ -251,7 +461,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1299,
-    "bytes": 640424
+    "bytes": 640424,
+    "id": "img_church_church-03-st-peter-s-church-nave-1-drogheda-ireland-diliff",
+    "sha256": "399e3fdda1cb5d617ab2044d1086a4edd00ab14924f6f9bff479b36c6652d152"
   },
   {
     "file": "church/church-04-duomo-verona-interior-nave-right-part-cappella-calcasoli.jpg",
@@ -269,7 +481,55 @@
     "retrievedAt": "2026-10-31",
     "width": 1131,
     "height": 1600,
-    "bytes": 640948
+    "bytes": 640948,
+    "id": "img_church_church-04-duomo-verona-interior-nave-right-part-cappella-cal",
+    "sha256": "7963396e6448ba7fd6c870be39b1d70fc1bbe74935cf6709c5bd34dfa9ce9d48"
+  },
+  {
+    "id": "img_cross_ai-wooden-cross-on-grassy-hill-37dad860",
+    "file": "cross/AI_Wooden_cross_on_grassy_hill_37dad860.jpg",
+    "category": "cross",
+    "title": "Wooden cross on grassy hill 37dad860",
+    "width": 768,
+    "height": 1376,
+    "bytes": 839279,
+    "sha256": "d8e262a6c96f4fadaa66c950b08b012c0566d6687117231710e42210fcc7dbd8",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:31:23.262Z",
+    "updatedAt": "2026-11-01T06:32:15.850Z",
+    "registeredAt": "2026-11-01T06:31:23.262Z"
+  },
+  {
+    "id": "img_cross_ai-wooden-cross-on-grassy-hill-a4d1c9aa",
+    "file": "cross/AI_Wooden_cross_on_grassy_hill_a4d1c9aa.jpg",
+    "category": "cross",
+    "title": "Wooden cross on grassy hill a4d1c9aa",
+    "width": 768,
+    "height": 1376,
+    "bytes": 864475,
+    "sha256": "be485b7364222fc92b2c3cca389f789cac1032a24d8040467667e5bd8b1bf550",
+    "provenance": "AI_GENERATED",
+    "generated": true,
+    "source": "AI Generated",
+    "license": "AI Generated (project original)",
+    "licenseUrl": "",
+    "attribution": "AI Generated",
+    "attributionRequired": false,
+    "commercialUse": "Allowed",
+    "socialMediaUse": "Allowed",
+    "reviewRequired": false,
+    "generatedAt": "2026-11-01T06:28:21.618Z",
+    "updatedAt": "2026-11-01T06:28:21.618Z",
+    "registeredAt": "2026-11-01T06:28:21.618Z"
   },
   {
     "file": "cross/cross-01-holy-cross-altar-church-of-saint-francis-listed-id-41-buda.jpg",
@@ -287,7 +547,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1200,
     "height": 1600,
-    "bytes": 350784
+    "bytes": 350784,
+    "id": "img_cross_cross-01-holy-cross-altar-church-of-saint-francis-listed-id-",
+    "sha256": "d159d0814724f6149076b2c70f657840779fa4340369b35e3407c7c53f66226f"
   },
   {
     "file": "cross/cross-02-saint-bernard-church-holy-cross-altar-in-eger-2016-hungary.jpg",
@@ -305,7 +567,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1200,
     "height": 1600,
-    "bytes": 358418
+    "bytes": 358418,
+    "id": "img_cross_cross-02-saint-bernard-church-holy-cross-altar-in-eger-2016-",
+    "sha256": "c8f329187dd3f1b3bda33e1558d33b7a4fc6c1ac0e36674a5c7de4a7f7fd079c"
   },
   {
     "file": "cross/cross-03-d-lmen-st-viktor-kirche-innenansicht-altar-2018-0552-6.jpg",
@@ -323,7 +587,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1079,
-    "bytes": 434292
+    "bytes": 434292,
+    "id": "img_cross_cross-03-d-lmen-st-viktor-kirche-innenansicht-altar-2018-055",
+    "sha256": "eed3a9055d7945a698bd97b105e7c33998be0a3e5dd0e2263c92aed581ab2a90"
   },
   {
     "file": "cross/cross-04-d-lmen-heilig-kreuz-kirche-altar-2019-3113-7.jpg",
@@ -341,7 +607,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1600,
     "height": 1187,
-    "bytes": 393690
+    "bytes": 393690,
+    "id": "img_cross_cross-04-d-lmen-heilig-kreuz-kirche-altar-2019-3113-7",
+    "sha256": "72ca680e288d6fe8bfe5bc5b157941861cc1dd9ee7a2dd1d03c57ec0381d272c"
   },
   {
     "file": "jesus/jesus-02-temptation-of-christ-in-the-wilderness.jpg",
@@ -359,7 +627,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1205,
     "height": 1600,
-    "bytes": 623500
+    "bytes": 623500,
+    "id": "img_jesus_jesus-02-temptation-of-christ-in-the-wilderness",
+    "sha256": "9ed090486cbd684cf91aa22453702abc4010a7f4f0a2a3c4c6995ec333ed343e"
   },
   {
     "file": "jesus/jesus-03-claude-mellan-face-of-christ-wga14764.jpg",
@@ -377,7 +647,9 @@
     "retrievedAt": "2026-10-31",
     "width": 1193,
     "height": 1600,
-    "bytes": 938260
+    "bytes": 938260,
+    "id": "img_jesus_jesus-03-claude-mellan-face-of-christ-wga14764",
+    "sha256": "1540e5a7cd96edf658c309181c9aa782a5bd91c5b791c5fc20e2345fa597587b"
   },
   {
     "file": "overlays/gold-bokeh-particles.png",

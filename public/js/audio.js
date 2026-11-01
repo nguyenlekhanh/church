@@ -206,7 +206,18 @@
       limiter.attack.value = 0.006;
       limiter.release.value = 0.3;
       master.connect(limiter);
-      limiter.connect(this.ctx.destination);
+      // The analyser measures the music bus only (narration uses a separate
+      // <audio> element), which is what the silent-audio monitor needs.
+      if (this.ctx.createAnalyser) {
+        const analyser = this.ctx.createAnalyser();
+        analyser.fftSize = 1024;
+        analyser.smoothingTimeConstant = 0.3;
+        limiter.connect(analyser);
+        analyser.connect(this.ctx.destination);
+        music.analyser = analyser;
+      } else {
+        limiter.connect(this.ctx.destination);
+      }
       music.master = master;
       music.limiter = limiter;
       return master;
@@ -371,6 +382,29 @@
       }
     }
 
+    /**
+     * Safe recovery for the silent-audio monitor: fades the current deck out
+     * and starts the same track again. No second player, no duplicate loop.
+     */
+    reloadCurrentTrack({ fadeMs = 600 } = {}) {
+      const music = this.music;
+      if (!this.ctx || !this.unlocked) return false;
+      if (!music.enabled || music.paused) return false;
+      const id = music.currentId || music.tracks[0]?.id;
+      if (!id) return false;
+      music.failed.delete(id);
+      const deck = music.deck;
+      if (deck) {
+        try {
+          this.stopDeck(deck, 300);
+        } catch (_) {}
+        music.deck = null;
+      }
+      music.loadError = null;
+      this.playTrack(id, { fadeMs });
+      return true;
+    }
+
     stopDeck(deck, fadeMs) {
       if (!deck) return;
       try {
@@ -449,6 +483,44 @@
       if (typeof this.onMusicStateChange === 'function') {
         this.onMusicStateChange({ reason: 'state', status: this.getMusicStatus() });
       }
+    }
+
+    /** RMS of what the music bus is actually outputting, or null if unmeasured. */
+    getMusicRms() {
+      const music = this.music;
+      if (!music.analyser) return null;
+      if (!this._levelBuffer || this._levelBuffer.length !== music.analyser.fftSize) {
+        this._levelBuffer = new Float32Array(music.analyser.fftSize);
+      }
+      try {
+        music.analyser.getFloatTimeDomainData(this._levelBuffer);
+      } catch (_) {
+        return null;
+      }
+      let sum = 0;
+      for (let index = 0; index < this._levelBuffer.length; index += 1) {
+        const value = this._levelBuffer[index];
+        sum += value * value;
+      }
+      return Math.sqrt(sum / this._levelBuffer.length);
+    }
+
+    /** Small, evidence-only report used by the server health monitor. */
+    getAudioHealth() {
+      const music = this.music;
+      const status = this.getMusicStatus();
+      return {
+        playing: Boolean(music.deck && !music.paused),
+        paused: Boolean(music.paused),
+        enabled: Boolean(music.enabled),
+        unlocked: Boolean(this.unlocked),
+        muted: false,
+        ttsPlaying: Boolean(this.ttsPlaying),
+        musicRms: this.getMusicRms(),
+        volume: music.volume,
+        trackId: music.currentId || null,
+        error: music.loadError || null
+      };
     }
 
     setTtsVolume(volume) {

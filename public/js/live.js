@@ -1509,6 +1509,15 @@
             renderMusicStatus();
           }
           break;
+        case 'audio.recover': {
+          // Server-side silent-audio monitor asked for a safe reload.
+          const resumed = audio.reloadCurrentTrack({ fadeMs: 500 });
+          console.info(`[Audio] Recovery requested (${data?.reason || 'silent'}) → ${resumed ? 'reloading track' : 'nothing to reload'}`);
+          break;
+        }
+        case 'schedule.state':
+          if (data?.schedule && currentState) currentState.schedule = data.schedule;
+          break;
         case 'music.library.updated':
           if (Array.isArray(data?.tracks)) {
             musicTracks = data.tracks.filter((track) => copyrightMusicCheck(track).eligible);
@@ -1569,6 +1578,17 @@
     ws.onerror = () => {
       setConnectionWarning(true);
     };
+  }
+
+  /** Periodic, read-only audio evidence for the health monitor. */
+  function reportAudioHealth() {
+    if (document.hidden) return;
+    try {
+      const report = audio.getAudioHealth();
+      callRpc('health.audio', { report });
+    } catch (err) {
+      console.warn('[Audio] Health report failed:', err.message);
+    }
   }
 
   async function callRpc(method, rpcParams = {}) {
@@ -1773,4 +1793,6 @@
   // OBS browser sources can autoplay; regular browsers stay silent until a click.
   audio.ensureContext();
   connectWebSocket();
+  setInterval(reportAudioHealth, 15000);
+  setTimeout(reportAudioHealth, 6000);
 })();

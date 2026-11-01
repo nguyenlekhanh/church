@@ -336,15 +336,31 @@ async function main() {
   check('disabled prayer interaction does not queue requests', ignoredPrayer?.prayerDisabled === true, JSON.stringify(ignoredPrayer).slice(0, 80));
   await rpc('temple.updateSettings', { prayer: { interactionEnabled: true } });
 
-  await rpc('stage.updateSettings', { sceneMatch: true });
+  // Scene matching applies while auto-rotation is off; with rotation on, the
+  // global rotation pool owns the stage so a segment cue cannot narrow it.
+  await rpc('stage.updateSettings', { sceneMatch: true, enabled: false });
   const sceneCue = await rpc('show.nextPrayer', { theme: 'healing' });
   await sleep(400);
   const sceneState = await rpc('temple.getState');
-  check('healing prayer switches to the candle scene', sceneState.settings.background.category === 'candles',
+  const sceneCatalog = (await rpc('stage.listBackgrounds'))?.backgrounds || [];
+  const sceneImage = sceneCatalog.find((img) => img.url === sceneState.settings.background.current);
+  check('healing prayer switches to the candle scene', sceneState.settings.background.category === 'candles'
+    && sceneImage?.category === 'candles',
     `${sceneCue.cue?.eyebrow} → ${sceneState.settings.background.category}`);
   const sceneOff = await rpc('stage.updateSettings', { sceneMatch: false });
   check('scene matching can be disabled', sceneOff.settings.background.sceneMatch === false);
-  await rpc('stage.updateSettings', { sceneMatch: true });
+
+  await rpc('stage.updateSettings', { sceneMatch: true, enabled: true });
+  const rotationBefore = (await rpc('temple.getState')).settings.background.current;
+  await rpc('show.nextPrayer', { theme: 'healing' });
+  await sleep(400);
+  const rotationAfter = await rpc('temple.getState');
+  check('a segment cue never narrows the global rotation stage',
+    rotationAfter.settings.background.current === rotationBefore,
+    `rotation → ${rotationAfter.settings.background.current}`);
+  const rotationPool = (await rpc('stage.listBackgrounds'))?.backgrounds || [];
+  const poolCats = [...new Set(rotationPool.filter((img) => img.copyright?.eligible === true).map((img) => img.category))];
+  check('rotation pool covers every image category', poolCats.length === 7, poolCats.sort().join(','));
 
   // 10f. Prayer congregation (session-only seats, no fabricated leave events)
   const { Congregation } = require('../lib/congregation.js');
@@ -467,13 +483,62 @@ async function main() {
   const musicUpdate = await rpc('music.update', { track: music.tracks[0]?.id, volume: 0.1, enabled: true, paused: false });
   check('music track can change without a restart', musicUpdate.settings.track === music.tracks[0]?.id && musicUpdate.settings.paused === false);
 
-  // 13. Static pages
+  // 13. Smart daily schedule (US timezones)
+  const schedule = await rpc('schedule.get');
+  check('smart schedule exposes four programs', schedule.programs?.length === 4, (schedule.programs || []).map((p) => p.id).join(', '));
+  check('smart schedule reports the US timezone', schedule.timezone === 'America/Chicago', schedule.timezone);
+  check('smart schedule has an active program', Boolean(schedule.current?.id), schedule.current?.label);
+  check('smart schedule reports the next transition', typeof schedule.remainingSeconds === 'number' && schedule.remainingSeconds > 0, `${schedule.remainingSeconds}s`);
+  const scheduleAt = (iso) => rpc('schedule.test', { at: new Date(iso).getTime() });
+  check('06:00 CST runs morning prayer', (await scheduleAt('2026-11-02T12:00:00Z')).effective === 'morning');
+  check('12:00 CST runs afternoon Bible study', (await scheduleAt('2026-11-02T18:00:00Z')).effective === 'afternoon');
+  check('17:30 CST runs evening worship', (await scheduleAt('2026-11-02T23:30:00Z')).effective === 'evening');
+  check('22:00 CST runs night prayer', (await scheduleAt('2026-11-02T04:00:00Z')).effective === 'night');
+  check('DST spring-forward is handled', (await scheduleAt('2026-03-08T08:00:00Z')).local.clock.startsWith('03:00'));
+  check('DST fall-back is handled', (await scheduleAt('2026-11-01T07:30:00Z')).local.clock.startsWith('01:30'));
+  const editedSchedule = await rpc('schedule.program.update', { id: 'morning', start: '05:15' });
+  check('editing a program keeps the day continuous',
+    editedSchedule.programs.find((p) => p.id === 'night').end === '05:15');
+  await rpc('schedule.program.update', { id: 'morning', start: '05:00' });
+  const overrideSchedule = await rpc('schedule.override', { program: 'evening', minutes: 15 });
+  check('manual override pauses automatic switching',
+    overrideSchedule.mode === 'manual' && overrideSchedule.current?.id === 'evening');
+  const automaticSchedule = await rpc('schedule.auto');
+  check('return to automatic schedule works', automaticSchedule.mode === 'auto' && automaticSchedule.override === null);
+
+  // 13b. System health, recovery and music integrity
+  const healthPayload = await rpc('health.get');
+  check('health reports all nine components', Object.keys(healthPayload.statuses || {}).length === 9, Object.keys(healthPayload.statuses || {}).join(', '));
+  check('health reports CPU, memory and event loop', typeof healthPayload.metrics?.cpuPercent === 'number'
+    && typeof healthPayload.metrics?.memory?.systemUsedPercent === 'number'
+    && typeof healthPayload.metrics?.eventLoopLagMs === 'number');
+  check('health reports the TTS queue', healthPayload.snapshot?.ttsQueue !== null && healthPayload.snapshot?.ttsQueue !== undefined);
+  check('health reports the OBS stage', healthPayload.statuses?.obsStage?.status === 'connected'
+    || healthPayload.statuses?.obsStage?.status === 'disconnected', healthPayload.statuses?.obsStage?.label);
+  check('health carries the configured thresholds', healthPayload.thresholds?.cpu?.warning === 80
+    && healthPayload.thresholds?.ram?.critical === 90 && healthPayload.thresholds?.eventLoop?.warning === 200);
+  check('health check runs on demand', (await rpc('health.check', { reason: 'smoke test' })).counters.checks >= 1);
+  const diagnostics = await rpc('health.export');
+  check('diagnostic export omits environment secrets', !JSON.stringify(diagnostics).includes('process.env')
+    && !JSON.stringify(diagnostics).toLowerCase().includes('api_key'));
+  await rpc('health.audio', { report: { playing: false, paused: true, enabled: true, unlocked: true, ttsPlaying: false, musicRms: 0, volume: 0.1 } });
+  await rpc('health.audio', { report: { playing: false, paused: true, enabled: true, unlocked: true, ttsPlaying: false, musicRms: 0, volume: 0.1 } });
+  await rpc('health.audio', { report: { playing: false, paused: true, enabled: true, unlocked: true, ttsPlaying: false, musicRms: 0, volume: 0.1 } });
+  check('paused music never raises a silence alert', (await rpc('health.get')).audio?.state !== 'silent');
+  const integrity = await rpc('music.integrity');
+  check('music integrity scan is read-only', integrity.healthy === true && integrity.missingCount === 0, integrity.summary);
+  check('music integrity lists unused files', Array.isArray(integrity.orphans));
+  const reconnect = await rpc('live.status');
+  check('TikTok reconnect policy is exposed', typeof reconnect.settings?.autoReconnect === 'boolean'
+    && typeof reconnect.settings?.maxRetries === 'number');
+
+  // 14. Static pages
   for (const pathname of ['/', '/admin', '/css/live.css', '/css/admin.css', '/js/live.js', '/js/admin.js', '/js/audio.js', '/js/particles.js']) {
     const res = await fetch(`${BASE}${pathname}`);
     check(`static ${pathname}`, res.status === 200, String(res.status));
   }
 
-  // 14. WebSocket + notifications
+  // 15. WebSocket + notifications
   await sleep(2700);
   await new Promise((resolve) => {
     const ws = new WebSocket(BASE.replace('http', 'ws') + '/ws');
@@ -512,7 +577,7 @@ async function main() {
     });
   });
 
-  // 14. Cleanup: leave a pleasant demo state
+  // 16. Cleanup: leave a pleasant demo state
   await rpc('prayer.clear');
   await rpc('prayer.add', { name: 'Sarah M.', text: 'Please pray for my family and for peace this week.', source: 'admin' });
   await rpc('prayer.add', { name: 'Michael R.', text: 'Please pray for my mother as she recovers.', source: 'admin' });

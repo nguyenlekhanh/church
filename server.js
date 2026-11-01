@@ -29,18 +29,30 @@ const { MusicLibrary } = require('./lib/music-library');
 const { Congregation } = require('./lib/congregation');
 const { CopyrightAudit } = require('./lib/copyright-audit');
 const { BroadcastSafety } = require('./lib/broadcast-safety');
+const { SmartSchedule } = require('./lib/schedule');
+const { HealthMonitor, wavStats } = require('./lib/health');
+const { MusicIntegrity } = require('./lib/music-integrity');
+const { ImageLibrary, isIgnoredImageName, imageDimensions } = require('./lib/image-library');
 
 const CONFIG = loadConfig();
 const PORT = CONFIG.port || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const TTS_CACHE_DIR = path.join(DATA_DIR, 'tts-cache');
 const STATE_FILE = path.join(DATA_DIR, 'prayer-state.json');
+const HEALTH_STATE_FILE = path.join(DATA_DIR, 'health-state.json');
+const SCHEDULE_FILE = path.join(__dirname, 'config', 'schedule.json');
 const LEGACY_STATE_FILE = path.join(DATA_DIR, 'merit-state.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const CHRISTIAN_ASSETS_DIR = path.join(PUBLIC_DIR, 'assets', 'christian');
 const ASSET_MANIFEST_FILE = path.join(CHRISTIAN_ASSETS_DIR, 'asset-manifest.json');
 const copyrightAudit = new CopyrightAudit({ root: __dirname });
 const broadcastSafety = new BroadcastSafety({ root: __dirname });
+const imageLibrary = new ImageLibrary({
+  root: __dirname,
+  assetsDir: CHRISTIAN_ASSETS_DIR,
+  manifestPath: ASSET_MANIFEST_FILE,
+  statePath: path.join(DATA_DIR, 'image-library-state.json')
+});
 let broadcastSafeMode = true;
 
 fs.mkdirSync(TTS_CACHE_DIR, { recursive: true });
@@ -65,6 +77,9 @@ const BRAND = {
 let ttsManager = null;
 let showProgram = null;
 let quizEngine = null;
+let healthMonitor = null;
+let smartSchedule = null;
+let tiktokWatchdog = null;
 // Set while a show narration is playing so two prayers never talk over each other.
 let narrationBusyUntil = 0;
 // Last cue of any kind (welcome included), replayed to a stage that reconnects.
@@ -87,7 +102,34 @@ class PiperManager {
     this.buffer = '';
     this.error = null;
     this.loadSec = null;
-    this.startWorker();
+    // Auto recovery: delays double up to one minute, with a hard rate limit so a
+    // permanently broken voice install cannot spin forever.
+    this.recovery = {
+      attempts: 0,
+      history: [],
+      timer: null,
+      nextAt: null,
+      suspended: false,
+      lastExit: null,
+      lastExitAt: null,
+      lastReadyAt: null,
+      starting: false
+    };
+    this.readyTimer = null;
+    this.requestedStop = false;
+    this.onIncident = null;
+    this.startWorker({ reason: 'startup' });
+  }
+
+  /** Records a recovery event without coupling the manager to the health module. */
+  reportIncident(incident) {
+    if (typeof this.onIncident === 'function') {
+      try {
+        this.onIncident(incident);
+      } catch (err) {
+        console.warn('[Piper] Incident handler failed:', err.message);
+      }
+    }
   }
 
   resolvePythonBin() {
@@ -107,27 +149,60 @@ class PiperManager {
     return 'python';
   }
 
-  startWorker() {
+  startWorker({ reason = 'manual' } = {}) {
+    if (this.recovery.timer) {
+      clearTimeout(this.recovery.timer);
+      this.recovery.timer = null;
+    }
+    this.recovery.nextAt = null;
+    this.recovery.starting = true;
+    // A manual retry must replace the worker, never leave a second one speaking.
+    if (this.proc) {
+      const previous = this.proc;
+      this.proc = null;
+      try {
+        previous.removeAllListeners();
+      } catch (_) {}
+      try {
+        previous.kill();
+      } catch (_) {}
+    }
     const pyBin = this.resolvePythonBin();
     const scriptPath = path.join(__dirname, 'tts_worker.py');
-    console.log(`[Piper] Starting TTS worker: ${pyBin}`);
+    console.log(`[Piper] Starting TTS worker: ${pyBin}${reason !== 'startup' ? ` (${reason})` : ''}`);
     this.status = 'loading';
     this.error = null;
 
+    let child;
     try {
-      this.proc = spawn(pyBin, [scriptPath], {
+      child = spawn(pyBin, [scriptPath], {
         cwd: __dirname,
         stdio: ['pipe', 'pipe', 'pipe'],
         env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
       });
     } catch (err) {
+      this.recovery.starting = false;
       this.status = 'error';
       this.error = err.message;
       console.error('[Piper] Could not spawn worker:', err.message);
+      this.scheduleRestart(`spawn failed: ${err.message}`);
       return;
     }
+    this.proc = child;
 
-    this.proc.stdout.on('data', (chunk) => {
+    // A voice that never becomes ready must not hang narration forever.
+    clearTimeout(this.readyTimer);
+    this.readyTimer = setTimeout(() => {
+      if (this.proc !== child || this.ready) return;
+      console.warn('[Piper] Worker did not become ready within 90s — restarting it.');
+      try {
+        child.kill();
+      } catch (_) {}
+    }, 90000);
+    if (typeof this.readyTimer.unref === 'function') this.readyTimer.unref();
+
+    child.stdout.on('data', (chunk) => {
+      if (this.proc !== child) return;
       this.buffer += chunk.toString('utf8');
       const lines = this.buffer.split('\n');
       this.buffer = lines.pop() || '';
@@ -137,31 +212,142 @@ class PiperManager {
       }
     });
 
-    this.proc.stderr.on('data', (chunk) => {
+    child.stderr.on('data', (chunk) => {
       const msg = chunk.toString('utf8').trim();
       if (msg) console.log(`[Piper] ${msg}`);
     });
 
-    this.proc.on('error', (err) => {
-      this.status = 'error';
+    child.on('error', (err) => {
+      if (this.proc !== child) return;
+      this.proc = null;
+      this.recovery.starting = false;
       this.ready = false;
+      this.status = 'error';
       this.error = `Piper worker failed: ${err.message}. Install it with: uv venv .venv && uv pip install piper-tts`;
       console.error(`[Piper] ${this.error}`);
       broadcastNotification('tts.status', this.getStatus());
+      this.scheduleRestart(this.error);
     });
 
-    this.proc.on('exit', (code) => {
+    child.on('exit', (code, signal) => {
+      if (this.proc !== child) return;
+      this.proc = null;
+      this.recovery.starting = false;
+      clearTimeout(this.readyTimer);
       this.ready = false;
-      this.status = code === 0 ? 'stopped' : 'error';
-      if (code !== 0) this.error = `Piper worker exited with code ${code}`;
-      console.warn(`[Piper] Worker exited (code ${code})`);
+      this.status = this.requestedStop ? 'stopped' : 'restarting';
+      const description = `Piper worker exited (code ${code}${signal ? `, ${signal}` : ''})`;
+      this.recovery.lastExit = description;
+      this.recovery.lastExitAt = new Date().toISOString();
+      if (!this.requestedStop) {
+        this.error = description;
+        console.warn(`[Piper] ${description}`);
+      }
+      // Reject in-flight synthesis once: pending speech is never replayed twice.
       for (const [, item] of this.pending) {
         clearTimeout(item.timer);
-        item.resolve({ ok: false, error: 'Piper worker exited' });
+        item.resolve({ ok: false, error: 'Piper worker restarted; the request was not repeated.' });
       }
       this.pending.clear();
       broadcastNotification('tts.status', this.getStatus());
+      if (!this.requestedStop) this.scheduleRestart(description);
     });
+  }
+
+  /** Exponential backoff with a one-hour rate limit and an admin-visible stop. */
+  scheduleRestart(reason) {
+    if (this.requestedStop || this.recovery.suspended) return;
+    const now = Date.now();
+    this.recovery.history = this.recovery.history.filter((at) => now - at < 60 * 60 * 1000);
+    if (this.recovery.history.length >= 8) {
+      this.recovery.suspended = true;
+      this.status = 'error';
+      this.error = 'Piper restarted 8 times in an hour. Automatic retries paused — use Retry Piper in the dashboard.';
+      console.error(`[Piper] ${this.error}`);
+      this.reportIncident({
+        component: 'piper',
+        severity: 'error',
+        message: this.error,
+        action: 'Automatic restarts paused',
+        result: 'Livestream continues without narration',
+        recoveryFailed: true
+      });
+      broadcastNotification('tts.status', this.getStatus());
+      return;
+    }
+    const delays = [2000, 5000, 10000, 30000, 60000];
+    const delay = delays[Math.min(this.recovery.attempts, delays.length - 1)];
+    this.recovery.attempts += 1;
+    this.recovery.history.push(now);
+    this.recovery.nextAt = now + delay;
+    this.status = 'restarting';
+    clearTimeout(this.recovery.timer);
+    this.recovery.timer = setTimeout(() => {
+      this.recovery.timer = null;
+      this.startWorker({ reason: `auto-recovery after ${Math.round(delay / 1000)}s backoff` });
+    }, delay);
+    if (typeof this.recovery.timer.unref === 'function') this.recovery.timer.unref();
+    console.warn(`[Piper] Auto-recovery in ${delay / 1000}s (${reason})`);
+    this.reportIncident({
+      component: 'piper',
+      severity: 'warning',
+      message: reason,
+      action: `Automatic restart in ${delay / 1000}s (attempt ${this.recovery.attempts})`,
+      result: 'Queued'
+    });
+    broadcastNotification('tts.status', this.getStatus());
+  }
+
+  /** Manual recovery button: resets the rate limit, then restarts once. */
+  recover({ manual = true } = {}) {
+    if (manual) {
+      this.recovery.history = [];
+      this.recovery.suspended = false;
+      this.recovery.attempts = 0;
+    }
+    if (this.recovery.timer) {
+      clearTimeout(this.recovery.timer);
+      this.recovery.timer = null;
+    }
+    this.requestedStop = false;
+    this.startWorker({ reason: manual ? 'manual retry' : 'recovery' });
+    this.reportIncident({
+      component: 'piper',
+      severity: 'info',
+      message: 'Piper restart requested.',
+      action: manual ? 'Manual restart from the dashboard' : 'Automatic restart',
+      result: 'Worker starting',
+      recovery: true
+    });
+    return this.getHealth();
+  }
+
+  getHealth() {
+    const now = Date.now();
+    const lastHour = this.recovery.history.filter((at) => now - at < 60 * 60 * 1000).length;
+    return {
+      status: this.status,
+      ready: this.ready,
+      suspended: this.recovery.suspended,
+      restartAttempts: this.recovery.attempts,
+      restartsLastHour: lastHour,
+      nextRestartAt: this.recovery.nextAt ? new Date(this.recovery.nextAt).toISOString() : null,
+      lastExit: this.recovery.lastExit,
+      lastExitAt: this.recovery.lastExitAt,
+      lastReadyAt: this.recovery.lastReadyAt,
+      pending: this.pending.size,
+      error: this.error
+    };
+  }
+
+  shutdown() {
+    this.requestedStop = true;
+    clearTimeout(this.recovery.timer);
+    this.recovery.timer = null;
+    clearTimeout(this.readyTimer);
+    try {
+      if (this.proc) this.proc.kill();
+    } catch (_) {}
   }
 
   handleWorkerLine(line) {
@@ -176,10 +362,26 @@ class PiperManager {
       this.status = msg.status || 'loading';
       broadcastNotification('tts.status', this.getStatus());
     } else if (msg.type === 'ready') {
+      const recovered = this.recovery.attempts > 0;
       this.ready = true;
       this.status = 'ready';
       this.error = msg.loadError || null;
       this.loadSec = msg.loadSec;
+      this.recovery.starting = false;
+      this.recovery.suspended = false;
+      this.recovery.attempts = 0;
+      this.recovery.lastReadyAt = new Date().toISOString();
+      clearTimeout(this.readyTimer);
+      if (recovered) {
+        this.reportIncident({
+          component: 'piper',
+          severity: 'info',
+          message: 'Piper worker recovered and is speaking again.',
+          action: 'Automatic restart',
+          result: 'Ready',
+          recovery: true
+        });
+      }
       if (Array.isArray(msg.voices) && msg.voices.length > 0) {
         this.voices = msg.voices;
       }
@@ -224,7 +426,8 @@ class PiperManager {
       volume: state.settings.ttsVolume,
       rate: state.settings.ttsRate,
       loadSec: this.loadSec,
-      error: this.error
+      error: this.error,
+      health: this.getHealth()
     };
   }
 
@@ -301,7 +504,11 @@ function walkImages(dir, baseDir, results) {
     if (entry.isDirectory()) {
       if (entry.name === 'overlays') continue;
       walkImages(full, baseDir, results);
-    } else if (/\.(jpe?g|png|webp)$/i.test(entry.name)) {
+    } else if (/\.(jpe?g|png|webp)$/i.test(entry.name) && !isIgnoredImageName(entry.name)) {
+      // Ignore thumbnails, hidden files and anything the scanner would reject,
+      // so the stage catalog and the image library stay in agreement.
+      const dimensions = imageDimensions(full);
+      if (!dimensions.width || !dimensions.height) continue;
       const relative = path.relative(baseDir, full).replace(/\\/g, '/');
       results.push({ full, relative });
     }
@@ -344,6 +551,11 @@ const BACKGROUNDS = loadBackgroundImages();
 // ============================================================================
 const MUSIC_DIR = path.join(CHRISTIAN_ASSETS_DIR, 'audio');
 const MUSIC_MANIFEST_FILE = path.join(MUSIC_DIR, 'music-manifest.json');
+
+const MUSIC_INTEGRITY = new MusicIntegrity({
+  dir: MUSIC_DIR,
+  manifestPath: MUSIC_MANIFEST_FILE
+});
 
 const MUSIC_LIBRARY = new MusicLibrary({
   dir: MUSIC_DIR,
@@ -479,6 +691,11 @@ function defaultSettings() {
       showNames: true,
       inactivityMinutes: 20,
       maxVisible: 50
+    },
+    tiktok: {
+      autoReconnect: true,
+      maxRetries: 6,
+      retrySeconds: 10
     }
   };
 }
@@ -506,10 +723,18 @@ const DEFAULT_STATE = {
   tiktok: {
     connected: false,
     connecting: false,
+    reconnecting: false,
     username: CONFIG.tiktok.username || '',
     roomId: null,
     viewerCount: 0,
-    lastError: null
+    lastError: null,
+    lastDisconnectReason: null,
+    lastConnectedAt: null,
+    connectStartedAt: null,
+    lastEventAt: null,
+    reconnectAttempts: 0,
+    nextRetryAt: null,
+    requiresAttention: false
   }
 };
 
@@ -536,7 +761,8 @@ function loadState() {
           show: { ...DEFAULT_STATE.settings.show, ...((saved.settings || {}).show || {}) },
           quiz: { ...DEFAULT_STATE.settings.quiz, ...((saved.settings || {}).quiz || {}) },
           gifts: { ...DEFAULT_STATE.settings.gifts, ...((saved.settings || {}).gifts || {}) },
-          congregation: { ...DEFAULT_STATE.settings.congregation, ...((saved.settings || {}).congregation || {}) }
+          congregation: { ...DEFAULT_STATE.settings.congregation, ...((saved.settings || {}).congregation || {}) },
+          tiktok: { ...DEFAULT_STATE.settings.tiktok, ...((saved.settings || {}).tiktok || {}) }
         },
         tiktok: { ...DEFAULT_STATE.tiktok }
       };
@@ -892,6 +1118,22 @@ function getPublicState() {
     })(),
     tiktok: state.tiktok,
     tts: ttsManager ? ttsManager.getStatus() : { ready: false, status: 'starting' },
+    schedule: (() => {
+      if (!smartSchedule) return null;
+      const payload = schedulePayload();
+      return {
+        id: payload.current?.id || null,
+        label: payload.current?.label || null,
+        mode: payload.mode,
+        timezone: payload.timezone,
+        localTime: payload.local?.clock12 || null,
+        remainingSeconds: payload.remainingSeconds,
+        next: payload.next || null,
+        override: payload.override
+          ? { programId: payload.override.programId, remainingSeconds: payload.override.remainingSeconds }
+          : null
+      };
+    })(),
     backgrounds: {
       current: state.settings.background.current,
       categories: BACKGROUNDS.categories,
@@ -1529,6 +1771,84 @@ function refreshBroadcastMedia() {
   return getBroadcastSafetyPayload();
 }
 
+/**
+ * Rebuild the stage catalog from disk without restarting the server. Used after
+ * an image-library scan. Keeps the current background when its file still
+ * exists; otherwise falls back to another broadcast-eligible image.
+ */
+function reloadBackgroundCatalog() {
+  const catalog = loadBackgroundImages();
+  BACKGROUNDS.images = catalog.images;
+  BACKGROUNDS.categories = catalog.categories;
+
+  if (state.settings.background.category !== 'all'
+    && !BACKGROUNDS.categories.includes(state.settings.background.category)) {
+    state.settings.background.category = 'all';
+  }
+  if (broadcastSafeMode && state.settings.background.category !== 'all') {
+    const hasEligible = BACKGROUNDS.images.some(
+      (img) => img.category === state.settings.background.category && img.copyright?.eligible
+    );
+    if (!hasEligible) state.settings.background.category = 'all';
+  }
+
+  const previousUrl = state.settings.background.current;
+  const previous = BACKGROUNDS.images.find((img) => img.url === previousUrl);
+  const pool = BACKGROUNDS.images.filter((img) => !broadcastSafeMode || img.copyright?.eligible);
+  const selected = previous || pool[0] || null;
+
+  if (selected) {
+    state.settings.background.current = selected.url;
+    broadcastNotification('stage.background', {
+      url: selected.url,
+      category: selected.category,
+      transitionMs: state.settings.background.transitionMs,
+      source: previous ? 'catalog-refresh' : 'catalog-fallback',
+      settings: state.settings.background
+    });
+  } else {
+    state.settings.background.current = '';
+    broadcastNotification('stage.background', {
+      url: '',
+      clear: true,
+      reason: 'No broadcast-eligible background remains in the image library'
+    });
+  }
+
+  configureBackgroundRotation();
+  saveState();
+  return {
+    count: BACKGROUNDS.images.length,
+    categories: BACKGROUNDS.categories,
+    current: state.settings.background.current,
+    previousExists: Boolean(previous),
+    eligibleCount: BACKGROUNDS.images.filter((img) => img.copyright?.eligible).length
+  };
+}
+
+/** Adds local URLs and the shared Copyright Safe Mode decision to a scan payload. */
+function enrichImageLibrary(payload) {
+  if (!payload) return payload;
+  const images = (payload.images || []).map((image) => {
+    const url = `/assets/christian/${image.file}`;
+    const decision = broadcastSafety.image(url, { safeMode: broadcastSafeMode });
+    return {
+      ...image,
+      url,
+      status: decision.status,
+      eligible: decision.eligible,
+      blockReason: decision.eligible ? '' : decision.reason
+    };
+  });
+  // Align the panel counters with the licensing audit: an image is "licensed"
+  // only when Copyright Safe Mode can actually put it on the stage.
+  const verified = images.filter((image) => image.status === 'VERIFIED').length;
+  const totals = payload.totals
+    ? { ...payload.totals, licensed: verified, needsReview: images.length - verified }
+    : payload.totals;
+  return { ...payload, images, totals };
+}
+
 function applyCopyrightSafeMode(enabled) {
   const next = Boolean(enabled);
   if (next === broadcastSafeMode) return getBroadcastSafetyPayload();
@@ -1637,6 +1957,26 @@ function showPayload() {
   };
 }
 
+/**
+ * Verifies the WAV Piper just wrote. A header-valid but silent file is reported
+ * once; narration itself is never replayed, so nothing speaks twice.
+ */
+function inspectTtsAudio(result, context = 'narration') {
+  if (!result || !result.ok || !result.url) return null;
+  const file = path.join(TTS_CACHE_DIR, path.basename(String(result.url)));
+  const stats = wavStats(file);
+  if (stats && stats.silent) {
+    healthMonitor?.addIncident({
+      component: 'tts',
+      severity: 'warning',
+      message: `Piper returned a silent WAV file for ${context}.`,
+      action: 'Kept the stage silent rather than replaying a failure',
+      result: `RMS ${stats.rms} · peak ${stats.peak}`
+    });
+  }
+  return stats;
+}
+
 /** Sends a cue to the OBS stage, then narrates it through the shared TTS queue. */
 async function publishShowCue(cue, { source = 'auto' } = {}) {
   if (!cue) return;
@@ -1676,6 +2016,7 @@ async function publishShowCue(cue, { source = 'auto' } = {}) {
       console.warn(`[Show] Narration unavailable: ${result.error}`);
       return;
     }
+    inspectTtsAudio(result, `the ${cue.kind || 'show'} cue`);
     const durationSec = Math.max(2, Number(result.durationSec) || 8);
     // Leaves room for the client's fade-out and a natural pause afterwards.
     narrationBusyUntil = Date.now() + durationSec * 1000 + 2200;
@@ -1747,6 +2088,7 @@ async function narrateQuizReveal(payload) {
       console.warn(`[Quiz] Narration unavailable: ${result.error}`);
       return;
     }
+    inspectTtsAudio(result, 'the quiz answer');
     const durationSec = Math.max(2, Number(result.durationSec) || 8);
     narrationBusyUntil = Date.now() + durationSec * 1000 + 2200;
     broadcastNotification('tts.play', {
@@ -1804,6 +2146,170 @@ function applyCongregationUpdate(params = {}) {
   return payload;
 }
 
+// ============================================================================
+// 10c. SMART DAILY SCHEDULE (US timezones → programming mode)
+// ============================================================================
+let lastScheduleApply = null;
+
+function schedulePayload() {
+  if (!smartSchedule) {
+    return { enabled: false, mode: 'disabled', current: null, programs: [], local: null };
+  }
+  return { ...smartSchedule.payload(), lastApplied: lastScheduleApply };
+}
+
+function eligibleStageImages() {
+  return BACKGROUNDS.images.filter((image) => !broadcastSafeMode || image.copyright?.eligible);
+}
+
+/**
+ * Background used when a programming mode starts.
+ * Programs no longer prefer their own image categories: a missing current
+ * image is replaced from the same global pool the rotation timer uses.
+ */
+function programBackgroundImage() {
+  const pool = backgroundPool();
+  if (pool.length === 0) return null;
+  const current = pool.find((image) => image.url === state.settings.background.current);
+  if (current) return { image: current, changed: false };
+  const next = pool[Math.floor(Math.random() * pool.length)];
+  return { image: next, changed: true };
+}
+
+/** Moves to a track whose category belongs to the program, never interrupting speech. */
+function programMusicTrack(program) {
+  const wanted = (program.musicCategories || []).map((category) => String(category).toLowerCase());
+  if (wanted.length === 0) return null;
+  const playable = playableMusicTracks();
+  const current = playable.find((track) => track.id === state.settings.music.track);
+  if (current && wanted.includes(String(current.category || '').toLowerCase())) {
+    return { track: current, changed: false };
+  }
+  const match = playable.find((track) => wanted.includes(String(track.category || '').toLowerCase()))
+    || playable[0];
+  if (!match) return null;
+  return { track: match, changed: match.id !== state.settings.music.track };
+}
+
+function buildProgramIntroCue(program) {
+  if (!program) return null;
+  const atmosphere = String(program.atmosphere || '').replace(/[.\s]+$/, '');
+  const body = atmosphere
+    ? `${atmosphere}. However this day finds you, you are welcome to pray with us.`
+    : 'However this day finds you, you are welcome to pray with us.';
+  return {
+    id: `cue_${Date.now()}_program`,
+    kind: 'welcome',
+    eyebrow: 'PROGRAM',
+    title: program.label,
+    body: `Welcome to ${program.label}. ${body}`,
+    note: 'Faith \u2022 Hope \u2022 Love',
+    displayMs: 26000,
+    ttsText: `Welcome to ${program.label}. ${body}`,
+    at: new Date().toISOString()
+  };
+}
+
+/**
+ * Applies a programming mode to the existing show, quiz, music and stage engines.
+ * It never restarts the TikTok connection, the show timer or playback.
+ */
+function applyProgramContent(program, { source = 'scheduled', announce = false, syncQuiz = true } = {}) {
+  if (!program) return null;
+  const applied = {
+    id: program.id,
+    label: program.label,
+    source,
+    at: new Date().toISOString()
+  };
+
+  // Prayer themes, verse tags and pacing for the shared show program.
+  showProgram?.setProgramContext({
+    id: program.id,
+    label: program.label,
+    prayerThemes: program.prayerThemes,
+    verseTags: program.verseTags,
+    narrationPace: program.narrationPace
+  });
+  // The program's theme list already narrows the prayer pool. Pinning a single
+  // theme is only a fallback for a program that does not define any.
+  state.settings.show.theme = (program.prayerThemes && program.prayerThemes.length > 0)
+    ? 'auto'
+    : (program.theme || 'auto');
+  state.settings.show.pace = clampNumber(program.narrationPace, 0.5, 1.5, state.settings.show.pace);
+  state.settings.show.welcomeEnabled = program.welcomeEnabled !== false;
+  state.settings.quiz.frequencyMinutes = clampNumber(
+    program.quizFrequencyMinutes,
+    2,
+    120,
+    state.settings.quiz.frequencyMinutes
+  );
+  state.settings.gifts.announce = program.giftAnnounce !== false;
+  state.settings.gifts.tts = program.giftTts !== false;
+  // At boot the startup path schedules the first quiz itself (45 s); syncing here
+  // would push that first question out by a full quiz interval.
+  if (syncQuiz) quizEngine?.sync();
+
+  // Background rotation stays global; a program never narrows the image pool.
+  const background = programBackgroundImage();
+  if (background) {
+    configureBackgroundRotation();
+    if (background.changed) {
+      const image = setCurrentBackground(background.image.url);
+      applied.background = image?.url || background.image.url;
+      applied.backgroundChanged = true;
+    } else {
+      applied.background = background.image.url;
+      applied.backgroundChanged = false;
+    }
+  }
+
+  // Music category follows the program; ducking and volume stay untouched.
+  const music = programMusicTrack(program);
+  if (music) {
+    applied.music = music.track.title;
+    applied.musicChanged = music.changed;
+    if (music.changed) applyMusicUpdate({ track: music.track.id });
+  }
+
+  saveState();
+  lastScheduleApply = applied;
+  broadcastNotification('show.state', { show: showPayload() });
+  broadcastNotification('temple.state', getPublicState());
+
+  if (announce) {
+    const cue = buildProgramIntroCue(program);
+    if (cue) {
+      Promise.resolve(publishShowCue(cue, { source: 'schedule' })).catch((err) => {
+        console.warn('[Schedule] Program intro failed:', err.message);
+      });
+    }
+  }
+  return applied;
+}
+
+function handleScheduleChange(program, previousId, meta = {}) {
+  if (!program) {
+    broadcastNotification('schedule.state', { schedule: schedulePayload() });
+    return;
+  }
+  const announce = ['scheduled', 'override', 'override-expired'].includes(meta.reason);
+  applyProgramContent(program, { source: meta.reason || 'scheduled', announce });
+  if (meta.reason !== 'startup') {
+    healthMonitor?.addIncident({
+      component: 'schedule',
+      severity: 'info',
+      message: `Programming mode is now ${program.label}.`,
+      action: `Applied ${program.prayerThemes?.length || 0} prayer themes and ${program.quizFrequencyMinutes || '—'} min quiz cadence.`,
+      result: `Previous mode: ${previousId || 'none'}`
+    });
+  }
+  broadcastNotification('schedule.state', {
+    schedule: schedulePayload(),
+    transition: { from: previousId || null, to: program.id, reason: meta.reason || 'scheduled' }
+  });
+}
+
 /** Visual theme for each program cue, using only the locally stored categories. */
 const SCENE_BY_THEME = {
   morning: 'backgrounds',
@@ -1832,6 +2338,9 @@ function sceneCategoryForCue(cue) {
 function applySceneForCue(cue) {
   const background = state.settings.background;
   if (!background || background.sceneMatch === false) return;
+  // Auto-rotation owns the stage and cycles every eligible image, so a
+  // segment-specific scene must not narrow the visible library.
+  if (background.enabled && backgroundPool().length > 1) return;
   const category = sceneCategoryForCue(cue);
   if (!category || !BACKGROUNDS.categories.includes(category)) return;
   const pool = BACKGROUNDS.images.filter(
@@ -1844,6 +2353,7 @@ function applySceneForCue(cue) {
     return;
   }
   const next = pool[Math.floor(Math.random() * pool.length)];
+  // Recorded for the Admin grid; it never gates the rotation pool.
   background.category = category;
   setCurrentBackground(next.url, { rotate: true });
   configureBackgroundRotation();
@@ -1851,16 +2361,14 @@ function applySceneForCue(cue) {
 
 let backgroundTimer = null;
 
+/**
+ * The single rotation pool: every broadcast-eligible image in the library,
+ * across all seven categories. Program preferences, the scene-matching accent
+ * and the Admin category filter never shrink it; Copyright Safe Mode still
+ * decides what is eligible.
+ */
 function backgroundPool() {
-  const category = state.settings.background.category;
-  const eligible = (img) => !broadcastSafeMode || img.copyright?.eligible;
-  let pool = category === 'all'
-    ? BACKGROUNDS.images.filter(eligible)
-    : BACKGROUNDS.images.filter((img) => img.category === category && eligible(img));
-  if (pool.length === 0 && category !== 'all') {
-    pool = BACKGROUNDS.images.filter(eligible);
-  }
-  return pool;
+  return eligibleStageImages();
 }
 
 function pickNextBackground() {
@@ -2069,6 +2577,16 @@ function handleViewerComment(commentText, user, uniqueId, avatar, options = {}) 
 // 11. TIKTOK LIVE CONNECTOR
 // ============================================================================
 let tiktokConn = null;
+let tiktokConnectInFlight = false;
+const tiktokRetry = {
+  timer: null,
+  attempts: 0,
+  manualDisconnect: false,
+  lastAttemptAt: null,
+  nextRetryAt: null
+};
+// Connector errors that need a human, not another retry.
+const TIKTOK_ATTENTION_RE = /(auth|login|captcha|verif|cookie|session|forbidden|unauthor|sign.?in|\b401\b|\b403\b)/i;
 
 async function resolveTikTokUsername(rawInput) {
   let input = String(rawInput || '').trim();
@@ -2117,56 +2635,210 @@ function formatConnectorError(err) {
   return String(err).slice(0, 300);
 }
 
-async function connectTikTokLive(usernameOrUrl) {
-  const cleanUser = await resolveTikTokUsername(usernameOrUrl);
-  if (!cleanUser) throw new Error('Could not find a valid TikTok username in that input.');
+function disposeTikTokConnection() {
+  const stale = tiktokConn;
+  tiktokConn = null;
+  if (!stale) return;
+  try {
+    stale.removeAllListeners();
+  } catch (_) {}
+  try {
+    const result = stale.disconnect();
+    if (result && typeof result.catch === 'function') result.catch(() => {});
+  } catch (_) {}
+}
 
-  if (tiktokConn) {
-    try {
-      await tiktokConn.disconnect();
-    } catch (_) {}
-    tiktokConn = null;
+function tiktokPolicy() {
+  const policy = state.settings.tiktok || {};
+  return {
+    autoReconnect: policy.autoReconnect !== false,
+    maxRetries: clampNumber(policy.maxRetries, 0, 50, 6),
+    retrySeconds: clampNumber(policy.retrySeconds, 5, 600, 10)
+  };
+}
+
+function cancelTikTokReconnect(reason = '') {
+  if (tiktokRetry.timer) {
+    clearTimeout(tiktokRetry.timer);
+    tiktokRetry.timer = null;
+  }
+  tiktokRetry.nextRetryAt = null;
+  state.tiktok.nextRetryAt = null;
+  if (reason) console.log(`[TikTok Live] Reconnect cancelled: ${reason}`);
+}
+
+/**
+ * Exponential backoff. At most one timer exists, at most one connection is
+ * created, and the configured @username is reused. Authentication problems stop
+ * retrying and wait for an administrator instead of hammering the platform.
+ */
+function scheduleTikTokReconnect(reason, { immediate = false } = {}) {
+  const policy = tiktokPolicy();
+  if (tiktokRetry.manualDisconnect) return null;
+  if (!policy.autoReconnect) {
+    console.log('[TikTok Live] Auto reconnect is off; staying disconnected.');
+    return null;
+  }
+  if (!state.tiktok.username) return null;
+  if (state.tiktok.requiresAttention) return null;
+  if (tiktokRetry.timer) return null;
+  if (tiktokRetry.attempts >= policy.maxRetries) {
+    state.tiktok.reconnecting = false;
+    state.tiktok.requiresAttention = true;
+    state.tiktok.lastDisconnectReason = reason;
+    state.tiktok.nextRetryAt = null;
+    broadcastNotification('temple.state', getPublicState());
+    healthMonitor?.addIncident({
+      component: 'tiktok',
+      severity: 'error',
+      message: `Could not reconnect to @${state.tiktok.username} after ${tiktokRetry.attempts} attempts.`,
+      action: 'Automatic retries stopped',
+      result: 'Use Retry Now after checking the account and LIVE status'
+    });
+    return null;
   }
 
+  const delay = immediate
+    ? 0
+    : Math.min(300000, policy.retrySeconds * 1000 * Math.pow(2, tiktokRetry.attempts));
+  tiktokRetry.attempts += 1;
+  const nextAt = Date.now() + delay;
+  tiktokRetry.nextRetryAt = nextAt;
+  state.tiktok.reconnectAttempts = tiktokRetry.attempts;
+  state.tiktok.reconnecting = true;
+  state.tiktok.connecting = false;
+  state.tiktok.nextRetryAt = new Date(nextAt).toISOString();
+  state.tiktok.lastDisconnectReason = reason;
+  broadcastNotification('temple.state', getPublicState());
+  console.log(`[TikTok Live] Reconnect attempt ${tiktokRetry.attempts}/${policy.maxRetries} in ${Math.round(delay / 1000)}s (${reason})`);
+
+  tiktokRetry.timer = setTimeout(async () => {
+    tiktokRetry.timer = null;
+    tiktokRetry.lastAttemptAt = new Date().toISOString();
+    try {
+      await connectTikTokLive(state.tiktok.username, { automatic: true });
+    } catch (err) {
+      console.warn('[TikTok Live] Reconnect failed:', err.message);
+    }
+  }, delay);
+  if (typeof tiktokRetry.timer.unref === 'function') tiktokRetry.timer.unref();
+  return { attempts: tiktokRetry.attempts, delay, nextAt: new Date(nextAt).toISOString() };
+}
+
+async function connectTikTokLive(usernameOrUrl, { automatic = false } = {}) {
+  if (tiktokConnectInFlight) {
+    console.log('[TikTok Live] A connection attempt is already running; ignoring the duplicate request.');
+    return state.tiktok;
+  }
+  tiktokConnectInFlight = true;
+  const cleanUser = await resolveTikTokUsername(usernameOrUrl || state.tiktok.username);
+  if (!cleanUser) {
+    tiktokConnectInFlight = false;
+    throw new Error('Could not find a valid TikTok username in that input.');
+  }
+
+  if (!automatic) {
+    tiktokRetry.manualDisconnect = false;
+    tiktokRetry.attempts = 0;
+    cancelTikTokReconnect();
+  }
+  cancelTikTokReconnect();
+  disposeTikTokConnection();
+  giftComboTracker.clear();
+
   state.tiktok = {
+    ...state.tiktok,
     connected: false,
     connecting: true,
+    reconnecting: Boolean(automatic),
     username: cleanUser,
     roomId: null,
     viewerCount: 0,
-    lastError: null
+    lastError: null,
+    connectStartedAt: new Date().toISOString(),
+    reconnectAttempts: tiktokRetry.attempts,
+    nextRetryAt: null,
+    requiresAttention: false
   };
   broadcastNotification('temple.state', getPublicState());
 
-  tiktokConn = new TikTokLiveConnection(cleanUser, {
+  const connection = new TikTokLiveConnection(cleanUser, {
     processInitialData: true,
     fetchRoomInfoOnConnect: false,
     enableExtendedGiftInfo: false
   });
+  tiktokConn = connection;
 
-  tiktokConn.on(ControlEvent.CONNECTED, (roomState) => {
+  connection.on(ControlEvent.CONNECTED, (roomState) => {
+    if (tiktokConn !== connection) return;
+    const reconnected = tiktokRetry.attempts > 0;
     state.tiktok.connected = true;
     state.tiktok.connecting = false;
-    state.tiktok.roomId = roomState?.roomId || tiktokConn?.roomId || null;
+    state.tiktok.reconnecting = false;
+    state.tiktok.requiresAttention = false;
+    state.tiktok.roomId = roomState?.roomId || connection.roomId || null;
     state.tiktok.lastError = null;
+    state.tiktok.lastConnectedAt = new Date().toISOString();
+    state.tiktok.connectStartedAt = null;
+    state.tiktok.reconnectAttempts = 0;
+    state.tiktok.nextRetryAt = null;
+    tiktokRetry.attempts = 0;
+    cancelTikTokReconnect();
     console.log(`[TikTok Live] Connected to @${cleanUser} (roomId: ${state.tiktok.roomId})`);
     broadcastNotification('temple.state', getPublicState());
+    if (reconnected) {
+      healthMonitor?.recordRecovery('tiktok', 'Automatic reconnect', 'Connected', {
+        ok: true,
+        message: `Reconnected to @${cleanUser}.`
+      });
+    }
   });
 
-  tiktokConn.on(ControlEvent.DISCONNECTED, () => {
+  connection.on(ControlEvent.DISCONNECTED, () => {
+    if (tiktokConn !== connection) return;
     state.tiktok.connected = false;
     state.tiktok.connecting = false;
+    state.tiktok.reconnecting = true;
     console.log(`[TikTok Live] Disconnected from @${cleanUser}`);
     broadcastNotification('temple.state', getPublicState());
+    healthMonitor?.addIncident({
+      component: 'tiktok',
+      severity: 'warning',
+      message: `TikTok Live connection to @${cleanUser} closed.`,
+      action: 'Scheduling a reconnect with backoff',
+      result: 'Awaiting retry'
+    });
+    scheduleTikTokReconnect('Connector reported a disconnect');
   });
 
-  tiktokConn.on(ControlEvent.ERROR, (err) => {
-    state.tiktok.lastError = formatConnectorError(err);
-    console.warn('[TikTok Live Warning]', state.tiktok.lastError);
+  connection.on(ControlEvent.ERROR, (err) => {
+    if (tiktokConn !== connection) return;
+    const message = formatConnectorError(err);
+    state.tiktok.lastError = message;
+    state.tiktok.lastDisconnectReason = message;
+    console.warn('[TikTok Live Warning]', message);
+    if (TIKTOK_ATTENTION_RE.test(message)) {
+      state.tiktok.requiresAttention = true;
+      state.tiktok.reconnecting = false;
+      cancelTikTokReconnect('authentication or access problem');
+      healthMonitor?.addIncident({
+        component: 'tiktok',
+        severity: 'error',
+        message: `TikTok Live needs attention: ${message}`,
+        action: 'Automatic retries paused',
+        result: 'Check the account, cookies and LIVE status, then use Retry Now'
+      });
+    }
     broadcastNotification('temple.state', getPublicState());
   });
 
-  tiktokConn.on(WebcastEvent.ROOM_USER, (data) => {
+  // Every decoded frame proves the socket is alive; no polling of the stream.
+  connection.on(ControlEvent.RAW_DATA, () => {
+    if (tiktokConn !== connection) return;
+    state.tiktok.lastEventAt = new Date().toISOString();
+  });
+
+  connection.on(WebcastEvent.ROOM_USER, (data) => {
     const viewerCount = Number(data?.total ?? data?.viewerCount ?? 0);
     if (viewerCount > 0) {
       state.tiktok.viewerCount = viewerCount;
@@ -2174,7 +2846,7 @@ async function connectTikTokLive(usernameOrUrl) {
     }
   });
 
-  tiktokConn.on(WebcastEvent.MEMBER, (data) => {
+  connection.on(WebcastEvent.MEMBER, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     recordMember(user, uniqueId, avatar, 0);
     // One seat per uniqueId; duplicate MEMBER frames update the same viewer.
@@ -2187,14 +2859,14 @@ async function connectTikTokLive(usernameOrUrl) {
     }
   });
 
-  tiktokConn.on(WebcastEvent.CHAT, (data) => {
+  connection.on(WebcastEvent.CHAT, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     const commentText = data?.content || data?.comment || '';
     console.log(`[TikTok Chat] ${user}: ${commentText}`);
     handleViewerComment(commentText, user, uniqueId, avatar, { source: 'tiktok' });
   });
 
-  tiktokConn.on(WebcastEvent.LIKE, (data) => {
+  connection.on(WebcastEvent.LIKE, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     congregation.touch({ uniqueId });
     const likeCount = clampNumber(data?.count ?? data?.likeCount, 1, 15, 1);
@@ -2202,7 +2874,7 @@ async function connectTikTokLive(usernameOrUrl) {
     Rituals.strikeWoodenFish({ user, uniqueId, avatar, count: likeCount });
   });
 
-  tiktokConn.on(WebcastEvent.FOLLOW, (data) => {
+  connection.on(WebcastEvent.FOLLOW, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     congregation.touch({ uniqueId });
     state.followCount += 1;
@@ -2217,7 +2889,7 @@ async function connectTikTokLive(usernameOrUrl) {
     });
   });
 
-  tiktokConn.on(WebcastEvent.SHARE, (data) => {
+  connection.on(WebcastEvent.SHARE, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     congregation.touch({ uniqueId });
     state.shareCount += 1;
@@ -2232,7 +2904,7 @@ async function connectTikTokLive(usernameOrUrl) {
     });
   });
 
-  tiktokConn.on(WebcastEvent.SOCIAL, (data) => {
+  connection.on(WebcastEvent.SOCIAL, (data) => {
     const action = String(data?.action || '');
     const display = String(data?.common?.displayText?.displayType || data?.displayType || '').toLowerCase();
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
@@ -2259,14 +2931,14 @@ async function connectTikTokLive(usernameOrUrl) {
     }
   });
 
-  tiktokConn.on(WebcastEvent.STREAM_END, () => {
+  connection.on(WebcastEvent.STREAM_END, () => {
     // The LIVE session really ended: seats from that room are no longer live.
     console.log('[TikTok Live] Stream ended — clearing the prayer congregation.');
     congregation.reset('stream-ended');
     broadcastNotification('temple.state', getPublicState());
   });
 
-  tiktokConn.on(WebcastEvent.GIFT, (data) => {
+  connection.on(WebcastEvent.GIFT, (data) => {
     const { user, uniqueId, avatar } = extractUserFromEvent(data);
     const giftObj = data?.gift || data?.giftDetails || {};
     const giftId = String(data?.giftId || giftObj?.id || 'gift');
@@ -2302,40 +2974,154 @@ async function connectTikTokLive(usernameOrUrl) {
   });
 
   try {
-    const roomState = await tiktokConn.connect();
+    const roomState = await connection.connect();
+    if (tiktokConn !== connection) return state.tiktok;
     state.tiktok.connected = true;
     state.tiktok.connecting = false;
-    state.tiktok.roomId = roomState?.roomId || tiktokConn?.roomId || null;
+    state.tiktok.reconnecting = false;
+    state.tiktok.roomId = roomState?.roomId || connection.roomId || null;
+    state.tiktok.lastConnectedAt = state.tiktok.lastConnectedAt || new Date().toISOString();
+    state.tiktok.connectStartedAt = null;
     broadcastNotification('temple.state', getPublicState());
     return state.tiktok;
   } catch (err) {
+    const message = formatConnectorError(err)
+      || 'Could not connect to the Live room. Make sure the account is currently live.';
     state.tiktok.connected = false;
     state.tiktok.connecting = false;
-    state.tiktok.lastError = formatConnectorError(err)
-      || 'Could not connect to the Live room. Make sure the account is currently live.';
+    state.tiktok.lastError = message;
+    state.tiktok.lastDisconnectReason = message;
+    if (TIKTOK_ATTENTION_RE.test(message)) {
+      state.tiktok.requiresAttention = true;
+      state.tiktok.reconnecting = false;
+      cancelTikTokReconnect('authentication or access problem');
+      healthMonitor?.addIncident({
+        component: 'tiktok',
+        severity: 'error',
+        message: `TikTok Live connection needs attention: ${message}`,
+        action: 'Automatic retries paused',
+        result: 'Administrator intervention required'
+      });
+    } else {
+      scheduleTikTokReconnect(message);
+    }
     broadcastNotification('temple.state', getPublicState());
-    throw new Error(state.tiktok.lastError);
+    throw new Error(message);
+  } finally {
+    tiktokConnectInFlight = false;
   }
 }
 
-function disconnectTikTokLive() {
-  if (tiktokConn) {
-    try {
-      tiktokConn.disconnect();
-    } catch (_) {}
-    tiktokConn = null;
+function disconnectTikTokLive({ manual = true } = {}) {
+  if (manual) {
+    tiktokRetry.manualDisconnect = true;
+    cancelTikTokReconnect('administrator disconnected');
+    tiktokRetry.attempts = 0;
   }
+  disposeTikTokConnection();
   state.tiktok = {
     connected: false,
     connecting: false,
+    reconnecting: false,
     username: '',
     roomId: null,
     viewerCount: 0,
-    lastError: null
+    lastError: null,
+    lastDisconnectReason: manual ? 'Disconnected by the administrator' : state.tiktok.lastDisconnectReason,
+    lastConnectedAt: state.tiktok.lastConnectedAt,
+    connectStartedAt: null,
+    reconnectAttempts: 0,
+    nextRetryAt: null,
+    requiresAttention: false
   };
   congregation.reset('live-disconnected');
   broadcastNotification('temple.state', getPublicState());
   return state.tiktok;
+}
+
+/** Admin: change reconnect policy without touching the live connection. */
+function applyTikTokReconnectSettings(params = {}) {
+  const policy = state.settings.tiktok;
+  if (typeof params.autoReconnect === 'boolean') policy.autoReconnect = params.autoReconnect;
+  if (params.maxRetries !== undefined) policy.maxRetries = clampNumber(params.maxRetries, 0, 50, policy.maxRetries);
+  if (params.retrySeconds !== undefined) policy.retrySeconds = clampNumber(params.retrySeconds, 5, 600, policy.retrySeconds);
+  if (!policy.autoReconnect) cancelTikTokReconnect('auto reconnect disabled');
+  saveState();
+  broadcastNotification('temple.state', getPublicState());
+  return { settings: policy, tiktok: state.tiktok };
+}
+
+function retryTikTokNow() {
+  if (!state.tiktok.username) {
+    throw new Error('No channel is configured. Connect a TikTok username first.');
+  }
+  if (tiktokConnectInFlight) {
+    return { alreadyRunning: true, tiktok: state.tiktok };
+  }
+  cancelTikTokReconnect('manual retry');
+  tiktokRetry.attempts = 0;
+  state.tiktok.requiresAttention = false;
+  tiktokRetry.manualDisconnect = false;
+  const scheduled = scheduleTikTokReconnect('Manual retry requested', { immediate: true });
+  return { scheduled, tiktok: state.tiktok };
+}
+
+/**
+ * Detects a connector that claims to be connected while its socket is gone, and
+ * a connect attempt that has hung. Both reset the connection once, then hand off
+ * to the normal backoff retry. Nothing is inferred from a quiet chat.
+ */
+function checkTikTokStaleness() {
+  if (!tiktokConn || tiktokRetry.manualDisconnect) return null;
+  const connectedAt = state.tiktok.lastConnectedAt ? new Date(state.tiktok.lastConnectedAt).getTime() : 0;
+  const gracePassed = connectedAt && Date.now() - connectedAt > 45000;
+  const socket = tiktokConn._wsClientInstance;
+  const socketClosed = socket && typeof socket.readyState === 'number' && socket.readyState !== 1;
+  const reportsDisconnected = tiktokConn.isConnected === false;
+
+  if (state.tiktok.connected && gracePassed && (socketClosed || reportsDisconnected)) {
+    const reason = 'Connector socket is closed but the app still thought it was connected.';
+    state.tiktok.connected = false;
+    state.tiktok.reconnecting = true;
+    state.tiktok.lastDisconnectReason = reason;
+    console.warn(`[TikTok Live] Stale connection detected: ${reason}`);
+    healthMonitor?.addIncident({
+      component: 'tiktok',
+      severity: 'warning',
+      message: reason,
+      action: 'Reconnecting with backoff',
+      result: 'Connection reset'
+    });
+    disposeTikTokConnection();
+    broadcastNotification('temple.state', getPublicState());
+    scheduleTikTokReconnect(reason);
+    return reason;
+  }
+
+  if (state.tiktok.connecting) {
+    const startedAt = state.tiktok.connectStartedAt ? new Date(state.tiktok.connectStartedAt).getTime() : 0;
+    if (startedAt && Date.now() - startedAt > 120000) {
+      const reason = 'TikTok connect attempt timed out.';
+      disposeTikTokConnection();
+      state.tiktok.connecting = false;
+      state.tiktok.lastDisconnectReason = reason;
+      scheduleTikTokReconnect(reason);
+      return reason;
+    }
+  }
+  return null;
+}
+
+function startTikTokWatchdog() {
+  if (tiktokWatchdog) return;
+  tiktokWatchdog = setInterval(() => {
+    try {
+      checkTikTokStaleness();
+    } catch (err) {
+      console.warn('[TikTok Live] Watchdog error:', err.message);
+    }
+  }, 30000);
+  if (typeof tiktokWatchdog.unref === 'function') tiktokWatchdog.unref();
 }
 
 // ============================================================================
@@ -2637,6 +3423,39 @@ async function handleRpcCall(method, params = {}) {
       return { ...result, safety };
     }
 
+    // ---- Christian image library (fixed category folders only) ----
+    case 'images.state':
+      return enrichImageLibrary(imageLibrary.summary());
+    case 'images.scan': {
+      const scan = await imageLibrary.scan();
+      // Rebuild the licensing inventory from the refreshed asset manifest so
+      // the background catalog uses the same source of truth as the audit.
+      const audit = await copyrightAudit.scan();
+      const catalog = reloadBackgroundCatalog();
+      const payload = enrichImageLibrary(scan);
+      broadcastNotification('images.updated', {
+        scannedAt: payload.scannedAt,
+        totals: payload.totals,
+        categories: payload.categories,
+        changes: {
+          added: payload.added,
+          removed: payload.removed,
+          renamed: payload.renamed,
+          updated: payload.updated
+        },
+        catalog,
+        copyright: { generatedAt: audit.generatedAt, counts: audit.counts, changes: audit.changes }
+      });
+      broadcastNotification('copyright.updated', {
+        generatedAt: audit.generatedAt,
+        counts: audit.counts,
+        changes: audit.changes,
+        safety: getBroadcastSafetyPayload()
+      });
+      broadcastNotification('temple.state', getPublicState());
+      return { ...payload, catalog, copyright: { generatedAt: audit.generatedAt, counts: audit.counts, changes: audit.changes } };
+    }
+
     // ---- Prayer congregation (live-session only, never persisted) ----
     case 'congregation.get':
       return congregation.getPayload();
@@ -2669,13 +3488,181 @@ async function handleRpcCall(method, params = {}) {
     case 'messages.save':
       return { saved: true, messages: messageLibrary.replace(params.messages || params) };
 
+    // ---- Smart daily schedule (US timezones) ----
+    case 'schedule.get':
+      return schedulePayload();
+    case 'schedule.update': {
+      if (!smartSchedule) throw new Error('The smart schedule is not available.');
+      smartSchedule.update({ enabled: params.enabled, timezone: params.timezone });
+      smartSchedule.tick();
+      broadcastNotification('schedule.state', { schedule: schedulePayload() });
+      broadcastNotification('temple.state', getPublicState());
+      return schedulePayload();
+    }
+    case 'schedule.program.update': {
+      if (!smartSchedule) throw new Error('The smart schedule is not available.');
+      const programId = String(params.id || params.program || '');
+      smartSchedule.updateProgram(programId, params);
+      const active = smartSchedule.current().program;
+      if (active && active.id === programId) {
+        applyProgramContent(active, { source: 'program-edit' });
+      }
+      broadcastNotification('schedule.state', { schedule: schedulePayload() });
+      return schedulePayload();
+    }
+    case 'schedule.override': {
+      if (!smartSchedule) throw new Error('The smart schedule is not available.');
+      smartSchedule.setOverride(
+        String(params.program || params.programId || ''),
+        params.minutes !== undefined ? params.minutes : 30
+      );
+      smartSchedule.tick();
+      broadcastNotification('schedule.state', { schedule: schedulePayload() });
+      return schedulePayload();
+    }
+    case 'schedule.auto': {
+      if (!smartSchedule) throw new Error('The smart schedule is not available.');
+      const hadOverride = Boolean(smartSchedule.activeOverride());
+      smartSchedule.clearOverride();
+      smartSchedule.tick();
+      if (!hadOverride) {
+        const active = smartSchedule.current().program;
+        if (active) applyProgramContent(active, { source: 'auto-return' });
+      }
+      broadcastNotification('schedule.state', { schedule: schedulePayload() });
+      return schedulePayload();
+    }
+    case 'schedule.preview': {
+      if (!smartSchedule) throw new Error('The smart schedule is not available.');
+      const program = smartSchedule.programById(String(params.program || params.programId || ''));
+      if (!program) throw new Error('Unknown program. Choose morning, afternoon, evening or night.');
+      const applied = applyProgramContent(program, { source: 'preview', announce: false });
+      return {
+        preview: true,
+        applied,
+        schedule: schedulePayload(),
+        note: 'Preview applied. Automatic switching continues and the scheduled mode is restored at the next transition or with Return to automatic.'
+      };
+    }
+    case 'schedule.test':
+      if (!smartSchedule) throw new Error('The smart schedule is not available.');
+      return smartSchedule.debug(params.at ? Number(params.at) : undefined);
+
+    // ---- System health & auto recovery ----
+    case 'health.get':
+      if (!healthMonitor) throw new Error('The health monitor is not running.');
+      return healthMonitor.payload();
+    case 'health.check': {
+      if (!healthMonitor) throw new Error('The health monitor is not running.');
+      const payload = healthMonitor.runCheck({ reason: params.reason || 'manual' });
+      broadcastNotification('health.state', { health: payload });
+      return payload;
+    }
+    case 'health.retry': {
+      if (!healthMonitor) throw new Error('The health monitor is not running.');
+      const component = String(params.component || '').toLowerCase();
+      let action = null;
+      if (['piper', 'tts', 'narration'].includes(component)) {
+        action = ttsManager.recover({ manual: true });
+        healthMonitor.recordRecovery('piper', 'Manual restart', 'Worker starting', {
+          ok: true,
+          message: 'Manual Piper restart requested from the dashboard.'
+        });
+      } else if (['tiktok', 'live'].includes(component)) {
+        action = retryTikTokNow();
+        healthMonitor.recordRecovery('tiktok', 'Manual reconnect', 'Retry scheduled', {
+          ok: true,
+          message: 'Manual TikTok reconnect requested from the dashboard.'
+        });
+      } else if (['music', 'audio', 'music-player'].includes(component)) {
+        broadcastNotification('audio.recover', {
+          reason: 'manual',
+          trackId: state.settings.music.track,
+          at: new Date().toISOString()
+        });
+        healthMonitor.recordRecovery('audio', 'Manual audio recovery', 'Stage asked to reload the track', {
+          ok: true,
+          message: 'Manual audio recovery requested.'
+        });
+        action = { requested: true };
+      } else if (['music-files', 'files', 'musicfiles'].includes(component)) {
+        const report = MUSIC_INTEGRITY.scan();
+        healthMonitor.recordRecovery('music-files', 'Music integrity scan', report.summary, {
+          ok: report.healthy,
+          message: 'Music file integrity scan completed.'
+        });
+        action = report;
+      } else {
+        throw new Error(`Unknown component: ${component}. Use piper, tiktok, music or music-files.`);
+      }
+      const payload = healthMonitor.runCheck({ reason: `retry ${component}` });
+      broadcastNotification('health.state', { health: payload });
+      return { component, action, health: payload };
+    }
+    case 'health.alerts.clear': {
+      if (!healthMonitor) throw new Error('The health monitor is not running.');
+      const cleared = healthMonitor.clearResolved();
+      const health = healthMonitor.payload();
+      broadcastNotification('health.state', { health });
+      return { ...cleared, health };
+    }
+    case 'health.export':
+      if (!healthMonitor) throw new Error('The health monitor is not running.');
+      return healthMonitor.exportReport();
+    case 'health.audio': {
+      if (!healthMonitor) throw new Error('The health monitor is not running.');
+      const report = params.report && typeof params.report === 'object' ? params.report : params;
+      const audio = healthMonitor.recordAudioReport({
+        playing: Boolean(report.playing),
+        paused: Boolean(report.paused),
+        enabled: report.enabled !== false,
+        muted: Boolean(report.muted),
+        unlocked: report.unlocked !== false,
+        ttsPlaying: Boolean(report.ttsPlaying),
+        // null means "not measured" — it must not be mistaken for silence.
+        musicRms: Number.isFinite(Number(report.musicRms)) ? Number(report.musicRms) : null,
+        volume: Number(report.volume) || 0,
+        trackId: report.trackId ? String(report.trackId).slice(0, 80) : null
+      });
+      return { ok: true, audio };
+    }
+
+    // ---- Music file integrity (read-only scans) ----
+    case 'music.integrity': {
+      const report = MUSIC_INTEGRITY.scan();
+      broadcastNotification('music.integrity.updated', { report });
+      return report;
+    }
+    case 'music.integrity.refresh': {
+      const result = await MUSIC_LIBRARY.scan({ probe: true });
+      applyMusicCatalog(result.catalog);
+      const repaired = repairMusicSelection();
+      if (repaired) saveState();
+      const scan = musicRescanPayload(result).scan;
+      const report = MUSIC_INTEGRITY.scan();
+      publishMusicLibrary(musicCatalogPayload());
+      broadcastNotification('music.integrity.updated', { report });
+      broadcastNotification('temple.state', getPublicState());
+      return { scan, report, track: state.settings.music.track, repaired };
+    }
+
     // ---- TikTok Live ----
     case 'live.connect':
       return connectTikTokLive(params.username);
     case 'live.disconnect':
       return disconnectTikTokLive();
     case 'live.status':
-      return state.tiktok;
+      return {
+        ...state.tiktok,
+        settings: tiktokPolicy(),
+        nextAttemptInSeconds: state.tiktok.nextRetryAt
+          ? Math.max(0, Math.round((new Date(state.tiktok.nextRetryAt).getTime() - Date.now()) / 1000))
+          : null
+      };
+    case 'live.setReconnect':
+      return applyTikTokReconnectSettings(params);
+    case 'live.retryNow':
+      return { ...retryTikTokNow(), status: state.tiktok };
     case 'live.setAutoSim':
       configureAutoSim(Boolean(params.enabled));
       saveState();
@@ -2767,8 +3754,29 @@ app.get('/api/health', (_req, res) => res.json({
   copyrightSafeMode: broadcastSafeMode,
   broadcastSafety: getBroadcastSafetyPayload().counts,
   music: state.settings.music,
-  congregation: congregation.getPayload().counts
+  congregation: congregation.getPayload().counts,
+  schedule: smartSchedule ? {
+    enabled: smartSchedule.config.enabled,
+    timezone: smartSchedule.config.timezone,
+    program: smartSchedule.current().program?.id || null,
+    mode: smartSchedule.current().mode
+  } : null,
+  tiktokReconnect: tiktokPolicy(),
+  musicIntegrity: MUSIC_INTEGRITY.summary(),
+  health: healthMonitor ? {
+    metrics: healthMonitor.payload().metrics,
+    statuses: healthMonitor.componentStatuses(healthSnapshot()),
+    counters: healthMonitor.counters,
+    lastError: healthMonitor.lastError,
+    lastRecovery: healthMonitor.lastRecovery
+  } : null
 }));
+
+app.get('/api/diagnostics', (_req, res) => {
+  if (!healthMonitor) return res.status(503).json({ ok: false, error: 'Health monitor is not running.' });
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(healthMonitor.exportReport());
+});
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
@@ -2780,10 +3788,43 @@ function broadcastNotification(method, params) {
   }
 }
 
-wss.on('connection', (ws) => {
+function wsClientCounts() {
+  let total = 0;
+  let obs = 0;
+  for (const client of wss.clients) {
+    total += 1;
+    if (client.isObs) obs += 1;
+  }
+  return { total, obs, stage: obs };
+}
+
+/** Evidence the health monitor can use without reaching into module internals. */
+function healthSnapshot() {
+  return {
+    tts: ttsManager ? { ...ttsManager.getHealth(), enabled: Boolean(state.settings.ttsEnabled) } : { status: 'starting' },
+    tiktok: { ...state.tiktok, roomId: state.tiktok.roomId || null },
+    music: { ...state.settings.music },
+    musicIntegrity: MUSIC_INTEGRITY.report(),
+    clients: wsClientCounts(),
+    ttsQueue: ttsManager ? ttsManager.pending.size : 0,
+    schedule: smartSchedule ? schedulePayload() : null
+  };
+}
+
+wss.on('connection', (ws, req) => {
+  try {
+    const url = new URL(req?.url || '/ws', 'http://localhost');
+    ws.isObs = url.searchParams.get('obs') === '1';
+  } catch (_) {
+    ws.isObs = false;
+  }
   ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'temple.state', params: getPublicState() }));
   ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'show.state', params: { show: showPayload() } }));
   ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'quiz.state', params: { quiz: quizPayload() } }));
+  ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'schedule.state', params: { schedule: schedulePayload() } }));
+  if (healthMonitor) {
+    ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'health.state', params: { health: healthMonitor.payload() } }));
+  }
   // Replay a cue that is still on screen so OBS can reload mid-prayer.
   if (lastPublishedCue) {
     const age = Date.now() - lastPublishedAt;
@@ -2859,6 +3900,62 @@ showProgram = new ShowProgram({
   }
 });
 
+// ---- Health, incidents and auto-recovery ------------------------------------
+healthMonitor = new HealthMonitor({
+  root: __dirname,
+  dataDir: DATA_DIR,
+  stateFile: HEALTH_STATE_FILE,
+  getSnapshot: healthSnapshot,
+  broadcast: (method, params) => broadcastNotification(method, params)
+});
+// Piper reports its own crash/restart cycle without knowing about the dashboard.
+// Recovery events increment the counters; failures record a failed recovery.
+ttsManager.onIncident = (incident) => {
+  if (!healthMonitor) return;
+  if (incident.recoveryFailed) {
+    healthMonitor.recordRecovery('piper', incident.action, incident.result, {
+      ok: false,
+      message: incident.message
+    });
+    return;
+  }
+  if (incident.recovery) {
+    healthMonitor.recordRecovery('piper', incident.action, incident.result, {
+      ok: true,
+      message: incident.message
+    });
+    return;
+  }
+  healthMonitor.addIncident(incident);
+};
+
+// ---- Smart daily schedule ---------------------------------------------------
+smartSchedule = new SmartSchedule({
+  filePath: SCHEDULE_FILE,
+  backupPath: path.join(__dirname, 'config', 'schedule.backup.json'),
+  onChange: handleScheduleChange
+});
+
+/**
+ * Applies the programming mode for the current wall clock once at boot, then
+ * keeps evaluating. Priming the signature keeps a restart from announcing the
+ * same program a second time.
+ */
+function startSmartSchedule() {
+  if (!smartSchedule) return;
+  const initial = smartSchedule.current();
+  if (smartSchedule.config.enabled && initial.program) {
+    smartSchedule.appliedId = initial.program.id;
+    smartSchedule.appliedSource = initial.override ? 'override' : 'scheduled';
+    smartSchedule.appliedSignature = `${initial.program.id}:${smartSchedule.appliedSource}:${initial.override?.until || ''}`;
+    applyProgramContent(initial.program, { source: 'startup', syncQuiz: false });
+    console.log(`[Schedule] ${initial.program.label} — ${initial.parts.clock12} ${initial.parts.offsetLabel || ''} (${smartSchedule.config.timezone})`);
+  } else {
+    console.log('[Schedule] Smart schedule is disabled. Manual show controls remain in use.');
+  }
+  smartSchedule.start();
+}
+
 /** Waits briefly for Piper so the opening welcome cue is actually spoken. */
 function startAutomatedShow() {
   if (!state.settings.show.enabled || state.settings.show.paused) {
@@ -2890,7 +3987,28 @@ server.listen(PORT, () => {
   console.log(`🎨 Backgrounds          : ${bgCount} local images (rotation ${state.settings.background.enabled ? 'on' : 'off'})`);
   console.log(`🗣️  Piper voices         : EN ${state.settings.enVoice} | VI ${state.settings.vnVoice}`);
   console.log(`🪑 Prayer congregation   : ${state.settings.congregation.maxVisible} seats · names ${state.settings.congregation.showNames ? 'on' : 'off'} · inactivity ${state.settings.congregation.inactivityMinutes}m`);
+  const scheduled = smartSchedule ? smartSchedule.current() : null;
+  if (scheduled?.program) {
+    console.log(`🕒 Smart schedule        : ${scheduled.program.label} · ${scheduled.parts.clock12} ${scheduled.parts.offsetLabel} (${smartSchedule.config.timezone})`);
+  }
   console.log('============================================================');
+
+  // Music integrity is read-only: it never deletes or rewrites audio.
+  try {
+    const integrity = MUSIC_INTEGRITY.scan();
+    console.log(`[Music] Integrity: ${integrity.summary} (${integrity.totalFilesOnDisk} files on disk)`);
+    if (!integrity.healthy) {
+      healthMonitor?.addIncident({
+        component: 'music-files',
+        severity: 'warning',
+        message: `Music integrity: ${integrity.summary}`,
+        action: 'Startup scan',
+        result: 'Review the missing files list in the dashboard'
+      });
+    }
+  } catch (err) {
+    console.warn('[Music] Integrity scan failed:', err.message);
+  }
 
   // Pick up audio files added or removed while the server was stopped.
   MUSIC_LIBRARY.scan({ probe: false }).then((result) => {
@@ -2905,6 +4023,9 @@ server.listen(PORT, () => {
 
   configureBackgroundRotation();
   if (state.settings.autoSim) configureAutoSim(true);
+  startSmartSchedule();
+  healthMonitor.start();
+  startTikTokWatchdog();
   startAutomatedShow();
   if (state.settings.quiz.enabled) {
     quizEngine.sync({ firstRun: true });
@@ -2932,7 +4053,17 @@ process.on('SIGINT', () => {
     if (quizEngine) quizEngine.stop();
   } catch (_) {}
   try {
-    if (ttsManager && ttsManager.proc) ttsManager.proc.kill();
+    if (smartSchedule) smartSchedule.stop();
+  } catch (_) {}
+  try {
+    if (healthMonitor) healthMonitor.stop();
+  } catch (_) {}
+  try {
+    if (tiktokWatchdog) clearInterval(tiktokWatchdog);
+    cancelTikTokReconnect('server shutdown');
+  } catch (_) {}
+  try {
+    if (ttsManager) ttsManager.shutdown();
   } catch (_) {}
   try {
     congregation.stop();

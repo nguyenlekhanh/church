@@ -1,0 +1,62 @@
+{
+  "scannedAt": "2026-11-01T06:36:39.853Z",
+  "durationMs": 85,
+  "totals": {
+    "images": 31,
+    "categories": 7,
+    "aiGenerated": 10,
+    "licensed": 31,
+    "needsReview": 0
+  },
+  "categories": [
+    {
+      "id": "backgrounds",
+      "label": "Backgrounds",
+      "count": 5,
+      "aiGenerated": 2,
+      "needsReview": 0
+    },
+    {
+      "id": "bible",
+      "label": "Bible",
+      "count": 4,
+      "aiGenerated": 2,
+      "needsReview": 0
+    },
+    {
+      "id": "candles",
+      "label": "Candles",
+      "count": 6,
+      "aiGenerated": 2,
+      "needsReview": 0
+    },
+    {
+      "id": "cathedral",
+      "label": "Cathedral",
+      "count": 4,
+      "aiGenerated": 2,
+      "needsReview": 0
+    },
+    {
+      "id": "church",
+      "label": "Church",
+      "count": 4,
+      "aiGenerated": 0,
+      "needsReview": 0
+    },
+    {
+      "id": "cross",
+      "label": "Cross",
+      "count": 6,
+      "aiGenerated": 2,
+      "needsReview": 0
+    },
+    {
+      "id": "jesus",
+      "label": "Jesus",
+      "count": 2,
+      "aiGenerated": 0,
+      "needsReview": 0
+    }
+  ]
+}

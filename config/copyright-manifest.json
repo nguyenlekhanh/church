@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-01T04:39:41.249Z",
+  "generatedAt": "2026-11-01T06:36:40.588Z",
   "scope": "Production assets under public/assets (active Christian assets, legacy files and archived music) plus documentation/reference images under docs. Generated TTS cache and dependency files are excluded.",
   "disclaimer": "This is an evidence-based inventory, not legal advice. A status only describes the copyright/licensing evidence recorded for an asset. It does not cover model or property releases, trademark, privacy/publicity rights, or platform-specific terms.",
   "roots": [
@@ -9,17 +9,17 @@
     "docs/**/*.{jpg,jpeg,png,webp,gif}"
   ],
   "counts": {
-    "total": 92,
+    "total": 104,
     "music": 23,
     "musicActive": 21,
     "musicEnabled": 18,
     "musicArchived": 2,
-    "images": 69,
-    "imagesBroadcast": 24,
+    "images": 81,
+    "imagesBroadcast": 34,
     "imagesLegacy": 12,
-    "imagesDocumentation": 33,
-    "verified": 32,
-    "needsReview": 44,
+    "imagesDocumentation": 35,
+    "verified": 42,
+    "needsReview": 46,
     "rejected": 0,
     "unknown": 16
   },
@@ -27,7 +27,7 @@
     "added": 0,
     "removed": 0,
     "changed": 0,
-    "unchanged": 92
+    "unchanged": 104
   },
   "unresolved": [
     {
@@ -107,7 +107,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.682Z"
+      "checkedAt": "2026-11-01T06:36:40.025Z"
     },
     {
       "id": "music:classical-7",
@@ -142,7 +142,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.908Z"
+      "checkedAt": "2026-11-01T06:36:40.249Z"
     },
     {
       "id": "music:deep-meditation",
@@ -177,7 +177,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.657Z"
+      "checkedAt": "2026-11-01T06:36:39.992Z"
     },
     {
       "id": "music:drawing-the-sky",
@@ -212,7 +212,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.979Z"
+      "checkedAt": "2026-11-01T06:36:40.330Z"
     },
     {
       "id": "music:finding-myself",
@@ -247,7 +247,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.838Z"
+      "checkedAt": "2026-11-01T06:36:40.182Z"
     },
     {
       "id": "music:forest-mist-whispers",
@@ -282,7 +282,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.807Z"
+      "checkedAt": "2026-11-01T06:36:40.155Z"
     },
     {
       "id": "music:moon-walk",
@@ -317,7 +317,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:41.004Z"
+      "checkedAt": "2026-11-01T06:36:40.351Z"
     },
     {
       "id": "music:morning-prayer-01",
@@ -352,7 +352,7 @@
       "status": "VERIFIED",
       "statusReason": "Project-generated original dedicated to CC0.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:40.631Z"
+      "checkedAt": "2026-11-01T06:36:39.972Z"
     },
     {
       "id": "music:opalescent",
@@ -387,7 +387,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.715Z"
+      "checkedAt": "2026-11-01T06:36:40.059Z"
     },
     {
       "id": "music:peaceful-prayer-01",
@@ -422,7 +422,7 @@
       "status": "VERIFIED",
       "statusReason": "Project-generated original dedicated to CC0.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:40.606Z"
+      "checkedAt": "2026-11-01T06:36:39.953Z"
     },
     {
       "id": "music:piano-reflections",
@@ -457,7 +457,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.856Z"
+      "checkedAt": "2026-11-01T06:36:40.200Z"
     },
     {
       "id": "music:piano-worship-01",
@@ -492,7 +492,7 @@
       "status": "VERIFIED",
       "statusReason": "Project-generated original dedicated to CC0.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:40.621Z"
+      "checkedAt": "2026-11-01T06:36:39.963Z"
     },
     {
       "id": "music:possible-dreams",
@@ -527,7 +527,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.933Z"
+      "checkedAt": "2026-11-01T06:36:40.279Z"
     },
     {
       "id": "music:relaxation-07",
@@ -562,7 +562,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.825Z"
+      "checkedAt": "2026-11-01T06:36:40.170Z"
     },
     {
       "id": "music:river-flow",
@@ -597,7 +597,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.958Z"
+      "checkedAt": "2026-11-01T06:36:40.307Z"
     },
     {
       "id": "music:smooth-meditation",
@@ -632,7 +632,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.791Z"
+      "checkedAt": "2026-11-01T06:36:40.136Z"
     },
     {
       "id": "music:staring-at-the-night-sky",
@@ -667,7 +667,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.920Z"
+      "checkedAt": "2026-11-01T06:36:40.264Z"
     },
     {
       "id": "music:vastness",
@@ -702,7 +702,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.738Z"
+      "checkedAt": "2026-11-01T06:36:40.083Z"
     },
     {
       "id": "music:rest-now",
@@ -737,7 +737,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.775Z"
+      "checkedAt": "2026-11-01T06:36:40.118Z"
     },
     {
       "id": "music:skyline",
@@ -772,7 +772,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.892Z"
+      "checkedAt": "2026-11-01T06:36:40.232Z"
     },
     {
       "id": "music:tears-of-joy",
@@ -807,7 +807,7 @@
       "status": "VERIFIED",
       "statusReason": "Mixkit license permits commercial web/social public performance; conditions apply.",
       "notes": "Mixkit prohibits TV/radio broadcast, CDs/DVDs, video games, remixing into a music-only track, standalone redistribution and rights registration. This stream uses it only as background audio.",
-      "checkedAt": "2026-11-01T04:39:40.872Z"
+      "checkedAt": "2026-11-01T06:36:40.212Z"
     },
     {
       "id": "music:archive:cathedral-ambient-01",
@@ -841,7 +841,7 @@
       "status": "VERIFIED",
       "statusReason": "Project-generated original dedicated to CC0; not in the active playlist.",
       "notes": "Archived on request. Retained for provenance; not broadcast or in rotation.",
-      "checkedAt": "2026-11-01T04:39:41.012Z"
+      "checkedAt": "2026-11-01T06:36:40.361Z"
     },
     {
       "id": "music:archive:peaceful-prayer-02",
@@ -875,7 +875,83 @@
       "status": "VERIFIED",
       "statusReason": "Project-generated original dedicated to CC0; not in the active playlist.",
       "notes": "Archived on request. Retained for provenance; not broadcast or in rotation.",
-      "checkedAt": "2026-11-01T04:39:41.019Z"
+      "checkedAt": "2026-11-01T06:36:40.370Z"
+    },
+    {
+      "id": "image:backgrounds/AI_Peaceful_landscape_at_sunrise_15c87dfd.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/backgrounds/AI_Peaceful_landscape_at_sunrise_15c87dfd.jpg",
+      "url": "/assets/christian/backgrounds/AI_Peaceful_landscape_at_sunrise_15c87dfd.jpg",
+      "title": "Peaceful landscape at sunrise 15c87dfd",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 832521,
+      "width": 768,
+      "height": 1376,
+      "sha256": "9fd43098bbb21ef1d08bcd1a17f3a84ef6241feefcc5876822b20c29c9906438",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.374Z"
+    },
+    {
+      "id": "image:backgrounds/AI_Sunlight_illuminating_landscape_…_42e43441.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/backgrounds/AI_Sunlight_illuminating_landscape_…_42e43441.jpg",
+      "url": "/assets/christian/backgrounds/AI_Sunlight_illuminating_landscape_…_42e43441.jpg",
+      "title": "Sunlight illuminating landscape … 42e43441",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 827077,
+      "width": 768,
+      "height": 1376,
+      "sha256": "ed6f9f64b08fc35fa5c31e269fb78b7bd22e8fd2986b2639b2f579abb20f2981",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.377Z"
     },
     {
       "id": "image:backgrounds/backgrounds-01-golden-clouds.jpg",
@@ -892,6 +968,7 @@
       "width": 1600,
       "height": 900,
       "sha256": "fe09cfba76d048d8bca8617425a6cdc33dbd082c0dcdeea633a5e1f84a91ea39",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Golden_Clouds.JPG",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Golden_Clouds.JPG",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ee/Golden_Clouds.JPG/1920px-Golden_Clouds.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -912,7 +989,7 @@
       "status": "VERIFIED",
       "statusReason": "License permits commercial use; attribution conditions are recorded.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.021Z"
+      "checkedAt": "2026-11-01T06:36:40.379Z"
     },
     {
       "id": "image:backgrounds/backgrounds-02-d-lmen-umland-sonnenaufgang-2012-8084.jpg",
@@ -929,6 +1006,7 @@
       "width": 1066,
       "height": 1600,
       "sha256": "fdfbcc74b7d4aa302129d6aceb028d7de767f676eead1f9e78a43790d2801e8c",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Umland,_Sonnenaufgang_--_2012_--_8084.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Umland,_Sonnenaufgang_--_2012_--_8084.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/D%C3%BClmen%2C_Umland%2C_Sonnenaufgang_--_2012_--_8084.jpg/1920px-D%C3%BClmen%2C_Umland%2C_Sonnenaufgang_--_2012_--_8084.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -949,7 +1027,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.023Z"
+      "checkedAt": "2026-11-01T06:36:40.380Z"
     },
     {
       "id": "image:backgrounds/backgrounds-03-d-lmen-umland-sonnenaufgang-2012-8069.jpg",
@@ -966,6 +1044,7 @@
       "width": 1600,
       "height": 1066,
       "sha256": "f9f01591eb74c3cebca00c8fcd503bdfba980480567482717ad3cdb5138c8658",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Umland,_Sonnenaufgang_--_2012_--_8069.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Umland,_Sonnenaufgang_--_2012_--_8069.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1a/D%C3%BClmen%2C_Umland%2C_Sonnenaufgang_--_2012_--_8069.jpg/1920px-D%C3%BClmen%2C_Umland%2C_Sonnenaufgang_--_2012_--_8069.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -986,7 +1065,83 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.025Z"
+      "checkedAt": "2026-11-01T06:36:40.382Z"
+    },
+    {
+      "id": "image:bible/AI_Bible_resting_on_wooden_table_395f2590.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/bible/AI_Bible_resting_on_wooden_table_395f2590.jpg",
+      "url": "/assets/christian/bible/AI_Bible_resting_on_wooden_table_395f2590.jpg",
+      "title": "Bible resting on wooden table 395f2590",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 702981,
+      "width": 768,
+      "height": 1376,
+      "sha256": "b07100e570ab1cfe8c3eca1bfedd395bba0c7b8c732307bc4a43e6840a988f08",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.384Z"
+    },
+    {
+      "id": "image:bible/AI_Bible_resting_on_wooden_table_5c55bf43.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/bible/AI_Bible_resting_on_wooden_table_5c55bf43.jpg",
+      "url": "/assets/christian/bible/AI_Bible_resting_on_wooden_table_5c55bf43.jpg",
+      "title": "Bible resting on wooden table 5c55bf43",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 669734,
+      "width": 768,
+      "height": 1376,
+      "sha256": "d8d51a7ad94f1550d1bcbd2083dd4bd259a71ad65a62648180bad54a652446a4",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.387Z"
     },
     {
       "id": "image:bible/bible-03-bible-on-a-coffee-table.jpg",
@@ -1003,6 +1158,7 @@
       "width": 1200,
       "height": 1600,
       "sha256": "7f500200549e1d7e6fe7de99a35cd20c4a2f1de0e39beeb5646f615305f97120",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Bible_on_a_coffee_table.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bible_on_a_coffee_table.jpg",
       "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/6/67/Bible_on_a_coffee_table.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
@@ -1023,7 +1179,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.026Z"
+      "checkedAt": "2026-11-01T06:36:40.388Z"
     },
     {
       "id": "image:bible/bible-04-communion-table.jpg",
@@ -1040,6 +1196,7 @@
       "width": 1600,
       "height": 1200,
       "sha256": "06ae222cd86b1d76767e6b321897d3817a372392cfd887d67f0309aa2a922433",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Communion_Table.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Communion_Table.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Communion_Table.jpg/1920px-Communion_Table.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1060,7 +1217,83 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.029Z"
+      "checkedAt": "2026-11-01T06:36:40.391Z"
+    },
+    {
+      "id": "image:candles/AI_Glowing_prayer_candles_inside_ch…_073b7c51.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/candles/AI_Glowing_prayer_candles_inside_ch…_073b7c51.jpg",
+      "url": "/assets/christian/candles/AI_Glowing_prayer_candles_inside_ch…_073b7c51.jpg",
+      "title": "Glowing prayer candles inside ch… 073b7c51",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 743677,
+      "width": 768,
+      "height": 1376,
+      "sha256": "454ea1927ddcdd6f1bd793f483907b8c1627a853c0ac1e2af5f5c5f39a33b0e6",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.393Z"
+    },
+    {
+      "id": "image:candles/AI_Prayer_candles_glowing_inside_ch…_310bb196.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/candles/AI_Prayer_candles_glowing_inside_ch…_310bb196.jpg",
+      "url": "/assets/christian/candles/AI_Prayer_candles_glowing_inside_ch…_310bb196.jpg",
+      "title": "Prayer candles glowing inside ch… 310bb196",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 714300,
+      "width": 768,
+      "height": 1376,
+      "sha256": "a2411ce93d383135cd49afc73c28016c389d7b6eaede1df16c7f5cc53c155ac8",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.396Z"
     },
     {
       "id": "image:candles/candles-01-montserrat-prayer-candles.jpg",
@@ -1077,6 +1310,7 @@
       "width": 1600,
       "height": 1070,
       "sha256": "46745c6b14664e0aec6cac48fd058c57480d5b94785fe692ca4993a365846cb7",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Montserrat_-_prayer_candles.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Montserrat_-_prayer_candles.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Montserrat_-_prayer_candles.jpg/1920px-Montserrat_-_prayer_candles.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1097,7 +1331,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.032Z"
+      "checkedAt": "2026-11-01T06:36:40.398Z"
     },
     {
       "id": "image:candles/candles-02-prayer-candles-at-sarrat.jpg",
@@ -1114,6 +1348,7 @@
       "width": 1600,
       "height": 1066,
       "sha256": "41786479a1cdd1c5241d930a504bb4b7993184c67538fc66d0953a12e80af49f",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Prayer_candles_at_sarrat.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Prayer_candles_at_sarrat.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2d/Prayer_candles_at_sarrat.jpg/1920px-Prayer_candles_at_sarrat.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1134,7 +1369,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.033Z"
+      "checkedAt": "2026-11-01T06:36:40.399Z"
     },
     {
       "id": "image:candles/candles-03-prayer-candles-5406060261.jpg",
@@ -1151,6 +1386,7 @@
       "width": 1600,
       "height": 1062,
       "sha256": "80d5acd68f92402f93fb0e3f44099e9213a36437e05352b0ba421e14c65a69d9",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Prayer_Candles_(5406060261).jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Prayer_Candles_(5406060261).jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/Prayer_Candles_%285406060261%29.jpg/1920px-Prayer_Candles_%285406060261%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1171,7 +1407,7 @@
       "status": "VERIFIED",
       "statusReason": "License permits commercial use; attribution conditions are recorded.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.035Z"
+      "checkedAt": "2026-11-01T06:36:40.401Z"
     },
     {
       "id": "image:candles/candles-04-bolton-abbey-mmb-06.jpg",
@@ -1188,6 +1424,7 @@
       "width": 1600,
       "height": 1033,
       "sha256": "307a8ff65e979522314b1df50f135fd3c6aaf4b6d88720f52d439e70cd3d2e7a",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Bolton_Abbey_MMB_06.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bolton_Abbey_MMB_06.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/76/Bolton_Abbey_MMB_06.jpg/1920px-Bolton_Abbey_MMB_06.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1208,7 +1445,83 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.036Z"
+      "checkedAt": "2026-11-01T06:36:40.402Z"
+    },
+    {
+      "id": "image:cathedral/AI_Congregation_kneeling_in_prayer_…_9a0c363f.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/cathedral/AI_Congregation_kneeling_in_prayer_…_9a0c363f.jpg",
+      "url": "/assets/christian/cathedral/AI_Congregation_kneeling_in_prayer_…_9a0c363f.jpg",
+      "title": "Congregation kneeling in prayer … 9a0c363f",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 916196,
+      "width": 768,
+      "height": 1376,
+      "sha256": "4959f555919034ae4f1111e129e9bcc60fba5fdac5d8327364856bbc2d003270",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.405Z"
+    },
+    {
+      "id": "image:cathedral/AI_Congregation_praying_in_Gothic_c…_bf512f0e.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/cathedral/AI_Congregation_praying_in_Gothic_c…_bf512f0e.jpg",
+      "url": "/assets/christian/cathedral/AI_Congregation_praying_in_Gothic_c…_bf512f0e.jpg",
+      "title": "Congregation praying in Gothic c… bf512f0e",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 947029,
+      "width": 768,
+      "height": 1376,
+      "sha256": "95161e857ce02be9c1be788138ef8f2d59e9e16c9a5c9253b32496c8c2ca92f9",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.409Z"
     },
     {
       "id": "image:cathedral/cathedral-01-cathedral-mass.jpg",
@@ -1225,6 +1538,7 @@
       "width": 1080,
       "height": 1920,
       "sha256": "2297f32ca392982817ab46cbc4f382a9b497003b97289ecf9910ed2510a29dd2",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Police_Week_Blue_Mass_2013_(8738256373).jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Police_Week_Blue_Mass_2013_(8738256373).jpg",
       "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/4/45/Police_Week_Blue_Mass_2013_%288738256373%29.jpg",
@@ -1245,7 +1559,7 @@
       "status": "VERIFIED",
       "statusReason": "License permits commercial use; attribution conditions are recorded.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.039Z"
+      "checkedAt": "2026-11-01T06:36:40.411Z"
     },
     {
       "id": "image:cathedral/cathedral-02-sanctuary-service.jpg",
@@ -1262,6 +1576,7 @@
       "width": 1080,
       "height": 1920,
       "sha256": "a991370868c9bcc14ec7254ae31c8d0f5f1054a14d69dfed67f7acaad0032206",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Central_nave_of_S%C3%A3o_Jos%C3%A9_Sanctuary_during_a_Catholic_service,_Igreja_S%C3%A3o_Jos%C3%A9_Belo_Horizonte_Minas_Gerais_Brasil_-_Daniel_Guimaraes_Rego_Dan_Rego_Daniel_G.Rego_Daniel_Rego.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Central_nave_of_S%C3%A3o_Jos%C3%A9_Sanctuary_during_a_Catholic_service,_Igreja_S%C3%A3o_Jos%C3%A9_Belo_Horizonte_Minas_Gerais_Brasil_-_Daniel_Guimaraes_Rego_Dan_Rego_Daniel_G.Rego_Daniel_Rego.jpg",
       "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/9/94/Central_nave_of_S%C3%A3o_Jos%C3%A9_Sanctuary_during_a_Catholic_service%2C_Igreja_S%C3%A3o_Jos%C3%A9_Belo_Horizonte_Minas_Gerais_Brasil_-_Daniel_Guimaraes_Rego_Dan_Rego_Daniel_G.Rego_Daniel_Rego.jpg",
@@ -1282,7 +1597,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.041Z"
+      "checkedAt": "2026-11-01T06:36:40.414Z"
     },
     {
       "id": "image:church/church-01-nave-of-basilica-saint-sernin-2012-08-24.jpg",
@@ -1299,6 +1614,7 @@
       "width": 1600,
       "height": 751,
       "sha256": "209138ae4bf9afccd61f83b0a9f2a2b982bc3b2506d0c5400aeea1540c39d0cb",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Nave_of_Basilica_Saint-Sernin_-_2012-08-24.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nave_of_Basilica_Saint-Sernin_-_2012-08-24.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/93/Nave_of_Basilica_Saint-Sernin_-_2012-08-24.jpg/1920px-Nave_of_Basilica_Saint-Sernin_-_2012-08-24.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1319,7 +1635,7 @@
       "status": "VERIFIED",
       "statusReason": "License permits commercial use; attribution conditions are recorded.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.043Z"
+      "checkedAt": "2026-11-01T06:36:40.415Z"
     },
     {
       "id": "image:church/church-02-holy-trinity-sloane-street-church-nave-2-diliff.jpg",
@@ -1336,6 +1652,7 @@
       "width": 1600,
       "height": 1067,
       "sha256": "93a0172822eaf9d9d4b0f90ea75172841aa6db8ec9b30ce1f37152ae18886b8a",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Holy_Trinity_Sloane_Street_Church_Nave_2_-_Diliff.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Holy_Trinity_Sloane_Street_Church_Nave_2_-_Diliff.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/Holy_Trinity_Sloane_Street_Church_Nave_2_-_Diliff.jpg/1920px-Holy_Trinity_Sloane_Street_Church_Nave_2_-_Diliff.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1356,7 +1673,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.045Z"
+      "checkedAt": "2026-11-01T06:36:40.417Z"
     },
     {
       "id": "image:church/church-03-st-peter-s-church-nave-1-drogheda-ireland-diliff.jpg",
@@ -1373,6 +1690,7 @@
       "width": 1600,
       "height": 1299,
       "sha256": "399e3fdda1cb5d617ab2044d1086a4edd00ab14924f6f9bff479b36c6652d152",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:St_Peter%27s_Church_Nave_1,_Drogheda,_Ireland_-_Diliff.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:St_Peter%27s_Church_Nave_1,_Drogheda,_Ireland_-_Diliff.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2a/St_Peter%27s_Church_Nave_1%2C_Drogheda%2C_Ireland_-_Diliff.jpg/1920px-St_Peter%27s_Church_Nave_1%2C_Drogheda%2C_Ireland_-_Diliff.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1393,7 +1711,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.049Z"
+      "checkedAt": "2026-11-01T06:36:40.420Z"
     },
     {
       "id": "image:church/church-04-duomo-verona-interior-nave-right-part-cappella-calcasoli.jpg",
@@ -1410,6 +1728,7 @@
       "width": 1131,
       "height": 1600,
       "sha256": "7963396e6448ba7fd6c870be39b1d70fc1bbe74935cf6709c5bd34dfa9ce9d48",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Duomo_(Verona)_-_Interior_-_Nave_right_part_-_Cappella_Calcasoli.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Duomo_(Verona)_-_Interior_-_Nave_right_part_-_Cappella_Calcasoli.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/db/Duomo_%28Verona%29_-_Interior_-_Nave_right_part_-_Cappella_Calcasoli.jpg/1920px-Duomo_%28Verona%29_-_Interior_-_Nave_right_part_-_Cappella_Calcasoli.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1430,7 +1749,83 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.052Z"
+      "checkedAt": "2026-11-01T06:36:40.423Z"
+    },
+    {
+      "id": "image:cross/AI_Wooden_cross_on_grassy_hill_37dad860.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/cross/AI_Wooden_cross_on_grassy_hill_37dad860.jpg",
+      "url": "/assets/christian/cross/AI_Wooden_cross_on_grassy_hill_37dad860.jpg",
+      "title": "Wooden cross on grassy hill 37dad860",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 839279,
+      "width": 768,
+      "height": 1376,
+      "sha256": "d8e262a6c96f4fadaa66c950b08b012c0566d6687117231710e42210fcc7dbd8",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.426Z"
+    },
+    {
+      "id": "image:cross/AI_Wooden_cross_on_grassy_hill_a4d1c9aa.jpg",
+      "kind": "image",
+      "usage": "broadcast",
+      "active": true,
+      "file": "public/assets/christian/cross/AI_Wooden_cross_on_grassy_hill_a4d1c9aa.jpg",
+      "url": "/assets/christian/cross/AI_Wooden_cross_on_grassy_hill_a4d1c9aa.jpg",
+      "title": "Wooden cross on grassy hill a4d1c9aa",
+      "artist": "AI Generated",
+      "durationSeconds": null,
+      "format": "JPG",
+      "bytes": 864475,
+      "width": 768,
+      "height": 1376,
+      "sha256": "be485b7364222fc92b2c3cca389f789cac1032a24d8040467667e5bd8b1bf550",
+      "provenance": "AI_GENERATED",
+      "source": "AI Generated",
+      "sourceUrl": "",
+      "downloadUrl": "",
+      "license": "AI Generated (project original)",
+      "licenseUrl": "",
+      "licenseNote": "Registered from the local AI_ filename convention; declared an original AI-generated asset. No third-party imagery.",
+      "commercial": "Allowed",
+      "livestream": "Allowed",
+      "tiktok": "Allowed",
+      "obs": "Allowed",
+      "modifications": "None documented",
+      "attributionRequired": false,
+      "attribution": "AI Generated",
+      "shareAlike": false,
+      "compositionLicensed": "Project-declared AI-generated original",
+      "recordingLicensed": null,
+      "evidence": "AI_ filename convention in the local image library; declared AI-generated by the operator",
+      "status": "VERIFIED",
+      "statusReason": "AI-generated original; all broadcast permissions granted by the image library rule.",
+      "notes": "",
+      "checkedAt": "2026-11-01T06:36:40.429Z"
     },
     {
       "id": "image:cross/cross-01-holy-cross-altar-church-of-saint-francis-listed-id-41-buda.jpg",
@@ -1447,6 +1842,7 @@
       "width": 1200,
       "height": 1600,
       "sha256": "d159d0814724f6149076b2c70f657840779fa4340369b35e3407c7c53f66226f",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Holy_Cross_altar._Church_of_Saint_Francis._Listed_ID_41._-_Budapest.JPG",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Holy_Cross_altar._Church_of_Saint_Francis._Listed_ID_41._-_Budapest.JPG",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fa/Holy_Cross_altar._Church_of_Saint_Francis._Listed_ID_41._-_Budapest.JPG/1920px-Holy_Cross_altar._Church_of_Saint_Francis._Listed_ID_41._-_Budapest.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1467,7 +1863,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.054Z"
+      "checkedAt": "2026-11-01T06:36:40.431Z"
     },
     {
       "id": "image:cross/cross-02-saint-bernard-church-holy-cross-altar-in-eger-2016-hungary.jpg",
@@ -1484,6 +1880,7 @@
       "width": 1200,
       "height": 1600,
       "sha256": "c8f329187dd3f1b3bda33e1558d33b7a4fc6c1ac0e36674a5c7de4a7f7fd079c",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Saint_Bernard_church,_Holy_Cross_altar_in_Eger,_2016_Hungary.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Saint_Bernard_church,_Holy_Cross_altar_in_Eger,_2016_Hungary.jpg",
       "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/6/60/Saint_Bernard_church%2C_Holy_Cross_altar_in_Eger%2C_2016_Hungary.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
@@ -1504,7 +1901,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.056Z"
+      "checkedAt": "2026-11-01T06:36:40.432Z"
     },
     {
       "id": "image:cross/cross-03-d-lmen-st-viktor-kirche-innenansicht-altar-2018-0552-6.jpg",
@@ -1521,6 +1918,7 @@
       "width": 1600,
       "height": 1079,
       "sha256": "eed3a9055d7945a698bd97b105e7c33998be0a3e5dd0e2263c92aed581ab2a90",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_St.-Viktor-Kirche,_Innenansicht,_Altar_--_2018_--_0552-6.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_St.-Viktor-Kirche,_Innenansicht,_Altar_--_2018_--_0552-6.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/52/D%C3%BClmen%2C_St.-Viktor-Kirche%2C_Innenansicht%2C_Altar_--_2018_--_0552-6.jpg/1920px-D%C3%BClmen%2C_St.-Viktor-Kirche%2C_Innenansicht%2C_Altar_--_2018_--_0552-6.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1541,7 +1939,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.058Z"
+      "checkedAt": "2026-11-01T06:36:40.434Z"
     },
     {
       "id": "image:cross/cross-04-d-lmen-heilig-kreuz-kirche-altar-2019-3113-7.jpg",
@@ -1558,6 +1956,7 @@
       "width": 1600,
       "height": 1187,
       "sha256": "72ca680e288d6fe8bfe5bc5b157941861cc1dd9ee7a2dd1d03c57ec0381d272c",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Heilig-Kreuz-Kirche,_Altar_--_2019_--_3113-7.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Heilig-Kreuz-Kirche,_Altar_--_2019_--_3113-7.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/D%C3%BClmen%2C_Heilig-Kreuz-Kirche%2C_Altar_--_2019_--_3113-7.jpg/1920px-D%C3%BClmen%2C_Heilig-Kreuz-Kirche%2C_Altar_--_2019_--_3113-7.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1578,7 +1977,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "CC BY-SA ShareAlike obligations for the adapted 9:16 crop need legal review.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.060Z"
+      "checkedAt": "2026-11-01T06:36:40.436Z"
     },
     {
       "id": "image:jesus/jesus-02-temptation-of-christ-in-the-wilderness.jpg",
@@ -1595,6 +1994,7 @@
       "width": 1205,
       "height": 1600,
       "sha256": "9ed090486cbd684cf91aa22453702abc4010a7f4f0a2a3c4c6995ec333ed343e",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Temptation-of-Christ-in-the-Wilderness.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Temptation-of-Christ-in-the-Wilderness.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Temptation-of-Christ-in-the-Wilderness.jpg/1920px-Temptation-of-Christ-in-the-Wilderness.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1615,7 +2015,7 @@
       "status": "VERIFIED",
       "statusReason": "License permits commercial use; attribution conditions are recorded.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.062Z"
+      "checkedAt": "2026-11-01T06:36:40.439Z"
     },
     {
       "id": "image:jesus/jesus-03-claude-mellan-face-of-christ-wga14764.jpg",
@@ -1632,6 +2032,7 @@
       "width": 1193,
       "height": 1600,
       "sha256": "1540e5a7cd96edf658c309181c9aa782a5bd91c5b791c5fc20e2345fa597587b",
+      "provenance": "RECORDED",
       "source": "https://commons.wikimedia.org/wiki/File:Claude_Mellan_-_Face_of_Christ_-_WGA14764.jpg",
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Claude_Mellan_-_Face_of_Christ_-_WGA14764.jpg",
       "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ca/Claude_Mellan_-_Face_of_Christ_-_WGA14764.jpg/1920px-Claude_Mellan_-_Face_of_Christ_-_WGA14764.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -1652,7 +2053,7 @@
       "status": "VERIFIED",
       "statusReason": "License permits commercial use; attribution conditions are recorded.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.067Z"
+      "checkedAt": "2026-11-01T06:36:40.446Z"
     },
     {
       "id": "image:overlays/gold-bokeh-particles.png",
@@ -1669,6 +2070,7 @@
       "width": 1080,
       "height": 1920,
       "sha256": "8828dda1e45fa03d9a3f89c524e778604143a77bac82cf061987bee17e79aaaa",
+      "provenance": "PROJECT_GENERATED",
       "source": "Generated locally for Christian Prayer Live",
       "sourceUrl": "",
       "downloadUrl": "",
@@ -1689,7 +2091,7 @@
       "status": "VERIFIED",
       "statusReason": "Project-generated overlay dedicated to CC0.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.069Z"
+      "checkedAt": "2026-11-01T06:36:40.447Z"
     },
     {
       "id": "image:overlays/golden-light-rays.png",
@@ -1706,6 +2108,7 @@
       "width": 1080,
       "height": 1920,
       "sha256": "e26f65116cd82e9bb3feafe288b1132b8310e1743b9bdfc2dc636e42138ac89c",
+      "provenance": "PROJECT_GENERATED",
       "source": "Generated locally for Christian Prayer Live",
       "sourceUrl": "",
       "downloadUrl": "",
@@ -1726,7 +2129,7 @@
       "status": "VERIFIED",
       "statusReason": "Project-generated overlay dedicated to CC0.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.070Z"
+      "checkedAt": "2026-11-01T06:36:40.448Z"
     },
     {
       "id": "image:overlays/soft-vignette.png",
@@ -1743,6 +2146,7 @@
       "width": 1080,
       "height": 1920,
       "sha256": "cbc85683e657f72911833c675ddb4ae51a559cc6dbf3213f3c0cba42026c6713",
+      "provenance": "PROJECT_GENERATED",
       "source": "Generated locally for Christian Prayer Live",
       "sourceUrl": "",
       "downloadUrl": "",
@@ -1763,7 +2167,7 @@
       "status": "VERIFIED",
       "statusReason": "Project-generated overlay dedicated to CC0.",
       "notes": "",
-      "checkedAt": "2026-11-01T04:39:41.072Z"
+      "checkedAt": "2026-11-01T06:36:40.448Z"
     },
     {
       "id": "image:public/assets/amitabha_stage.jpg",
@@ -1799,7 +2203,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.077Z"
+      "checkedAt": "2026-11-01T06:36:40.451Z"
     },
     {
       "id": "image:public/assets/amitabha_stage.png",
@@ -1835,7 +2239,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.089Z"
+      "checkedAt": "2026-11-01T06:36:40.472Z"
     },
     {
       "id": "image:public/assets/buddha.png",
@@ -1871,7 +2275,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.099Z"
+      "checkedAt": "2026-11-01T06:36:40.483Z"
     },
     {
       "id": "image:public/assets/devotee_bow_mid.png",
@@ -1907,7 +2311,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.101Z"
+      "checkedAt": "2026-11-01T06:36:40.485Z"
     },
     {
       "id": "image:public/assets/devotee_bow.png",
@@ -1943,7 +2347,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.101Z"
+      "checkedAt": "2026-11-01T06:36:40.484Z"
     },
     {
       "id": "image:public/assets/devotee_kneel_down.png",
@@ -1979,7 +2383,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.102Z"
+      "checkedAt": "2026-11-01T06:36:40.485Z"
     },
     {
       "id": "image:public/assets/devotee_prostrate_deep.png",
@@ -2015,7 +2419,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.103Z"
+      "checkedAt": "2026-11-01T06:36:40.486Z"
     },
     {
       "id": "image:public/assets/devotee_prostrate.png",
@@ -2051,7 +2455,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.102Z"
+      "checkedAt": "2026-11-01T06:36:40.486Z"
     },
     {
       "id": "image:public/assets/devotee_walk_2.png",
@@ -2087,7 +2491,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.104Z"
+      "checkedAt": "2026-11-01T06:36:40.487Z"
     },
     {
       "id": "image:public/assets/devotee_walk.png",
@@ -2123,7 +2527,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.104Z"
+      "checkedAt": "2026-11-01T06:36:40.487Z"
     },
     {
       "id": "image:public/assets/devotee.png",
@@ -2159,7 +2563,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.100Z"
+      "checkedAt": "2026-11-01T06:36:40.484Z"
     },
     {
       "id": "image:public/assets/temple_stage_bg.png",
@@ -2195,7 +2599,7 @@
       "status": "UNKNOWN",
       "statusReason": "No source or license evidence; do not broadcast.",
       "notes": "Retained in place for compatibility; not part of the active Christian rotation.",
-      "checkedAt": "2026-11-01T04:39:41.115Z"
+      "checkedAt": "2026-11-01T06:36:40.499Z"
     },
     {
       "id": "image:docs/asset-contact-sheet.jpg",
@@ -2231,7 +2635,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.118Z"
+      "checkedAt": "2026-11-01T06:36:40.502Z"
     },
     {
       "id": "image:docs/overlay-preview.jpg",
@@ -2267,7 +2671,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.136Z"
+      "checkedAt": "2026-11-01T06:36:40.515Z"
     },
     {
       "id": "image:docs/screenshots/admin-community-engagement.jpg",
@@ -2303,7 +2707,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.137Z"
+      "checkedAt": "2026-11-01T06:36:40.516Z"
     },
     {
       "id": "image:docs/screenshots/admin-copyright-audit.png",
@@ -2339,7 +2743,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.138Z"
+      "checkedAt": "2026-11-01T06:36:40.517Z"
     },
     {
       "id": "image:docs/screenshots/admin-copyright-safe-mode.png",
@@ -2375,7 +2779,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.141Z"
+      "checkedAt": "2026-11-01T06:36:40.520Z"
     },
     {
       "id": "image:docs/screenshots/admin-dashboard-lower.png",
@@ -2411,7 +2815,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.146Z"
+      "checkedAt": "2026-11-01T06:36:40.525Z"
     },
     {
       "id": "image:docs/screenshots/admin-dashboard.png",
@@ -2447,7 +2851,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.148Z"
+      "checkedAt": "2026-11-01T06:36:40.527Z"
     },
     {
       "id": "image:docs/screenshots/admin-live-show-panel.jpg",
@@ -2483,7 +2887,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.149Z"
+      "checkedAt": "2026-11-01T06:36:40.528Z"
     },
     {
       "id": "image:docs/screenshots/admin-live-show-preview.jpg",
@@ -2519,7 +2923,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.150Z"
+      "checkedAt": "2026-11-01T06:36:40.529Z"
     },
     {
       "id": "image:docs/screenshots/admin-live-show.png",
@@ -2555,7 +2959,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.156Z"
+      "checkedAt": "2026-11-01T06:36:40.533Z"
     },
     {
       "id": "image:docs/screenshots/admin-prayer-queue.png",
@@ -2591,7 +2995,79 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.158Z"
+      "checkedAt": "2026-11-01T06:36:40.534Z"
+    },
+    {
+      "id": "image:docs/screenshots/admin-smart-schedule.png",
+      "kind": "image",
+      "usage": "documentation",
+      "active": false,
+      "file": "docs/screenshots/admin-smart-schedule.png",
+      "url": "",
+      "title": "admin-smart-schedule.png",
+      "artist": "Christian Prayer Live (documentation capture)",
+      "durationSeconds": null,
+      "format": "PNG",
+      "bytes": 645641,
+      "width": 1800,
+      "height": 1340,
+      "sha256": "22163a5b2b0e3ff67fed5273c28719fae6bcebf559db75ffaf02c9b072f3d1ed",
+      "source": "Captured from this application for documentation",
+      "sourceUrl": "",
+      "license": "Project-generated capture; may contain third-party imagery",
+      "licenseUrl": "",
+      "licenseNote": "The capture itself is project-generated, but it can depict licensed backgrounds and overlays.",
+      "commercial": "Review required",
+      "livestream": "Not a broadcast asset",
+      "tiktok": "Not a broadcast asset",
+      "obs": "Not a broadcast asset",
+      "modifications": "Documentation capture",
+      "attributionRequired": true,
+      "attribution": "Christian Prayer Live; underlying assets retain their own credits",
+      "shareAlike": true,
+      "compositionLicensed": "Project capture of mixed-license assets",
+      "recordingLicensed": null,
+      "evidence": "Generated by the project during UI verification",
+      "status": "NEEDS_REVIEW",
+      "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
+      "notes": "Documentation only; not served to OBS.",
+      "checkedAt": "2026-11-01T06:36:40.537Z"
+    },
+    {
+      "id": "image:docs/screenshots/admin-system-health.png",
+      "kind": "image",
+      "usage": "documentation",
+      "active": false,
+      "file": "docs/screenshots/admin-system-health.png",
+      "url": "",
+      "title": "admin-system-health.png",
+      "artist": "Christian Prayer Live (documentation capture)",
+      "durationSeconds": null,
+      "format": "PNG",
+      "bytes": 464068,
+      "width": 1800,
+      "height": 1340,
+      "sha256": "f3751c9c5b77b929df15079f63556bbb565fc91d226c63523730dfb4cc4ef3d1",
+      "source": "Captured from this application for documentation",
+      "sourceUrl": "",
+      "license": "Project-generated capture; may contain third-party imagery",
+      "licenseUrl": "",
+      "licenseNote": "The capture itself is project-generated, but it can depict licensed backgrounds and overlays.",
+      "commercial": "Review required",
+      "livestream": "Not a broadcast asset",
+      "tiktok": "Not a broadcast asset",
+      "obs": "Not a broadcast asset",
+      "modifications": "Documentation capture",
+      "attributionRequired": true,
+      "attribution": "Christian Prayer Live; underlying assets retain their own credits",
+      "shareAlike": true,
+      "compositionLicensed": "Project capture of mixed-license assets",
+      "recordingLicensed": null,
+      "evidence": "Generated by the project during UI verification",
+      "status": "NEEDS_REVIEW",
+      "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
+      "notes": "Documentation only; not served to OBS.",
+      "checkedAt": "2026-11-01T06:36:40.539Z"
     },
     {
       "id": "image:docs/screenshots/cathedral-stage-final.jpg",
@@ -2627,7 +3103,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.160Z"
+      "checkedAt": "2026-11-01T06:36:40.540Z"
     },
     {
       "id": "image:docs/screenshots/cathedral-stage-final.png",
@@ -2663,7 +3139,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.169Z"
+      "checkedAt": "2026-11-01T06:36:40.549Z"
     },
     {
       "id": "image:docs/screenshots/congregation-admin.png",
@@ -2699,7 +3175,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.172Z"
+      "checkedAt": "2026-11-01T06:36:40.552Z"
     },
     {
       "id": "image:docs/screenshots/congregation-interactions.png",
@@ -2735,7 +3211,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.176Z"
+      "checkedAt": "2026-11-01T06:36:40.554Z"
     },
     {
       "id": "image:docs/screenshots/congregation-prayer.png",
@@ -2771,7 +3247,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.182Z"
+      "checkedAt": "2026-11-01T06:36:40.557Z"
     },
     {
       "id": "image:docs/screenshots/congregation-stage.png",
@@ -2807,7 +3283,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.189Z"
+      "checkedAt": "2026-11-01T06:36:40.560Z"
     },
     {
       "id": "image:docs/screenshots/gift-stage.jpg",
@@ -2843,7 +3319,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.191Z"
+      "checkedAt": "2026-11-01T06:36:40.560Z"
     },
     {
       "id": "image:docs/screenshots/live-show-stage-preview.jpg",
@@ -2879,7 +3355,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.192Z"
+      "checkedAt": "2026-11-01T06:36:40.561Z"
     },
     {
       "id": "image:docs/screenshots/live-show-stage.png",
@@ -2915,7 +3391,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.202Z"
+      "checkedAt": "2026-11-01T06:36:40.567Z"
     },
     {
       "id": "image:docs/screenshots/live-show-welcome-preview.jpg",
@@ -2951,7 +3427,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.203Z"
+      "checkedAt": "2026-11-01T06:36:40.567Z"
     },
     {
       "id": "image:docs/screenshots/live-show-welcome.png",
@@ -2987,7 +3463,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.212Z"
+      "checkedAt": "2026-11-01T06:36:40.572Z"
     },
     {
       "id": "image:docs/screenshots/obs-amen.png",
@@ -3023,7 +3499,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.216Z"
+      "checkedAt": "2026-11-01T06:36:40.574Z"
     },
     {
       "id": "image:docs/screenshots/obs-stage-final.png",
@@ -3059,7 +3535,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.220Z"
+      "checkedAt": "2026-11-01T06:36:40.577Z"
     },
     {
       "id": "image:docs/screenshots/obs-stage-full.png",
@@ -3095,7 +3571,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.222Z"
+      "checkedAt": "2026-11-01T06:36:40.580Z"
     },
     {
       "id": "image:docs/screenshots/obs-stage.png",
@@ -3131,7 +3607,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.227Z"
+      "checkedAt": "2026-11-01T06:36:40.585Z"
     },
     {
       "id": "image:docs/screenshots/prayer-invite-stage.jpg",
@@ -3167,7 +3643,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.228Z"
+      "checkedAt": "2026-11-01T06:36:40.586Z"
     },
     {
       "id": "image:docs/screenshots/quiz-stage-answer.jpg",
@@ -3203,7 +3679,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.229Z"
+      "checkedAt": "2026-11-01T06:36:40.586Z"
     },
     {
       "id": "image:docs/screenshots/quiz-stage-open.jpg",
@@ -3239,7 +3715,7 @@
       "status": "NEEDS_REVIEW",
       "statusReason": "Captures may contain CC BY-SA backgrounds; do not redistribute standalone without the credits and ShareAlike review.",
       "notes": "Documentation only; not served to OBS.",
-      "checkedAt": "2026-11-01T04:39:41.230Z"
+      "checkedAt": "2026-11-01T06:36:40.587Z"
     },
     {
       "id": "image:docs/demo/demo-admin-panel.png",
@@ -3275,7 +3751,7 @@
       "status": "UNKNOWN",
       "statusReason": "Source and license cannot be verified from the repository.",
       "notes": "Reference/documentation only. Do not use in the livestream.",
-      "checkedAt": "2026-11-01T04:39:41.120Z"
+      "checkedAt": "2026-11-01T06:36:40.503Z"
     },
     {
       "id": "image:docs/demo/demo-fortune-oracle.png",
@@ -3311,7 +3787,7 @@
       "status": "UNKNOWN",
       "statusReason": "Source and license cannot be verified from the repository.",
       "notes": "Reference/documentation only. Do not use in the livestream.",
-      "checkedAt": "2026-11-01T04:39:41.123Z"
+      "checkedAt": "2026-11-01T06:36:40.505Z"
     },
     {
       "id": "image:docs/demo/demo-main-stage.png",
@@ -3347,7 +3823,7 @@
       "status": "UNKNOWN",
       "statusReason": "Source and license cannot be verified from the repository.",
       "notes": "Reference/documentation only. Do not use in the livestream.",
-      "checkedAt": "2026-11-01T04:39:41.127Z"
+      "checkedAt": "2026-11-01T06:36:40.508Z"
     },
     {
       "id": "image:docs/demo/demo-obs-9x16.png",
@@ -3383,7 +3859,7 @@
       "status": "UNKNOWN",
       "statusReason": "Source and license cannot be verified from the repository.",
       "notes": "Reference/documentation only. Do not use in the livestream.",
-      "checkedAt": "2026-11-01T04:39:41.133Z"
+      "checkedAt": "2026-11-01T06:36:40.514Z"
     }
   ]
 }

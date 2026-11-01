@@ -221,7 +221,7 @@ The dashboard includes an evidence-based **Copyright & Licensing** panel and a *
 - [docs/ASSET_ATTRIBUTION.md](docs/ASSET_ATTRIBUTION.md) — copy-ready image credits and music courtesy credits.
 - `public/copyright-audit.json` — the dashboard's read-only copy, so the panel also works before a server restart.
 
-The current audit covers 23 music files (21 active + 2 archived), 24 active Christian images, 12 legacy `public/assets` files and 33 documentation/reference images. Statuses are deliberately conservative: CC BY-SA images and documentation captures are **NEEDS_REVIEW**, not cleared, and files with no provenance are **UNKNOWN**.
+The current audit covers 23 music files (21 active + 2 archived), 31 active Christian images plus 3 stage overlays (10 of the images are AI-generated originals), 12 legacy `public/assets` files and 35 documentation/reference images. Statuses are deliberately conservative: CC BY-SA images and documentation captures are **NEEDS_REVIEW**, not cleared, and files with no provenance are **UNKNOWN**.
 
 ### Copyright Safe Broadcast Mode
 
@@ -280,6 +280,51 @@ The same controls exist in compact form in the stage's quick dock. Pausing stops
 
 ---
 
+## Smart daily schedule (US timezones)
+
+The 35-minute program no longer runs identically all day. Four programming modes follow the wall clock of a US timezone:
+
+| Program | Default window | Focus |
+| --- | --- | --- |
+| Morning Prayer | 05:00–11:00 | Morning gratitude, family blessings, hope and strength, warm sunrise scenes, soft piano |
+| Afternoon Bible Study | 11:00–17:00 | Scripture reflection, Bible quiz at its most frequent, daylight Bible/church scenes |
+| Evening Worship | 17:00–21:00 | Gratitude and family prayer, community prayer, cathedral and candlelight scenes, cinematic ambience |
+| Night Prayer | 21:00–05:00 | Peace, anxiety and rest, gentle reflection, dim cathedral/candle scenes, slower narration |
+
+Each mode controls the program title, prayer themes, Scripture tags, quiz cadence, narration pace, music categories, background categories, welcome greetings, gift announcements and community engagement. It reuses the existing show, quiz, music and stage engines.
+
+**Timezone correctness.** The default is `America/Chicago`; the dashboard can select New York, Chicago, Denver, Phoenix, Los Angeles, Anchorage or Honolulu. Boundaries are read from the IANA wall clock through `Intl.DateTimeFormat`, so daylight saving and midnight transitions need no hardcoded UTC offsets.
+
+**No duplicate transitions.** A single timer evaluates the clock every 20 seconds and fires `onChange` only when the effective program signature changes. Crossing a boundary, an override starting and an override expiring each produce exactly one transition. Switching a program never restarts the TikTok connection, the show timer, music playback or narration.
+
+**Manual override.** Selecting a program (or using a program card) runs it for 15–120 minutes (30 by default). Automatic switching is paused for that period and then resumes on its own. **Return to Automatic Schedule** clears the override immediately. **Preview** applies a program's content without creating an override, so the automatic schedule is restored at the next transition or with Return to Automatic.
+
+Settings live in [config/schedule.json](config/schedule.json) and are written atomically with a `schedule.backup.json` copy of the previous version. Editing one program's start or end time moves the neighbouring program's shared boundary, so the day always stays continuous.
+
+Admin controls (**Smart Daily Schedule** panel in `/admin`): schedule on/off, US timezone, override duration, live local time, current program, next program and countdown, a progress bar, one manual button per program, Preview, Run with override, Return to Automatic, and editable start/end, quiz cadence and narration pace per program.
+
+---
+
+## Reliability, health and auto recovery
+
+Long broadcasts are monitored and, where it is safe, repaired automatically. Every action is written to an incident log in the dashboard and to `data/health-state.json` (atomic writes, newest 200 incidents).
+
+**Piper TTS recovery.** The Python worker is monitored for spawn failures, unexpected exits, readiness (90-second limit), synthesis timeouts and broken pipes. A failed worker is rejected once — pending speech is never replayed twice — and restarted with 2s → 5s → 10s → 30s → 60s backoff. Eight restarts in an hour pause automatic retries and raise an admin warning; the livestream continues without narration. **Retry Piper** resets the limit and restarts once. Successful recoveries increment the recovery counter.
+
+**TikTok auto reconnect.** A dropped socket, connector error, failed room lookup or timed-out connection schedules one reconnect using the configured @username and exponential backoff (base delay × 2ⁿ, capped at 5 minutes). Connects are single-flight: a second request while one is running is ignored, old connections are disposed with their listeners removed, and the gift-combo tracker is cleared before a new session so stale events are never replayed. Authentication/captcha/session errors pause retries and require an administrator. A 30-second watchdog detects a connector that claims to be connected while its socket is closed, or a connect attempt hung for more than two minutes.
+
+Admin controls (**TikTok Live Connection** panel): auto reconnect on/off, maximum retries, base delay, **Retry Now**, attempt count, next retry time, last disconnect reason and last successful connection time.
+
+**CPU, RAM and event loop.** A 5-second sample reads CPU deltas from `os.cpus()`, process RSS, system memory and event-loop lag. Alerts use sustained thresholds so a single spike never raises a warning: CPU warning >80% for 60s, critical >95% for 30s; RAM warning >80% for 60s, critical >90% for 30s; event-loop warning >200ms, critical >1000ms. No component is killed because of a load reading.
+
+**Silent audio detection.** The OBS stage reports the music bus RMS every 15 seconds from a WebAudio analyser (narration uses a separate element and is excluded). Three consecutive reports below the silence floor while music should be audible raise an incident and send `audio.recover`; the stage fades the track out and reloads the same track with no second player. Intentional pauses, a disabled playlist, muted output, active narration/ducking and a stage that stopped reporting are never treated as silence. A healthy report clears the alert and counts the recovery. Generated WAV files are also checked for a silent payload before narration is announced.
+
+**Music file integrity.** Read-only scans compare `music-manifest.json` with the audio folder: missing entries, path escapes, unreadable files, unrecognised containers, duplicate ids and orphaned audio. **Refresh Music Manifest** runs the existing library scan (which keeps `music-manifest.backup.json` and never deletes audio). **Scan Music Files**, **View Missing Files** and **View Unused Files** only report.
+
+Admin controls (**System Health & Auto Recovery** panel): nine status indicators (Bun server, TikTok, Piper, music, music files, CPU, RAM, OBS stage, WebSocket), CPU/RAM/event-loop/uptime/client/queue/recovery tiles, **Run Health Check**, **Export Diagnostic Report**, **Clear Resolved Alerts**, per-component retry buttons, the music-integrity report and the incident history. Diagnostic reports exclude environment variables, secrets, tokens and viewer personal data.
+
+---
+
 ## Bible quiz and community engagement
 
 A Bible quiz runs between program segments: one verified KJV question at a time, answered in the TikTok comments.
@@ -295,7 +340,9 @@ A Bible quiz runs between program segments: one verified KJV question at a time,
 
 **Listen for real events only.** The stage reacts to actual `temple.event` / `prayer.request` payloads from the TikTok connector. The dashboard's demo controls are labelled and the stage shows a red DEMO MODE badge whenever simulated activity is on.
 
-**Scene matching.** When it is enabled, each program cue picks a locally stored image category that fits it: welcome → cathedral, Scripture/reflection → Bible, community → church, gratitude → Bible, and prayers by theme (healing/night → candles, family/finances → church, strength → cross, morning/anxiety → backgrounds). Background rotation stays inside that category until the next cue. Turn it off to keep the rotation fully manual.
+**Global rotation pool.** Automatic background rotation cycles **every** broadcast-eligible image in the library, across all seven categories (`backgrounds`, `bible`, `candles`, `cathedral`, `church`, `cross`, `jesus`). The active program (Morning / Afternoon / Evening / Night), its background preferences and the dashboard's category selector never narrow the pool; Copyright Safe Mode still decides what is eligible. The category selector filters the thumbnail grid, and switching it does not change what the rotation may show.
+
+**Scene matching.** This applies while auto-rotation is **off**. When enabled, each program cue picks a locally stored image category that fits it: welcome → cathedral, Scripture/reflection → Bible, community → church, gratitude → Bible, and prayers by theme (healing/night → candles, family/finances → church, strength → cross, morning/anxiety → backgrounds). While auto-rotation is on, the global pool owns the stage, so a cue never replaces the rotating image. Turn scene matching off to leave the stage on manual selection only.
 
 Admin controls (**Community Engagement** panel in `/admin`): quiz on/off, answer narration, frequency (2–120 minutes), reveal delay, Next Question, Reveal Answer, prayer interaction toggle, gift announcement toggle, gift narration toggle, scene matching toggle and Next Background.
 
@@ -339,17 +386,17 @@ All broadcast images are served locally from `public/assets/christian/`. No remo
 ```
 public/assets/christian/
 ├── asset-manifest.json
-├── cathedral/     2  cathedral Mass / sanctuary service with congregation (default)
-├── backgrounds/   3  sunrise / golden sky
+├── cathedral/     4  cathedral Mass / sanctuary service with congregation (default)
+├── backgrounds/   5  sunrise / golden sky
 ├── church/        4  church interiors and naves
-├── cross/         4  illuminated altar crosses
-├── bible/         2  open Bible and communion table
-├── candles/       4  prayer candles
+├── cross/         6  illuminated altar crosses
+├── bible/         4  open Bible and communion table
+├── candles/       6  prayer candles
 ├── jesus/         2  classical Christian artwork (public domain)
 └── overlays/      3  generated light rays, gold bokeh, vignette
 ```
 
-**21 photographs + 3 generated overlays.** Sources are Wikimedia Commons; every file was checked against its machine-readable license before download. Each manifest entry records the original file page, download URL, license, license URL, author/attribution, original dimensions and the local file size.
+**28 photographs + 10 AI-generated originals + 3 generated overlays.** Sources are Wikimedia Commons; every file was checked against its machine-readable license before download. Each manifest entry records the original file page, download URL, license, license URL, author/attribution, original dimensions and the local file size.
 
 The default scene is `cathedral/cathedral-01-cathedral-mass.jpg` — a public-domain U.S. Customs and Border Protection photograph of a cathedral Mass, centre-cropped to 1080×1920 and colour-graded. The alternate `cathedral-02-sanctuary-service.jpg` is CC BY-SA 4.0 by Daniel G Rego. Both were cropped and graded from the original photographs; the originals remain available at the source pages in the manifest.
 
@@ -372,6 +419,19 @@ Regenerate the collection (requires internet):
 ```
 
 The script rejects licenses outside its allowlist, deduplicates by file hash and writes the manifest.
+
+### Adding images: SCAN IMAGE FOLDER
+
+Drop new `.jpg`, `.jpeg`, `.png` or `.webp` files into any of the seven category folders (subfolders are scanned too), then press **SCAN IMAGE FOLDER** in the *Christian Image Library* panel of the dashboard. There is no restart and no server reload: the asset manifest and copyright audit are rewritten, the background catalog refreshes, and every open OBS/admin client receives the new list over the existing WebSocket.
+
+- A filename starting with **`AI_`** (case-insensitive) is registered as an AI-generated original: `AI_GENERATED`, **VERIFIED**, commercial/social use allowed, no attribution required. This rule is never applied to another filename, and the scanner does not search the internet.
+- Any other new file is registered as **NEEDS_REVIEW** with license `Unknown`; Copyright Safe Mode keeps it off the stage until its source and license are recorded in the manifest.
+- Existing entries keep their title, source, license and attribution. Only dimensions, file size and hash are refreshed. A renamed file is matched by content hash and keeps its licensing record.
+- Deleted files are removed from the catalog but never deleted from disk; the previous manifest is kept as `asset-manifest.backup.json`, plus a timestamped copy in `docs/backups/image-manifests/` when entries are removed.
+- Hidden files, thumbnails (`thumb*`, `*-thumb*`), temporary files, unsupported extensions and unreadable/corrupted images are ignored and reported as scan errors.
+- Only the seven fixed folders under `public/assets/christian/` are scanned; browser requests cannot supply a path, and the music manifest is never touched.
+
+The OBS stage keeps showing the current background if its file still exists. If it was deleted, the catalog falls back to another broadcast-eligible image automatically.
 
 ---
 
@@ -409,7 +469,7 @@ Rotation runs on the server and broadcasts `stage.background`, so every connecte
 | `CHRISTIAN_THEME` | Brand theme marker | `christian` |
 | `BACKGROUND_ROTATION` | Auto-rotate backgrounds | `true` |
 | `BACKGROUND_ROTATION_INTERVAL` | Seconds between backgrounds | `60` |
-| `BACKGROUND_CATEGORY` | Initial category | `all` |
+| `BACKGROUND_CATEGORY` | Dashboard category filter (never limits rotation) | `all` |
 | `PRAYER_AUTO_APPROVE` | Publish new requests immediately | `true` |
 | `MUSIC_ENABLED` | Enable the worship music bed | `true` |
 | `MUSIC_VOLUME` | Music volume (0–1) | `0.1` |
@@ -431,6 +491,25 @@ Rotation runs on the server and broadcasts `stage.background`, so every connecte
 | `SCENE_MATCH` | Match the background to the program segment | `true` |
 
 Settings changed in the dashboard are persisted in `data/prayer-state.json` and take precedence for the current installation. The legacy `data/merit-state.json` is still read as a migration fallback.
+
+### Smart schedule settings
+
+[config/schedule.json](config/schedule.json) is the editable schedule. It is not overwritten by `.env`.
+
+| Field | Meaning | Default |
+| --- | --- | --- |
+| `enabled` | Honour the schedule automatically | `true` |
+| `timezone` | IANA US timezone id | `America/Chicago` |
+| `programs[].start` / `end` | Local window, `HH:MM` | 05:00 / 11:00 / 17:00 / 21:00 and wraps |
+| `programs[].prayerThemes` | Prayer theme ids this mode may use | see file |
+| `programs[].verseTags` | Scripture tags this mode prefers | see file |
+| `programs[].quizFrequencyMinutes` | Quiz cadence while active | 12 / 5 / 10 / 20 |
+| `programs[].narrationPace` | Hold-time multiplier (0.5–1.5) | 0.95 / 1 / 1 / 0.9 |
+| `programs[].musicCategories` | Preferred track categories | Piano, Ambient, Cinematic |
+| `programs[].backgroundCategories` | Preferred local scene categories | see file |
+| `override` | Active manual override (cleared or expired automatically) | empty |
+
+Runtime reliability data lives in `data/health-state.json` (counters and the newest 200 incidents). Delete it while the server is stopped to reset the incident history. The previous schedule is kept at `config/schedule.backup.json`.
 
 ---
 
@@ -454,12 +533,17 @@ All original RPC method names still work. User-facing labels changed; endpoint n
 | Gifts | `gift.update` (announce / TTS toggles) |
 | Prayer congregation | `congregation.get`, `congregation.update`, `congregation.reset`, `congregation.demo`, `congregation.demoClear`, `congregation.demoEvent` |
 | Copyright audit / safe mode | `copyright.get`, `copyright.scan`, `copyright.safety`, `copyright.setSafeMode` |
-| TikTok | `live.connect`, `live.disconnect`, `live.status`, `live.setAutoSim` |
-| Settings / health | `settings.get`, `settings.update`, `health.check` |
+| TikTok | `live.connect`, `live.disconnect`, `live.status`, `live.setAutoSim`, `live.setReconnect`, `live.retryNow` |
+| Smart schedule | `schedule.get`, `schedule.update`, `schedule.program.update`, `schedule.override`, `schedule.auto`, `schedule.preview`, `schedule.test` |
+| Health & recovery | `health.get`, `health.check`, `health.retry`, `health.alerts.clear`, `health.export`, `health.audio` |
+| Music integrity | `music.integrity`, `music.integrity.refresh` |
+| Settings / health (legacy) | `settings.get`, `settings.update`, `health.check` |
 
 Internal ritual names (`burnIncense`, `strikeWoodenFish`, `drawFortune`) are retained only for wire compatibility. Every label, message and visual shown to viewers is Christian.
 
-WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `music.library.updated`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end`, `congregation.state`, `copyright.updated` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
+WebSocket notifications include `temple.state`, `temple.event`, `prayer.request`, `prayer.state`, `prayer.hide`, `live.chat`, `stage.background`, `music.state`, `music.library.updated`, `music.integrity.updated`, `tts.play`, `tts.status`, `show.state`, `show.cue`, `quiz.state`, `quiz.start`, `quiz.correct`, `quiz.reveal`, `quiz.end`, `congregation.state`, `copyright.updated`, `schedule.state`, `health.state`, `health.incident`, `audio.recover` and `temple.viewerCount`. A stage that connects mid-segment receives a replay of the cue that is still on screen.
+
+New read-only HTTP endpoints: `GET /api/diagnostics` returns the same sanitised diagnostic report as `health.export`.
 
 Legacy state fields (`totalIncense`, `woodenFishHits`, `fortuneCount`, `offerings.lotus`, …) are still present alongside the new Christian counters.
 
@@ -472,9 +556,13 @@ server.js                  Bun/Express HTTP + WebSocket + TikTok + RPC + rotatio
 tts_worker.py              Piper multilingual worker (stdin/stdout JSON lines)
 config/
   app.config.json          Brand, TTS, backgrounds, moderation, gift tiers
+  schedule.json            Four US-timezone programming modes + manual override
   messages.en.json         Editable English message library + verified verses
   piper/en|vn/             Installed Piper voices (untouched)
 lib/
+  schedule.js              IANA wall-clock schedule engine (DST, midnight, override)
+  health.js                Health monitor, thresholds, incidents, silent-audio logic
+  music-integrity.js       Read-only audio-folder / manifest integrity scanner
   show.js                  Program schedule, prayer themes, cue builder, welcomes
   congregation.js          Session-only seats, interactions, inactivity expiry, demo preview
   music-library.js         Audio-folder scanner, manifest writes, enable/disable, removal
@@ -492,9 +580,11 @@ public/
   assets/christian/audio/  21 instrumental tracks + music manifest
 data/
   prayer-state.json        Persisted state
+  health-state.json        Recovery counters + incident history
   tts-cache/               Generated WAV narration (gitignored)
 scripts/
   smoke-test.js            API / WebSocket / TTS smoke test
+  test-reliability.js      Schedule / health / music-integrity tests (offline + live)
   fetch_christian_assets.py  Licensed image fetcher
   generate_music.py        Original ambient track renderer
 backup/                    Pre-conversion copies of modified files
@@ -507,12 +597,24 @@ backup/                    Pre-conversion copies of modified files
 Run against a live server:
 
 ```bat
+REM API, WebSocket, narration, schedule and health smoke checks
 node scripts\smoke-test.js
+
+REM Schedule + health engines, music integrity, then the same features live
+node scripts\test-reliability.js
 ```
 
-Last run on this machine: **129/129 checks passed**, including:
+Both scripts accept `BASE_URL` (for example `BASE_URL=http://127.0.0.1:3100 node scripts\test-reliability.js`) so a staging instance can be tested without touching the broadcast on port 3000.
+
+Last run on this machine against an isolated instance on port 3100: **166/166 smoke checks** and **77/77 schedule/reliability checks** passed, including:
 
 - Bun server startup, health endpoint and brand payload.
+- Smart daily schedule: four programs, all seven US timezones, DST spring-forward (08:00Z → 03:00 CDT) and fall-back (07:30Z → 01:30 CST), midnight rollover, continuous-window edits, manual override, automatic return, program preview, and exactly one transition per boundary (no duplicates). Restart applies the current mode once.
+- Reliability: CPU warning after 60s above 80%, critical after 30s above 95%, RAM critical after 30s above 90%, event-loop thresholds, resolved-incident state, and a diagnostic export with no environment values. Piper worker killed mid-broadcast — restarted after the 2s backoff, recovery counter incremented, pending speech rejected once and not replayed.
+- Silent audio: two silent reports are ignored, three raise an incident and send `audio.recover`; a healthy report clears it and counts the recovery. Paused music, disabled music and narration ducking never raise a false positive.
+- Music integrity: 21/21 files present and recognised, missing manifest entries, path escapes and orphaned audio detected on a temporary fixture, and the real manifest left untouched by a scan.
+- TikTok guards: simultaneous connect calls create only one connection, a failed room lookup schedules a single backoff attempt, turning auto reconnect off cancels it, and `live.retryNow` refuses when no channel is configured.
+- Dashboard in Chromium at 1440px: Smart Daily Schedule and System Health panels render, preview/override/return-to-automatic work, program editing keeps the window continuous, health check, music scan and diagnostic export run, and a fresh reload produces no console errors. Captures: [admin-smart-schedule.png](docs/screenshots/admin-smart-schedule.png), [admin-system-health.png](docs/screenshots/admin-system-health.png).
 - `temple.getState` compatibility and new counters.
 - Background catalog (21 images, all 7 categories including the new cathedral category), local asset serving, manual change.
 - Music library (21 tracks: 3 original CC0 + 18 licensed Mixkit), 2–6 minutes each, license and source on every entry, default 10% volume with a 3.5% duck level, local serving and a track change without a server restart.
@@ -546,6 +648,9 @@ Last run on this machine: **129/129 checks passed**, including:
 
 Not tested here:
 
+- A real TikTok reconnect. The reconnect state machine, duplicate-connection guard and policy were exercised on an isolated instance with a deliberately non-live probe handle (one failed room lookup, one scheduled retry, then cancelled), but no live account was disconnected and recovered. Real comment/like/follow/share/gift delivery after a reconnect was not observed.
+- Silent-audio detection was validated with synthetic RMS reports and the analyser code path was reviewed; the OBS-side mix was not measured inside OBS Studio. A long soak with a deliberately silent track was not run.
+- Piper restart-rate suspension (8 restarts in an hour) was not driven to its limit; the backoff and a single recovery were verified. TikTok authentication-failure handling was not exercised against the platform.
 - A real TikTok LIVE room (no live account/session was available). Connector wiring, event names and payload extraction were reviewed, but comment/like/follow/share/gift events — including the new join welcome — were not observed from TikTok itself. Welcome deduplication and the greeting text were tested through `show.testWelcome` and the engine's unit-level checks only.
 - OBS Studio capture, its audio routing/monitoring and CEF performance (the page was verified in Chromium at the OBS aspect ratio, not inside OBS). Music played in the browser tab, but the OBS-side mix was not monitored here.
 - Mixkit tracks were chosen from the Ambient, Piano and Cinematic catalogue categories and are marked as instrumentals by their metadata; vocal absence was not machine-audited with a vocal detector.
@@ -558,7 +663,9 @@ The app starts cleanly and does not require a TikTok connection to render the st
 ## Operational notes
 
 - Port `3000` is shared by the stage, admin and WebSocket. Change `PORT` if it is already in use.
-- `backup/` contains the pre-conversion versions of the modified files.
+- `backup/` contains the pre-conversion versions of the modified files. This upgrade also wrote `backup/pre-reliability-<timestamp>/` with the previous `server.js`, `lib/show.js`, `config/config.js`, `config/app.config.json`, `public/admin.html`, `public/js/admin.js`, `public/js/audio.js` and `scripts/smoke-test.js`, plus `backup/.last-backup` naming the folder.
+- The new server-side schedule, health and integrity features need one normal restart (`bun run start`). The OBS page and dashboard reload on their own; the live process was not restarted during implementation, so an already-running server keeps the old server code until you restart it.
+- `config/schedule.json` is the smart schedule; `config/schedule.backup.json` keeps the previous version. `data/health-state.json` stores recovery counters and the newest 200 incidents and can be deleted while the server is stopped to reset the incident history.
 - TTS cache and generated WAV files can be cleared safely; they are recreated on demand.
 - `data/prayer-state.json` is the live state. Delete it to reset counters and the demo prayer queue.
 - Demo activity is off by default. The **Simulate viewers** switch on the dashboard generates sample events for layout testing only; those events are flagged as simulated, never trigger welcomes, and never appear on the prayer wall. While it is on, a red **DEMO MODE · SIMULATED ACTIVITY** badge is visible on the stage so a test can never be mistaken for a real broadcast.

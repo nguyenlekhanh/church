@@ -212,102 +212,209 @@
     {
       "text": "The Lord is my shepherd; I shall not want.",
       "reference": "Psalm 23:1 (KJV)",
-      "reflection": "You are not asked to carry today alone. The Shepherd knows the way, even when you cannot see it."
+      "reflection": "You are not asked to carry today alone. The Shepherd knows the way, even when you cannot see it.",
+      "tags": [
+        "comfort",
+        "trust",
+        "peace",
+        "night"
+      ]
     },
     {
       "text": "Be still, and know that I am God.",
       "reference": "Psalm 46:10 (KJV)",
-      "reflection": "Stillness is not giving up. It is remembering who holds the world, and who holds you."
+      "reflection": "Stillness is not giving up. It is remembering who holds the world, and who holds you.",
+      "tags": [
+        "peace",
+        "anxiety",
+        "night",
+        "trust"
+      ]
     },
     {
       "text": "The Lord is my light and my salvation; whom shall I fear?",
       "reference": "Psalm 27:1 (KJV)",
-      "reflection": "Fear speaks loudly, but it does not get the final word. Light is still stronger."
+      "reflection": "Fear speaks loudly, but it does not get the final word. Light is still stronger.",
+      "tags": [
+        "courage",
+        "faith",
+        "hope",
+        "morning"
+      ]
     },
     {
       "text": "This is the day which the Lord hath made; we will rejoice and be glad in it.",
       "reference": "Psalm 118:24 (KJV)",
-      "reflection": "Today is a gift, not a guarantee. Let us receive it with grateful hearts."
+      "reflection": "Today is a gift, not a guarantee. Let us receive it with grateful hearts.",
+      "tags": [
+        "morning",
+        "gratitude",
+        "joy"
+      ]
     },
     {
       "text": "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
       "reference": "Proverbs 3:5 (KJV)",
-      "reflection": "Understanding has limits. Trust reaches further than what we can figure out."
+      "reflection": "Understanding has limits. Trust reaches further than what we can figure out.",
+      "tags": [
+        "trust",
+        "faith",
+        "guidance"
+      ]
     },
     {
       "text": "Come unto me, all ye that labour and are heavy laden, and I will give you rest.",
       "reference": "Matthew 11:28 (KJV)",
-      "reflection": "Rest is an invitation, not a reward. Bring your tired heart to Jesus today."
+      "reflection": "Rest is an invitation, not a reward. Bring your tired heart to Jesus today.",
+      "tags": [
+        "rest",
+        "comfort",
+        "night",
+        "healing"
+      ]
     },
     {
       "text": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
       "reference": "John 3:16 (KJV)",
-      "reflection": "Love moved first. Before you had anything to offer, God loved you."
+      "reflection": "Love moved first. Before you had anything to offer, God loved you.",
+      "tags": [
+        "love",
+        "faith",
+        "hope",
+        "salvation"
+      ]
     },
     {
       "text": "And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
       "reference": "Romans 8:28 (KJV)",
-      "reflection": "Not everything that happens is good, but God is still at work in it. Nothing is wasted in His hands."
+      "reflection": "Not everything that happens is good, but God is still at work in it. Nothing is wasted in His hands.",
+      "tags": [
+        "hope",
+        "trust",
+        "strength"
+      ]
     },
     {
       "text": "I can do all things through Christ which strengtheneth me.",
       "reference": "Philippians 4:13 (KJV)",
-      "reflection": "Strength here is not endless energy. It is Christ carrying you through what you cannot carry alone."
+      "reflection": "Strength here is not endless energy. It is Christ carrying you through what you cannot carry alone.",
+      "tags": [
+        "strength",
+        "courage"
+      ]
     },
     {
       "text": "Fear thou not; for I am with thee: be not dismayed; for I am thy God.",
       "reference": "Isaiah 41:10 (KJV)",
-      "reflection": "You are not forgotten, and you are not alone. God is nearer than your fear."
+      "reflection": "You are not forgotten, and you are not alone. God is nearer than your fear.",
+      "tags": [
+        "courage",
+        "strength",
+        "comfort",
+        "anxiety"
+      ]
     },
     {
       "text": "Casting all your care upon him; for he careth for you.",
       "reference": "1 Peter 5:7 (KJV)",
-      "reflection": "You are allowed to put it down. God cares about the detail you think is too small."
+      "reflection": "You are allowed to put it down. God cares about the detail you think is too small.",
+      "tags": [
+        "anxiety",
+        "comfort",
+        "trust",
+        "night"
+      ]
     },
     {
       "text": "Let all your things be done with charity.",
       "reference": "1 Corinthians 16:14 (KJV)",
-      "reflection": "Love is not only a feeling. It shows up in ordinary, faithful actions."
+      "reflection": "Love is not only a feeling. It shows up in ordinary, faithful actions.",
+      "tags": [
+        "love",
+        "gratitude"
+      ]
     },
     {
       "text": "The Lord is nigh unto them that are of a broken heart; and saveth such as be of a contrite spirit.",
       "reference": "Psalm 34:18 (KJV)",
-      "reflection": "God is close to the brokenhearted. Your sorrow is not an inconvenience to Him."
+      "reflection": "God is close to the brokenhearted. Your sorrow is not an inconvenience to Him.",
+      "tags": [
+        "comfort",
+        "healing",
+        "night",
+        "hope"
+      ]
     },
     {
       "text": "Cast thy burden upon the Lord, and he shall sustain thee: he shall never suffer the righteous to be moved.",
       "reference": "Psalm 55:22 (KJV)",
-      "reflection": "The weight was never meant to be carried alone. Hand it over, one piece at a time."
+      "reflection": "The weight was never meant to be carried alone. Hand it over, one piece at a time.",
+      "tags": [
+        "comfort",
+        "anxiety",
+        "trust"
+      ]
     },
     {
       "text": "But they that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.",
       "reference": "Isaiah 40:31 (KJV)",
-      "reflection": "Waiting is not wasted time. Strength is being renewed in the waiting."
+      "reflection": "Waiting is not wasted time. Strength is being renewed in the waiting.",
+      "tags": [
+        "strength",
+        "hope",
+        "morning"
+      ]
     },
     {
       "text": "Take therefore no thought for the morrow: for the morrow shall take thought for the things of itself.",
       "reference": "Matthew 6:34 (KJV)",
-      "reflection": "Tomorrow will ask for your attention soon enough. Let today have your whole heart."
+      "reflection": "Tomorrow will ask for your attention soon enough. Let today have your whole heart.",
+      "tags": [
+        "anxiety",
+        "trust",
+        "night",
+        "peace"
+      ]
     },
     {
       "text": "Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid.",
       "reference": "John 14:27 (KJV)",
-      "reflection": "The peace Jesus gives is not dependent on circumstances. It can hold you in the middle of them."
+      "reflection": "The peace Jesus gives is not dependent on circumstances. It can hold you in the middle of them.",
+      "tags": [
+        "peace",
+        "anxiety",
+        "night",
+        "comfort"
+      ]
     },
     {
       "text": "Rejoicing in hope; patient in tribulation; continuing instant in prayer;",
       "reference": "Romans 12:12 (KJV)",
-      "reflection": "Hope, patience, prayer. Three small practices that carry a person a long way."
+      "reflection": "Hope, patience, prayer. Three small practices that carry a person a long way.",
+      "tags": [
+        "hope",
+        "prayer",
+        "strength"
+      ]
     },
     {
       "text": "Now faith is the substance of things hoped for, the evidence of things not seen.",
       "reference": "Hebrews 11:1 (KJV)",
-      "reflection": "Faith is not certainty about the future. It is trust in the One who holds it."
+      "reflection": "Faith is not certainty about the future. It is trust in the One who holds it.",
+      "tags": [
+        "faith",
+        "hope"
+      ]
     },
     {
       "text": "Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the Lord thy God is with thee whithersoever thou goest.",
       "reference": "Joshua 1:9 (KJV)",
-      "reflection": "Courage is not the absence of fear. It is moving forward because God goes with you."
+      "reflection": "Courage is not the absence of fear. It is moving forward because God goes with you.",
+      "tags": [
+        "courage",
+        "strength",
+        "faith"
+      ]
     }
   ],
   "prayerRequestTriggers": [

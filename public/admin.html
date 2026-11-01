@@ -61,6 +61,31 @@
 
         <div class="divider"></div>
         <div class="inline-head">
+          <h3>Auto Reconnect</h3>
+          <span class="panel-hint" id="tiktokRetryHint">—</span>
+        </div>
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="tiktokAutoReconnect" />
+            <span>Reconnect automatically</span>
+          </label>
+          <label class="field compact">
+            <span>Max retries</span>
+            <input type="number" id="tiktokMaxRetries" min="0" max="50" step="1" value="6" />
+          </label>
+          <label class="field compact">
+            <span>Base delay (s)</span>
+            <input type="number" id="tiktokRetrySeconds" min="5" max="600" step="5" value="10" />
+          </label>
+          <button class="btn" id="btnTikTokRetry">Retry Now</button>
+        </div>
+        <p class="note small" id="tiktokRetryStatus">
+          Reconnects reuse the configured @username with exponential backoff. Authentication or captcha problems pause retries
+          until you intervene, and stale events from a previous connection are never replayed.
+        </p>
+
+        <div class="divider"></div>
+        <div class="inline-head">
           <h3>Demo Activity</h3>
           <label class="switch">
             <input type="checkbox" id="autoSimToggle" />
@@ -68,6 +93,69 @@
           </label>
         </div>
         <p class="note">Demo activity is optional and off by default. It creates sample prayer requests for testing the layout.</p>
+      </section>
+
+      <!-- Smart daily schedule -->
+      <section class="panel span-2" id="schedule">
+        <div class="panel-head">
+          <h2>Smart Daily Schedule</h2>
+          <span class="badge" id="scheduleBadge">Loading</span>
+        </div>
+        <p class="note">
+          Four programming modes follow the wall clock of a US timezone. Daylight saving and midnight transitions are computed from
+          IANA timezone data — no fixed UTC offsets. Switching a program changes prayers, Scripture, quiz cadence, music and backgrounds;
+          it never restarts the TikTok connection or the show timer.
+        </p>
+
+        <div class="schedule-clock">
+          <div class="schedule-clock-main">
+            <span class="schedule-time" id="scheduleLocalTime">—</span>
+            <span class="schedule-zone" id="scheduleZone">—</span>
+          </div>
+          <div class="schedule-clock-copy">
+            <strong id="scheduleProgram">Loading program…</strong>
+            <span id="scheduleNextLine">—</span>
+            <span id="scheduleOverrideLine" class="schedule-override"></span>
+          </div>
+          <div class="schedule-progress" aria-hidden="true"><div id="scheduleProgressBar"></div></div>
+          <span class="panel-hint" id="scheduleRemaining"></span>
+        </div>
+
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="scheduleEnabled" />
+            <span>Automatic schedule</span>
+          </label>
+          <label class="field compact grow">
+            <span>US timezone</span>
+            <select id="scheduleTimezone"></select>
+          </label>
+          <label class="field compact">
+            <span>Override duration</span>
+            <select id="scheduleOverrideMinutes">
+              <option value="15">15 minutes</option>
+              <option value="30" selected>30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="120">2 hours</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="button-row" id="scheduleProgramButtons"></div>
+        <div class="button-row">
+          <button class="btn gold" id="btnScheduleAuto">Return to Automatic Schedule</button>
+        </div>
+        <p class="note" id="scheduleStatus" role="status"></p>
+
+        <div class="divider"></div>
+        <div class="inline-head">
+          <h3>Program Windows &amp; Content</h3>
+          <span class="panel-hint">Times are local to the selected timezone</span>
+        </div>
+        <div class="schedule-programs" id="schedulePrograms">
+          <div class="empty">Loading programs…</div>
+        </div>
       </section>
 
       <!-- TTS -->
@@ -259,7 +347,7 @@
         </div>
         <p class="note" id="engagementNote">
           Turning off prayer requests from comments stops new requests from being queued; existing requests stay on the wall.
-          Scene matching only uses the locally stored Christian images.
+          Scene matching only uses the locally stored Christian images and applies while auto-rotation is off; auto-rotation always cycles every eligible image in all categories.
         </p>
       </section>
 
@@ -504,6 +592,61 @@
         <div class="save-status" id="messagesStatus"></div>
       </section>
 
+      <!-- System health & auto recovery -->
+      <section class="panel span-2" id="health">
+        <div class="panel-head">
+          <h2>System Health &amp; Auto Recovery</h2>
+          <span class="badge" id="healthBadge">Loading</span>
+        </div>
+        <p class="note">
+          Live status, recovery controls and the incident log. CPU, memory and event-loop alerts use sustained thresholds, so a single
+          spike does not raise a warning, and no component is killed because of a load reading. Reports stay local and exclude API keys,
+          tokens, environment variables and viewer personal data.
+        </p>
+
+        <div class="health-status-grid" id="healthStatusGrid"></div>
+
+        <div class="stat-grid">
+          <div class="stat-tile"><span class="stat-label">CPU</span><strong id="healthCpu">—</strong></div>
+          <div class="stat-tile"><span class="stat-label">Process RAM</span><strong id="healthRam">—</strong></div>
+          <div class="stat-tile"><span class="stat-label">Event Loop</span><strong id="healthLoop">—</strong></div>
+          <div class="stat-tile"><span class="stat-label">Uptime</span><strong id="healthUptime">—</strong></div>
+          <div class="stat-tile"><span class="stat-label">OBS Clients</span><strong id="healthClients">—</strong></div>
+          <div class="stat-tile"><span class="stat-label">TTS Queue</span><strong id="healthQueue">—</strong></div>
+          <div class="stat-tile"><span class="stat-label">Recoveries</span><strong id="healthRecoveries">—</strong></div>
+          <div class="stat-tile"><span class="stat-label">Failed</span><strong id="healthFailed">—</strong></div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn gold" id="btnHealthCheck">Run Health Check</button>
+          <button class="btn" id="btnHealthExport">Export Diagnostic Report</button>
+          <button class="btn" id="btnHealthClear">Clear Resolved Alerts</button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="inline-head">
+          <h3>Component Recovery</h3>
+          <span class="panel-hint">Each button performs one action, then re-checks</span>
+        </div>
+        <div class="button-row">
+          <button class="btn" id="btnRetryPiper">Retry Piper</button>
+          <button class="btn" id="btnRetryTikTok">Retry TikTok</button>
+          <button class="btn" id="btnRecoverMusic">Recover Music</button>
+          <button class="btn" id="btnScanMusicFiles">Scan Music Files</button>
+          <button class="btn" id="btnRefreshMusicManifest">Refresh Music Manifest</button>
+          <button class="btn" id="btnViewMissingMusic">View Missing Files</button>
+          <button class="btn" id="btnViewUnusedMusic">View Unused Files</button>
+        </div>
+        <p class="note" id="healthStatusLine" role="status"></p>
+        <div class="music-integrity" id="musicIntegrity"><div class="empty">Music files have not been scanned yet.</div></div>
+
+        <div class="inline-head">
+          <h3>Incident History</h3>
+          <span class="panel-hint" id="healthIncidentCount">0 incidents</span>
+        </div>
+        <div class="health-incidents" id="healthIncidents"><div class="empty">No incidents recorded.</div></div>
+      </section>
+
       <!-- Copyright & licensing -->
       <section class="panel span-2" id="copyright">
         <div class="panel-head">
@@ -576,6 +719,39 @@
           Reports: <code>docs/COPYRIGHT_AUDIT.md</code> · Manifest: <code>config/copyright-manifest.json</code> · Credits:
           <code>docs/ASSET_ATTRIBUTION.md</code>. Local scanning finds files and compares recorded evidence; it cannot prove
           copyright ownership or grant clearance.
+        </p>
+      </section>
+
+      <!-- Christian image library -->
+      <section class="panel span-2" id="imageLibrary">
+        <div class="panel-head">
+          <h2>Christian Image Library</h2>
+          <span class="badge" id="imageLibraryBadge">Loading…</span>
+        </div>
+
+        <div class="copyright-stats">
+          <div class="copyright-stat"><strong id="imgTotal">0</strong><span>Total images</span></div>
+          <div class="copyright-stat verified"><strong id="imgAi">0</strong><span>AI-generated</span></div>
+          <div class="copyright-stat verified"><strong id="imgLicensed">0</strong><span>Licensed</span></div>
+          <div class="copyright-stat review"><strong id="imgReview">0</strong><span>Need review</span></div>
+          <div class="copyright-stat"><strong id="imgCategoryCount">0</strong><span>Categories</span></div>
+        </div>
+
+        <div class="copyright-toolbar">
+          <button class="btn gold" id="btnImageScan">SCAN IMAGE FOLDER</button>
+          <span class="music-summary" id="imageLastScan">Never scanned</span>
+        </div>
+        <p class="note music-rescan-status" id="imageScanStatus" role="status"></p>
+
+        <div class="image-category-grid" id="imageCategoryCounts"></div>
+        <div class="background-grid image-library-grid" id="imageLibraryGrid">
+          <div class="empty">Loading the local image library…</div>
+        </div>
+
+        <p class="note small">
+          Scans only <code>public/assets/christian/{backgrounds,bible,candles,cathedral,church,cross,jesus}</code>. Files named
+          <code>AI_*</code> are registered as AI_GENERATED originals (VERIFIED, no attribution); any other new file is registered as
+          NEEDS_REVIEW until its license is recorded. Scanning never deletes image files and never modifies the music manifest.
         </p>
       </section>
 

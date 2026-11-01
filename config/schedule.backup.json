@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "enabled": true,
+  "timezone": "America/Chicago",
+  "override": {
+    "programId": "night",
+    "startedAt": "2026-11-01T18:47:29.218Z",
+    "until": "2026-11-01T18:52:29.218Z",
+    "durationMinutes": 5
+  },
+  "programs": [
+    {
+      "id": "morning",
+      "label": "Morning Prayer",
+      "start": "05:00",
+      "end": "11:00",
+      "atmosphere": "Warm sunrise, golden church light, peaceful cathedral",
+      "theme": "morning",
+      "prayerThemes": [
+        "morning",
+        "gratitude",
+        "family",
+        "strength"
+      ],
+      "verseTags": [
+        "morning",
+        "gratitude",
+        "hope",
+        "strength",
+        "faith"
+      ],
+      "quizFrequencyMinutes": 12,
+      "narrationPace": 0.95,
+      "musicCategories": [
+        "Piano",
+        "Ambient"
+      ],
+      "backgroundCategories": [
+        "backgrounds",
+        "cathedral",
+        "church"
+      ],
+      "welcomeEnabled": true,
+      "giftAnnounce": true,
+      "giftTts": true,
+      "communityEngagement": true
+    },
+    {
+      "id": "afternoon",
+      "label": "Afternoon Bible Study",
+      "start": "11:00",
+      "end": "17:00",
+      "atmosphere": "Open Bible, church interiors, natural daylight",
+      "theme": "auto",
+      "prayerThemes": [
+        "strength",
+        "family",
+        "healing",
+        "gratitude"
+      ],
+      "verseTags": [
+        "faith",
+        "hope",
+        "trust",
+        "love",
+        "scripture"
+      ],
+      "quizFrequencyMinutes": 5,
+      "narrationPace": 1,
+      "musicCategories": [
+        "Ambient",
+        "Piano"
+      ],
+      "backgroundCategories": [
+        "bible",
+        "church",
+        "cathedral"
+      ],
+      "welcomeEnabled": true,
+      "giftAnnounce": true,
+      "giftTts": true,
+      "communityEngagement": true
+    },
+    {
+      "id": "evening",
+      "label": "Evening Worship",
+      "start": "17:00",
+      "end": "21:00",
+      "atmosphere": "Cathedral interiors, golden stained glass, warm candles",
+      "theme": "auto",
+      "prayerThemes": [
+        "gratitude",
+        "family",
+        "healing",
+        "strength"
+      ],
+      "verseTags": [
+        "love",
+        "gratitude",
+        "hope",
+        "peace",
+        "faith"
+      ],
+      "quizFrequencyMinutes": 10,
+      "narrationPace": 1,
+      "musicCategories": [
+        "Cinematic",
+        "Ambient"
+      ],
+      "backgroundCategories": [
+        "cathedral",
+        "candles",
+        "church"
+      ],
+      "welcomeEnabled": true,
+      "giftAnnounce": true,
+      "giftTts": true,
+      "communityEngagement": true
+    },
+    {
+      "id": "night",
+      "label": "Night Prayer",
+      "start": "21:00",
+      "end": "05:00",
+      "atmosphere": "Dimly lit cathedral, candles, peaceful moonlight",
+      "theme": "night",
+      "prayerThemes": [
+        "night",
+        "anxiety",
+        "healing",
+        "gratitude"
+      ],
+      "verseTags": [
+        "peace",
+        "comfort",
+        "night",
+        "trust",
+        "hope"
+      ],
+      "quizFrequencyMinutes": 20,
+      "narrationPace": 0.9,
+      "musicCategories": [
+        "Ambient",
+        "Piano"
+      ],
+      "backgroundCategories": [
+        "candles",
+        "cathedral",
+        "church"
+      ],
+      "welcomeEnabled": true,
+      "giftAnnounce": true,
+      "giftTts": false,
+      "communityEngagement": true
+    }
+  ]
+}

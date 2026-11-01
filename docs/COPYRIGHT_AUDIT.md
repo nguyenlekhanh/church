@@ -1,6 +1,6 @@
 # Copyright & Commercial Licensing Audit
 
-**Generated:** Oct 31, 2026, 11:39 PM  
+**Generated:** Nov 01, 2026, 1:36 AM  
 **Scope:** Production assets under public/assets (active Christian assets, legacy files and archived music) plus documentation/reference images under docs. Generated TTS cache and dependency files are excluded.  
 **Status:** Evidence-based inventory. This is **not legal advice** and does not grant clearance.
 
@@ -13,15 +13,15 @@
 | Music files audited | 23 |
 | — active playlist | 21 (18 enabled) |
 | — archived originals | 2 |
-| Image files audited | 69 |
-| — active Christian broadcast assets | 24 |
+| Image files audited | 81 |
+| — active Christian broadcast assets | 34 |
 | — legacy public/assets files | 12 |
-| — documentation/reference images | 33 |
-| **VERIFIED** | **32** |
-| **NEEDS_REVIEW** | **44** |
+| — documentation/reference images | 35 |
+| **VERIFIED** | **42** |
+| **NEEDS_REVIEW** | **46** |
 | **REJECTED** | **0** |
 | **UNKNOWN** | **16** |
-| Total assets audited | 92 |
+| Total assets audited | 104 |
 
 ### What the statuses mean
 
@@ -67,25 +67,35 @@ The active playlist contains 21 tracks. 3 are original synthesis; 18 MP3 tracks 
 
 ## Images — active Christian assets
 
-24 files are in the active catalog. Public-domain, CC0, CC BY and generated overlays are **VERIFIED** subject to attribution. The CC BY-SA files are **NEEDS_REVIEW** because the adapted 9:16 crops may require ShareAlike release; do not describe those images as fully cleared.
+34 files are in the active catalog. Public-domain, CC0, CC BY and generated overlays are **VERIFIED** subject to attribution. The CC BY-SA files are **NEEDS_REVIEW** because the adapted 9:16 crops may require ShareAlike release; do not describe those images as fully cleared.
 
 | File | Author | Source | License | Modifications | Attribution | Status |
 | --- | --- | --- | --- | --- | --- | --- |
+| `AI_Peaceful_landscape_at_sunrise_15c87dfd.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
+| `AI_Sunlight_illuminating_landscape_…_42e43441.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `backgrounds-01-golden-clouds.jpg` | Velatrix | [Source](https://commons.wikimedia.org/wiki/File:Golden_Clouds.JPG) | [CC0](http://creativecommons.org/publicdomain/zero/1.0/deed.en) | Resized/optimized from 3840×2160 to 1600×900 | No | **VERIFIED** |
 | `backgrounds-02-d-lmen-umland-sonnenaufgang-2012-8084.jpg` | Dietmar Rabich | [Source](https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Umland,_Sonnenaufgang_--_2012_--_8084.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Resized/optimized from 3456×5184 to 1066×1600 | Yes | **NEEDS_REVIEW** |
 | `backgrounds-03-d-lmen-umland-sonnenaufgang-2012-8069.jpg` | Dietmar Rabich | [Source](https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Umland,_Sonnenaufgang_--_2012_--_8069.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Resized/optimized from 5184×3456 to 1600×1066 | Yes | **NEEDS_REVIEW** |
+| `AI_Bible_resting_on_wooden_table_395f2590.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
+| `AI_Bible_resting_on_wooden_table_5c55bf43.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `bible-03-bible-on-a-coffee-table.jpg` | Harmonywriter | [Source](https://commons.wikimedia.org/wiki/File:Bible_on_a_coffee_table.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 1920×2560 to 1200×1600 | Yes | **NEEDS_REVIEW** |
 | `bible-04-communion-table.jpg` | John Snyder | [Source](https://commons.wikimedia.org/wiki/File:Communion_Table.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 3264×2448 to 1600×1200 | Yes | **NEEDS_REVIEW** |
+| `AI_Glowing_prayer_candles_inside_ch…_073b7c51.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
+| `AI_Prayer_candles_glowing_inside_ch…_310bb196.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `candles-01-montserrat-prayer-candles.jpg` | Joe Mabel | [Source](https://commons.wikimedia.org/wiki/File:Montserrat_-_prayer_candles.jpg) | [CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0/) | Resized/optimized from 3444×2304 to 1600×1070 | Yes | **NEEDS_REVIEW** |
 | `candles-02-prayer-candles-at-sarrat.jpg` | Angelonce | [Source](https://commons.wikimedia.org/wiki/File:Prayer_candles_at_sarrat.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 5184×3456 to 1600×1066 | Yes | **NEEDS_REVIEW** |
 | `candles-03-prayer-candles-5406060261.jpg` | Serge Melki from Indianapolis, USA | [Source](https://commons.wikimedia.org/wiki/File:Prayer_Candles_(5406060261%29.jpg) | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0) | Resized/optimized from 4288×2848 to 1600×1062 | Yes | **VERIFIED** |
 | `candles-04-bolton-abbey-mmb-06.jpg` | mattbuck ( category ) | [Source](https://commons.wikimedia.org/wiki/File:Bolton_Abbey_MMB_06.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 4090×2641 to 1600×1033 | Yes | **NEEDS_REVIEW** |
+| `AI_Congregation_kneeling_in_prayer_…_9a0c363f.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
+| `AI_Congregation_praying_in_Gothic_c…_bf512f0e.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `cathedral-01-cathedral-mass.jpg` | U.S. Customs and Border Protection | [Source](https://commons.wikimedia.org/wiki/File:Police_Week_Blue_Mass_2013_(8738256373%29.jpg) | [Public domain](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain) | Center 9:16 crop, deeper warm cinematic grade, light sharpening | No | **VERIFIED** |
 | `cathedral-02-sanctuary-service.jpg` | Daniel G Rego | [Source](https://commons.wikimedia.org/wiki/File:Central_nave_of_S%C3%A3o_Jos%C3%A9_Sanctuary_during_a_Catholic_service,_Igreja_S%C3%A3o_Jos%C3%A9_Belo_Horizonte_Minas_Gerais_Brasil_-_Daniel_Guimaraes_Rego_Dan_Rego_Daniel_G.Rego_Daniel_Rego.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Center 9:16 crop, warm cinematic grade | Yes | **NEEDS_REVIEW** |
 | `church-01-nave-of-basilica-saint-sernin-2012-08-24.jpg` | PierreSelim | [Source](https://commons.wikimedia.org/wiki/File:Nave_of_Basilica_Saint-Sernin_-_2012-08-24.jpg) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | Resized/optimized from 4270×2006 to 1600×751 | Yes | **VERIFIED** |
 | `church-02-holy-trinity-sloane-street-church-nave-2-diliff.jpg` | Diliff | [Source](https://commons.wikimedia.org/wiki/File:Holy_Trinity_Sloane_Street_Church_Nave_2_-_Diliff.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 7152×4770 to 1600×1067 | Yes | **NEEDS_REVIEW** |
 | `church-03-st-peter-s-church-nave-1-drogheda-ireland-diliff.jpg` | Diliff | [Source](https://commons.wikimedia.org/wiki/File:St_Peter%27s_Church_Nave_1,_Drogheda,_Ireland_-_Diliff.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 9839×7989 to 1600×1299 | Yes | **NEEDS_REVIEW** |
 | `church-04-duomo-verona-interior-nave-right-part-cappella-calcasoli.jpg` | Didier Descouens | [Source](https://commons.wikimedia.org/wiki/File:Duomo_(Verona%29_-_Interior_-_Nave_right_part_-_Cappella_Calcasoli.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Resized/optimized from 3949×5583 to 1131×1600 | Yes | **NEEDS_REVIEW** |
+| `AI_Wooden_cross_on_grassy_hill_37dad860.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
+| `AI_Wooden_cross_on_grassy_hill_a4d1c9aa.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `cross-01-holy-cross-altar-church-of-saint-francis-listed-id-41-buda.jpg` | Globetrotter19 | [Source](https://commons.wikimedia.org/wiki/File:Holy_Cross_altar._Church_of_Saint_Francis._Listed_ID_41._-_Budapest.JPG) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 2448×3264 to 1200×1600 | Yes | **NEEDS_REVIEW** |
 | `cross-02-saint-bernard-church-holy-cross-altar-in-eger-2016-hungary.jpg` | Globetrotter19 | [Source](https://commons.wikimedia.org/wiki/File:Saint_Bernard_church,_Holy_Cross_altar_in_Eger,_2016_Hungary.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 1704×2272 to 1200×1600 | Yes | **NEEDS_REVIEW** |
 | `cross-03-d-lmen-st-viktor-kirche-innenansicht-altar-2018-0552-6.jpg` | Dietmar Rabich | [Source](https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_St.-Viktor-Kirche,_Innenansicht,_Altar_--_2018_--_0552-6.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Resized/optimized from 6642×4479 to 1600×1079 | Yes | **NEEDS_REVIEW** |
@@ -132,6 +142,8 @@ These are not broadcast assets. Screenshots may contain licensed backgrounds; up
 | `admin-live-show-preview.jpg` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `admin-live-show.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `admin-prayer-queue.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
+| `admin-smart-schedule.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
+| `admin-system-health.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `cathedral-stage-final.jpg` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `cathedral-stage-final.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `congregation-admin.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |

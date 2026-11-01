@@ -20,6 +20,11 @@
   let copyrightSafety = null;
   let messagesLoaded = false;
   let assetSignature = '';
+  let currentSchedule = null;
+  let currentHealth = null;
+  let scheduleCardSignature = '';
+  let musicIntegrityReport = null;
+  let musicIntegrityFilter = null;
 
   /* ---------------------------------------------------------------------
      RPC
@@ -163,6 +168,38 @@
     if (input && !input.value && state.tiktok?.username) input.value = `@${state.tiktok.username}`;
     const simToggle = $('autoSimToggle');
     if (simToggle) simToggle.checked = Boolean(state.settings?.autoSim);
+
+    const autoReconnect = $('tiktokAutoReconnect');
+    if (autoReconnect && state.settings?.tiktok) {
+      autoReconnect.checked = state.settings.tiktok.autoReconnect !== false;
+    }
+    const maxRetries = $('tiktokMaxRetries');
+    if (maxRetries && state.settings?.tiktok && document.activeElement !== maxRetries) {
+      maxRetries.value = state.settings.tiktok.maxRetries ?? 6;
+    }
+    const retrySeconds = $('tiktokRetrySeconds');
+    if (retrySeconds && state.settings?.tiktok && document.activeElement !== retrySeconds) {
+      retrySeconds.value = state.settings.tiktok.retrySeconds ?? 10;
+    }
+
+    const retryHint = $('tiktokRetryHint');
+    if (retryHint) {
+      retryHint.textContent = state.tiktok?.nextRetryAt
+        ? `Retry ${new Date(state.tiktok.nextRetryAt).toLocaleTimeString('en-US')}`
+        : `Attempts ${state.tiktok?.reconnectAttempts || 0}`;
+    }
+    const retryStatus = $('tiktokRetryStatus');
+    if (retryStatus) {
+      const lines = [];
+      if (state.tiktok?.requiresAttention) lines.push('Needs attention: automatic retries are paused until you retry or reconnect.');
+      if (state.tiktok?.lastDisconnectReason) lines.push(`Last disconnect: ${state.tiktok.lastDisconnectReason}`);
+      if (state.tiktok?.lastConnectedAt) {
+        lines.push(`Last successful connection: ${new Date(state.tiktok.lastConnectedAt).toLocaleTimeString('en-US')}`);
+      }
+      retryStatus.textContent = lines.length
+        ? lines.join(' ')
+        : 'Reconnects reuse the configured @username with exponential backoff. Stale events are never replayed.';
+    }
   }
 
   function renderSettings(state) {
@@ -1064,7 +1101,7 @@
     const hint = $('backgroundHint');
     if (!hint) return;
     const eligibleCount = backgrounds.filter((item) => backgroundSafety(item).eligible).length;
-    hint.textContent = `${eligibleCount} eligible · ${backgrounds.length} total images · ${categories.length} categories`;
+    hint.textContent = `${eligibleCount} eligible · ${backgrounds.length} total images · ${categories.length} categories · auto-rotation uses every eligible image in all categories`;
   }
 
   function renderBackgroundCatalog() {
@@ -1430,6 +1467,183 @@
     return null;
   }
 
+  /* ---------------------------------------------------------------------
+     Christian image library
+     --------------------------------------------------------------------- */
+  let imageLibraryData = null;
+
+  function setImageStatus(text, tone = '') {
+    const el = $('imageScanStatus');
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.tone = tone;
+  }
+
+  function formatScanTime(iso) {
+    if (!iso) return 'Never scanned';
+    try {
+      return `Last scan: ${new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+    } catch (_) {
+      return 'Last scan: unknown';
+    }
+  }
+
+  function renderImageLibrary(data) {
+    if (!data) return;
+    imageLibraryData = data;
+    const totals = data.totals || {};
+    const setText = (id, value) => {
+      const el = $(id);
+      if (el) el.textContent = value;
+    };
+    setText('imgTotal', formatNumber(totals.images || 0));
+    setText('imgAi', formatNumber(totals.aiGenerated || 0));
+    setText('imgLicensed', formatNumber(totals.licensed || 0));
+    setText('imgReview', formatNumber(totals.needsReview || 0));
+    setText('imgCategoryCount', formatNumber(totals.categories || (data.categories || []).length));
+    setText('imageLastScan', formatScanTime(data.scannedAt));
+
+    const badge = $('imageLibraryBadge');
+    if (badge) {
+      badge.textContent = totals.images ? `${formatNumber(totals.images)} images` : 'No images';
+      badge.className = `badge ${totals.needsReview ? '' : 'ok'}`;
+    }
+
+    const categoryWrap = $('imageCategoryCounts');
+    if (categoryWrap) {
+      categoryWrap.innerHTML = '';
+      (data.categories || []).forEach((category) => {
+        const cell = document.createElement('div');
+        cell.className = 'image-category-cell';
+        const label = document.createElement('span');
+        label.className = 'image-category-label';
+        label.textContent = category.label;
+        const count = document.createElement('strong');
+        count.textContent = formatNumber(category.count || 0);
+        cell.append(label, count);
+        if (category.aiGenerated) {
+          const ai = document.createElement('span');
+          ai.className = 'image-category-ai';
+          ai.textContent = `${category.aiGenerated} AI`;
+          cell.appendChild(ai);
+        }
+        categoryWrap.appendChild(cell);
+      });
+    }
+
+    const grid = $('imageLibraryGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const images = (data.images || []).slice().sort((a, b) => String(a.file).localeCompare(String(b.file)));
+    if (images.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No images found in the seven category folders yet.';
+      grid.appendChild(empty);
+      return;
+    }
+
+    images.forEach((image) => {
+      const eligible = Boolean(image.eligible);
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `bg-card image-card${eligible ? '' : ' is-blocked'}`;
+      card.dataset.file = image.file;
+      card.dataset.url = image.url || `/assets/christian/${image.file}`;
+      card.title = `${image.title || image.file}\n${image.category} · ${image.status || 'UNKNOWN'}\n${image.license || 'Unknown'}${image.attribution ? ` · ${image.attribution}` : ''}${eligible ? '' : `\nBlocked: ${image.blockReason || 'not eligible'}`}`;
+
+      const picture = document.createElement('img');
+      picture.loading = 'lazy';
+      picture.src = image.url || `/assets/christian/${image.file}`;
+      picture.alt = image.title || image.file;
+
+      const copy = document.createElement('div');
+      copy.className = 'bg-card-copy';
+      const title = document.createElement('span');
+      title.className = 'bg-card-title';
+      title.textContent = image.title || image.file;
+      const meta = document.createElement('span');
+      meta.className = 'bg-card-meta';
+      const tag = image.aiGenerated ? 'AI · VERIFIED' : (image.status || 'UNKNOWN');
+      meta.textContent = `${image.category} · ${tag}`;
+      copy.append(title, meta);
+
+      if (image.aiGenerated) {
+        const flag = document.createElement('span');
+        flag.className = 'image-card-ai';
+        flag.textContent = 'AI';
+        card.appendChild(flag);
+      }
+
+      card.append(picture, copy);
+      card.addEventListener('click', async () => {
+        if (safeModeEnabled() && !eligible) {
+          reportError('Image blocked', new Error(`${image.blockReason || image.status}. Manual review is required.`));
+          return;
+        }
+        try {
+          await callRpc('stage.setBackground', { url: image.url });
+          markActiveBackground(image.url);
+        } catch (error) {
+          reportError('Background change failed', error);
+        }
+      });
+      grid.appendChild(card);
+    });
+
+    markActiveBackground(currentState?.settings?.background?.current);
+  }
+
+  async function loadImageLibrary() {
+    try {
+      const data = await callRpc('images.state');
+      renderImageLibrary(data);
+      return data;
+    } catch (error) {
+      const badge = $('imageLibraryBadge');
+      if (badge) {
+        badge.textContent = 'Unavailable';
+        badge.className = 'badge error';
+      }
+      setImageStatus(
+        `Image library unavailable: ${error.message}. Restart the server to load the images.* RPC methods.`,
+        'error'
+      );
+      return null;
+    }
+  }
+
+  $('btnImageScan')?.addEventListener('click', async () => {
+    const button = $('btnImageScan');
+    if (button) button.disabled = true;
+    setImageStatus('Scanning the seven image categories…');
+    try {
+      const result = await callRpc('images.scan');
+      renderImageLibrary(result);
+      const totals = result?.totals || {};
+      const added = result?.added || [];
+      const removed = result?.removed || [];
+      const renamed = result?.renamed || [];
+      const updated = result?.updated || [];
+      const errors = result?.errors || [];
+      let message = `Scan complete — ${formatNumber(totals.images || 0)} images, ${formatNumber(totals.aiGenerated || 0)} AI-generated, ` +
+        `${formatNumber(added.length)} added, ${formatNumber(removed.length)} removed, ${formatNumber(renamed.length)} renamed, ` +
+        `${formatNumber(updated.length)} updated.`;
+      if (added.length) message += ` New: ${added.slice(0, 6).join(', ')}${added.length > 6 ? '…' : ''}.`;
+      if (removed.length) message += ` Removed: ${removed.slice(0, 6).join(', ')}${removed.length > 6 ? '…' : ''}.`;
+      if (errors.length) message += ` ${errors.length} error(s): ${errors[0].file} — ${errors[0].error}.`;
+      setImageStatus(message, errors.length ? 'error' : '');
+      await loadBackgroundCatalog();
+    } catch (error) {
+      setImageStatus(
+        `Scan failed: ${error.message}. The last written manifest is unchanged; restart the server to load the scan RPC.`,
+        'error'
+      );
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+
   $('btnCopyrightScan')?.addEventListener('click', async () => {
     const button = $('btnCopyrightScan');
     if (button) button.disabled = true;
@@ -1492,6 +1706,438 @@
   let socket = null;
   let reconnectTimer = null;
 
+  /* ---------------------------------------------------------------------
+     Smart daily schedule
+     --------------------------------------------------------------------- */
+  function formatClock12(timeText) {
+    const match = String(timeText || '').match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return timeText || '—';
+    const hour = Number(match[1]);
+    const suffix = hour >= 12 ? 'PM' : 'AM';
+    return `${((hour + 11) % 12) + 1}:${match[2]} ${suffix}`;
+  }
+
+  function formatRemaining(seconds) {
+    const value = Number(seconds);
+    if (!Number.isFinite(value)) return '—';
+    const total = Math.max(0, Math.round(value));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${total % 60}s`;
+    return `${total}s`;
+  }
+
+  function scheduleBadgeText(schedule) {
+    if (!schedule?.enabled) return 'DISABLED';
+    if (schedule.override) return `MANUAL · ${String(schedule.current?.label || '').toUpperCase()}`;
+    return `AUTOMATIC · ${String(schedule.current?.label || '').toUpperCase()}`;
+  }
+
+  function renderScheduleProgramCards(schedule) {
+    const container = $('schedulePrograms');
+    if (!container || !Array.isArray(schedule.programs)) return;
+    const signature = schedule.programs
+      .map((program) => `${program.id}:${program.start}:${program.end}:${program.quizFrequencyMinutes}:${program.narrationPace}:${program.label}`)
+      .join('|');
+    if (signature === scheduleCardSignature) {
+      container.querySelectorAll('.schedule-card').forEach((card) => {
+        card.classList.toggle('active', card.dataset.program === schedule.current?.id);
+        card.classList.toggle('scheduled', Boolean(schedule.programs.find((program) => program.id === card.dataset.program)?.scheduledNow));
+      });
+      return;
+    }
+    scheduleCardSignature = signature;
+    container.innerHTML = '';
+    schedule.programs.forEach((program) => {
+      const card = document.createElement('div');
+      card.className = 'schedule-card';
+      card.dataset.program = program.id;
+      card.classList.toggle('active', program.id === schedule.current?.id);
+      card.classList.toggle('scheduled', Boolean(program.scheduledNow));
+
+      const head = document.createElement('div');
+      head.className = 'schedule-card-head';
+      const title = document.createElement('strong');
+      title.textContent = program.label;
+      const time = document.createElement('span');
+      time.className = 'schedule-card-time';
+      time.textContent = `${formatClock12(program.start)} – ${formatClock12(program.end)}${program.wrapsMidnight ? ' (+1 day)' : ''}`;
+      head.append(title, time);
+
+      const note = document.createElement('p');
+      note.className = 'note small';
+      note.textContent = program.atmosphere || '';
+
+      const fields = document.createElement('div');
+      fields.className = 'schedule-card-fields';
+
+      const startField = document.createElement('label');
+      startField.className = 'field compact';
+      startField.innerHTML = '<span>Starts</span>';
+      const startInput = document.createElement('input');
+      startInput.type = 'time';
+      startInput.value = program.start;
+      startInput.dataset.field = 'start';
+      startField.append(startInput);
+
+      const endField = document.createElement('label');
+      endField.className = 'field compact';
+      endField.innerHTML = '<span>Ends</span>';
+      const endInput = document.createElement('input');
+      endInput.type = 'time';
+      endInput.value = program.end;
+      endInput.dataset.field = 'end';
+      endField.append(endInput);
+
+      const quizField = document.createElement('label');
+      quizField.className = 'field compact';
+      quizField.innerHTML = '<span>Quiz every (min)</span>';
+      const quizInput = document.createElement('input');
+      quizInput.type = 'number';
+      quizInput.min = '2';
+      quizInput.max = '120';
+      quizInput.step = '1';
+      quizInput.value = program.quizFrequencyMinutes;
+      quizInput.dataset.field = 'quizFrequencyMinutes';
+      quizField.append(quizInput);
+
+      const paceField = document.createElement('label');
+      paceField.className = 'field compact';
+      paceField.innerHTML = '<span>Narration pace</span>';
+      const paceSelect = document.createElement('select');
+      paceSelect.dataset.field = 'narrationPace';
+      [[0.9, 'Gentle'], [0.95, 'Calm'], [1, 'Standard'], [1.1, 'Frequent']].forEach(([value, label]) => {
+        const option = document.createElement('option');
+        option.value = String(value);
+        option.textContent = label;
+        paceSelect.append(option);
+      });
+      paceSelect.value = String(program.narrationPace);
+      paceField.append(paceSelect);
+
+      fields.append(startField, endField, quizField, paceField);
+
+      const tags = document.createElement('p');
+      tags.className = 'note small schedule-tags';
+      tags.textContent = `Prayer themes: ${(program.prayerThemes || []).join(', ') || 'all'} · Scripture: ${(program.verseTags || []).join(', ') || 'all'} · Music: ${(program.musicCategories || []).join(', ') || 'any'} · Scenes: ${(program.backgroundCategories || []).join(', ') || 'all'}`;
+
+      const actions = document.createElement('div');
+      actions.className = 'button-row';
+      const preview = document.createElement('button');
+      preview.className = 'btn';
+      preview.dataset.action = 'preview';
+      preview.textContent = 'Preview';
+      const run = document.createElement('button');
+      run.className = 'btn gold';
+      run.dataset.action = 'run';
+      run.textContent = 'Run with override';
+      actions.append(preview, run);
+
+      card.append(head, note, fields, tags, actions);
+      container.append(card);
+    });
+  }
+
+  function renderSchedule(schedule) {
+    if (!schedule) return;
+    currentSchedule = schedule;
+    const setText = (id, value) => {
+      const el = $(id);
+      if (el) el.textContent = value;
+    };
+    const badge = $('scheduleBadge');
+    if (badge) {
+      badge.textContent = scheduleBadgeText(schedule);
+      badge.dataset.tone = schedule.override ? 'warn' : schedule.enabled ? 'ok' : 'idle';
+    }
+    setText('scheduleLocalTime', schedule.local?.clock12 || '—');
+    setText('scheduleZone', `${schedule.timezone || ''} · ${schedule.local?.dateLabel || ''}`);
+    setText('scheduleProgram', schedule.current?.label || 'No active program');
+    setText('scheduleNextLine', schedule.next
+      ? `Next: ${schedule.next.label} at ${formatClock12(schedule.next.start)}`
+      : 'Next program: —');
+    setText('scheduleOverrideLine', schedule.override
+      ? `Manual override · ${formatRemaining(schedule.override.remainingSeconds)} remaining`
+      : (schedule.enabled ? 'Following the automatic schedule' : 'Automatic switching is disabled'));
+    setText('scheduleRemaining', schedule.remainingSeconds !== null && schedule.remainingSeconds !== undefined
+      ? `${formatRemaining(schedule.remainingSeconds)} until the next program`
+      : '—');
+    const bar = $('scheduleProgressBar');
+    if (bar) {
+      const progress = Number(schedule.current?.dayProgress);
+      bar.style.width = `${Number.isFinite(progress) ? Math.round(progress * 100) : 0}%`;
+    }
+
+    const enabled = $('scheduleEnabled');
+    if (enabled) enabled.checked = Boolean(schedule.enabled);
+    const tz = $('scheduleTimezone');
+    if (tz) {
+      if (tz.options.length === 0 && Array.isArray(schedule.timezoneOptions)) {
+        schedule.timezoneOptions.forEach((zone) => {
+          const option = document.createElement('option');
+          option.value = zone.id;
+          option.textContent = zone.label;
+          tz.append(option);
+        });
+      }
+      if (document.activeElement !== tz) tz.value = schedule.timezone;
+    }
+
+    const buttons = $('scheduleProgramButtons');
+    if (buttons && Array.isArray(schedule.programs)) {
+      const signature = schedule.programs.map((program) => `${program.id}:${program.label}`).join('|');
+      if (buttons.dataset.signature !== signature) {
+        buttons.dataset.signature = signature;
+        buttons.innerHTML = '';
+        schedule.programs.forEach((program) => {
+          const button = document.createElement('button');
+          button.className = 'btn';
+          button.dataset.program = program.id;
+          button.textContent = program.label;
+          buttons.append(button);
+        });
+      }
+      buttons.querySelectorAll('button').forEach((button) => {
+        button.classList.toggle('gold', button.dataset.program === schedule.current?.id);
+      });
+    }
+
+    renderScheduleProgramCards(schedule);
+  }
+
+  function setScheduleStatus(text, tone = '') {
+    const el = $('scheduleStatus');
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.tone = tone;
+  }
+
+  async function loadSchedule() {
+    try {
+      renderSchedule(await callRpc('schedule.get'));
+    } catch (error) {
+      reportError('Schedule load failed', error);
+    }
+  }
+
+  async function updateScheduleProgram(id, patch, successText) {
+    try {
+      const result = await callRpc('schedule.program.update', { id, ...patch });
+      scheduleCardSignature = '';
+      renderSchedule(result);
+      if (successText) setScheduleStatus(successText, 'ok');
+    } catch (error) {
+      setScheduleStatus(error.message, 'error');
+      scheduleCardSignature = '';
+      await loadSchedule();
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+     System health, incidents and music integrity
+     --------------------------------------------------------------------- */
+  function healthTone(status) {
+    if (['online', 'ready', 'connected', 'healthy', 'playing', 'normal'].includes(status)) return 'ok';
+    if (['warning', 'warn', 'restarting', 'reconnecting', 'attention', 'missing', 'idle', 'waiting'].includes(status)) return 'warn';
+    if (['error', 'critical', 'disconnected', 'silent', 'failed'].includes(status)) return 'bad';
+    return 'idle';
+  }
+
+  function renderHealthStatuses(statuses) {
+    const grid = $('healthStatusGrid');
+    if (!grid || !statuses) return;
+    const labels = {
+      server: 'Bun Server',
+      tiktok: 'TikTok Connector',
+      piper: 'Piper TTS',
+      music: 'Background Music',
+      musicFiles: 'Music Files',
+      cpu: 'CPU',
+      ram: 'RAM',
+      obsStage: 'OBS Stage',
+      websocket: 'WebSocket'
+    };
+    grid.innerHTML = '';
+    Object.entries(labels).forEach(([key, label]) => {
+      const status = statuses[key] || { status: 'unknown', label: 'UNKNOWN' };
+      const tile = document.createElement('div');
+      tile.className = `health-status health-${healthTone(status.status)}`;
+      const dot = document.createElement('span');
+      dot.className = 'health-dot';
+      const name = document.createElement('span');
+      name.className = 'health-status-label';
+      name.textContent = label;
+      const value = document.createElement('strong');
+      value.textContent = status.label || String(status.status || '').toUpperCase();
+      tile.append(dot, name, value);
+      grid.append(tile);
+    });
+  }
+
+  function renderHealthIncidents(incidents) {
+    const list = $('healthIncidents');
+    const count = $('healthIncidentCount');
+    if (count) count.textContent = `${incidents?.length || 0} ${incidents?.length === 1 ? 'incident' : 'incidents'}`;
+    if (!list) return;
+    list.innerHTML = '';
+    if (!Array.isArray(incidents) || incidents.length === 0) {
+      list.innerHTML = '<div class="empty">No incidents recorded.</div>';
+      return;
+    }
+    incidents.slice(0, 40).forEach((incident) => {
+      const row = document.createElement('div');
+      row.className = `incident incident-${incident.severity}${incident.resolved ? ' resolved' : ''}`;
+      const head = document.createElement('div');
+      head.className = 'incident-head';
+      const component = document.createElement('strong');
+      component.textContent = incident.component;
+      const severity = document.createElement('span');
+      severity.className = 'incident-severity';
+      severity.textContent = incident.severity.toUpperCase();
+      const time = document.createElement('span');
+      time.className = 'incident-time';
+      time.textContent = new Date(incident.at).toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+      head.append(component, severity, time);
+      const message = document.createElement('p');
+      message.className = 'incident-message';
+      message.textContent = incident.message;
+      const meta = document.createElement('p');
+      meta.className = 'note small';
+      meta.textContent = [incident.action, incident.result].filter(Boolean).join(' → ');
+      row.append(head, message, meta);
+      if (incident.resolved) {
+        const resolved = document.createElement('span');
+        resolved.className = 'incident-resolved';
+        resolved.textContent = 'RESOLVED';
+        row.append(resolved);
+      }
+      list.append(row);
+    });
+  }
+
+  function renderMusicIntegrity(rawReport) {
+    if (!rawReport) return;
+    const report = {
+      ...rawReport,
+      missing: Array.isArray(rawReport.missing) ? rawReport.missing : [],
+      orphans: Array.isArray(rawReport.orphans) ? rawReport.orphans : [],
+      unreadable: Array.isArray(rawReport.unreadable) ? rawReport.unreadable : [],
+      invalidFormat: Array.isArray(rawReport.invalidFormat) ? rawReport.invalidFormat : [],
+      pathViolations: Array.isArray(rawReport.pathViolations) ? rawReport.pathViolations : [],
+      errors: Array.isArray(rawReport.errors) ? rawReport.errors : [],
+      missingCount: Number(rawReport.missingCount || 0),
+      presentCount: Number(rawReport.presentCount || 0),
+      entries: Number(rawReport.entries || 0),
+      totalFilesOnDisk: Number(rawReport.totalFilesOnDisk || 0),
+      summary: rawReport.summary || 'Music library scanned'
+    };
+    musicIntegrityReport = report;
+    const box = $('musicIntegrity');
+    if (!box) return;
+    const heading = document.createElement('div');
+    heading.className = 'integrity-head';
+    const title = document.createElement('strong');
+    title.textContent = report.healthy ? 'Music library healthy' : 'Music library needs attention';
+    const summary = document.createElement('span');
+    summary.className = 'panel-hint';
+    summary.textContent = `${report.summary} · checked ${new Date(report.checkedAt).toLocaleTimeString('en-US')}`;
+    heading.append(title, summary);
+
+    const counts = document.createElement('div');
+    counts.className = 'integrity-counts';
+    [
+      ['Files on disk', report.totalFilesOnDisk],
+      ['Manifest entries', report.entries],
+      ['Present', report.presentCount],
+      ['Missing', report.missingCount],
+      ['Unreadable', report.unreadable.length],
+      ['Invalid format', report.invalidFormat.length],
+      ['Unused files', report.orphans.length]
+    ].forEach(([label, value]) => {
+      const item = document.createElement('span');
+      item.innerHTML = `<strong>${value}</strong> ${label}`;
+      counts.append(item);
+    });
+
+    box.innerHTML = '';
+    box.append(heading, counts);
+
+    const filterLabel = musicIntegrityFilter === 'missing'
+      ? 'Missing files'
+      : musicIntegrityFilter === 'unused' ? 'Unused files' : null;
+    if (filterLabel) {
+      const listTitle = document.createElement('p');
+      listTitle.className = 'note small';
+      listTitle.textContent = `${filterLabel} (${musicIntegrityFilter === 'missing' ? report.missing.length : report.orphans.length})`;
+      box.append(listTitle);
+      const list = document.createElement('div');
+      list.className = 'integrity-list';
+      const items = musicIntegrityFilter === 'missing' ? report.missing : report.orphans;
+      if (!items.length) list.innerHTML = '<div class="empty">None.</div>';
+      items.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'integrity-row';
+        row.textContent = musicIntegrityFilter === 'missing'
+          ? `${item.file} — ${item.title || item.id}`
+          : `${item.file}${item.label ? ` — ${item.label}` : ''}`;
+        list.append(row);
+      });
+      box.append(list);
+    }
+    if (report.errors?.length) {
+      const errors = document.createElement('p');
+      errors.className = 'note small';
+      errors.textContent = report.errors.join(' · ');
+      box.append(errors);
+    }
+  }
+
+  function renderHealth(health, integrityReport) {
+    if (!health) return;
+    currentHealth = health;
+    const badge = $('healthBadge');
+    if (badge) {
+      const statuses = health.statuses || {};
+      const hasBad = Object.values(statuses).some((entry) => healthTone(entry.status) === 'bad');
+      const hasWarn = Object.values(statuses).some((entry) => healthTone(entry.status) === 'warn');
+      badge.textContent = hasBad ? 'ATTENTION' : hasWarn ? 'WARNING' : 'HEALTHY';
+      badge.dataset.tone = hasBad ? 'bad' : hasWarn ? 'warn' : 'ok';
+    }
+    renderHealthStatuses(health.statuses);
+    const setText = (id, value) => {
+      const el = $(id);
+      if (el) el.textContent = value;
+    };
+    const metrics = health.metrics || {};
+    setText('healthCpu', `${Number(metrics.cpuPercent || 0).toFixed(1)}%`);
+    setText('healthRam', `${metrics.memory?.processRssMb ?? 0} MB · sys ${metrics.memory?.systemUsedPercent ?? 0}%`);
+    setText('healthLoop', `${metrics.eventLoopLagMs ?? 0} ms`);
+    setText('healthUptime', formatLongDuration(health.uptimeSeconds));
+    setText('healthClients', `${health.snapshot?.clients?.obs ?? 0} OBS / ${health.snapshot?.clients?.total ?? 0}`);
+    setText('healthQueue', String(health.snapshot?.ttsQueue ?? 0));
+    setText('healthRecoveries', String(health.counters?.recoveries ?? 0));
+    setText('healthFailed', String(health.counters?.failedRecoveries ?? 0));
+    renderHealthIncidents(health.incidents);
+    if (health.snapshot?.musicIntegrity) renderMusicIntegrity(health.snapshot.musicIntegrity);
+    if (integrityReport) renderMusicIntegrity(integrityReport);
+  }
+
+  function setHealthStatus(text, tone = '') {
+    const el = $('healthStatusLine');
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.tone = tone;
+  }
+
+  async function loadHealth() {
+    try {
+      renderHealth(await callRpc('health.get'));
+    } catch (error) {
+      reportError('Health load failed', error);
+    }
+  }
+
   function connectSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
@@ -1535,8 +2181,17 @@
       } else if (method === 'congregation.state') {
         if (currentState) currentState.congregation = params;
         renderCongregation(params);
+      } else if (method === 'schedule.state') {
+        renderSchedule(params?.schedule);
+      } else if (method === 'health.state' || method === 'health.incident') {
+        if (params?.health) renderHealth(params.health);
+      } else if (method === 'music.integrity.updated') {
+        renderMusicIntegrity(params?.report);
       } else if (method === 'copyright.updated') {
         loadCopyrightAudit();
+      } else if (method === 'images.updated') {
+        loadImageLibrary();
+        loadBackgroundCatalog();
       } else if (method === 'show.cue') {
         const cue = params?.cue;
         if (cue) {
@@ -2098,6 +2753,215 @@
   });
 
   /* ---------------------------------------------------------------------
+     Smart schedule controls
+     --------------------------------------------------------------------- */
+  $('scheduleEnabled')?.addEventListener('change', async (event) => {
+    try {
+      const schedule = await callRpc('schedule.update', { enabled: event.target.checked });
+      renderSchedule(schedule);
+      setScheduleStatus(event.target.checked
+        ? 'Automatic schedule enabled.'
+        : 'Automatic switching disabled. Manual selection still works.', 'ok');
+    } catch (error) {
+      setScheduleStatus(error.message, 'error');
+    }
+  });
+
+  $('scheduleTimezone')?.addEventListener('change', async (event) => {
+    try {
+      const schedule = await callRpc('schedule.update', { timezone: event.target.value });
+      renderSchedule(schedule);
+      setScheduleStatus(`Timezone set to ${event.target.value}. The active program was recalculated.`, 'ok');
+    } catch (error) {
+      setScheduleStatus(error.message, 'error');
+    }
+  });
+
+  function overrideMinutes() {
+    return Number($('scheduleOverrideMinutes')?.value || 30);
+  }
+
+  $('scheduleProgramButtons')?.addEventListener('click', async (event) => {
+    const button = event.target.closest('button[data-program]');
+    if (!button) return;
+    try {
+      const schedule = await callRpc('schedule.override', {
+        program: button.dataset.program,
+        minutes: overrideMinutes()
+      });
+      renderSchedule(schedule);
+      setScheduleStatus(`Manual override: ${schedule.current?.label || button.dataset.program} for ${overrideMinutes()} minutes. Automatic switching resumes afterwards.`, 'warn');
+    } catch (error) {
+      setScheduleStatus(error.message, 'error');
+    }
+  });
+
+  $('btnScheduleAuto')?.addEventListener('click', async () => {
+    try {
+      const schedule = await callRpc('schedule.auto');
+      renderSchedule(schedule);
+      setScheduleStatus(`Back on the automatic schedule: ${schedule.current?.label || '—'}.`, 'ok');
+    } catch (error) {
+      setScheduleStatus(error.message, 'error');
+    }
+  });
+
+  $('schedulePrograms')?.addEventListener('change', async (event) => {
+    const field = event.target.dataset?.field;
+    if (!field) return;
+    const card = event.target.closest('.schedule-card');
+    const id = card?.dataset.program;
+    if (!id) return;
+    const raw = event.target.value;
+    const patch = field === 'quizFrequencyMinutes' || field === 'narrationPace' ? Number(raw) : raw;
+    await updateScheduleProgram(id, { [field]: patch }, `Saved ${field === 'start' ? 'start time' : field === 'end' ? 'end time' : field} for ${id}.`);
+  });
+
+  $('schedulePrograms')?.addEventListener('click', async (event) => {
+    const action = event.target.closest('button[data-action]')?.dataset.action;
+    const id = event.target.closest('.schedule-card')?.dataset.program;
+    if (!action || !id) return;
+    try {
+      if (action === 'preview') {
+        const result = await callRpc('schedule.preview', { program: id });
+        renderSchedule(result.schedule);
+        setScheduleStatus(`Previewing ${id}. ${result.note}`, 'warn');
+      } else if (action === 'run') {
+        const schedule = await callRpc('schedule.override', { program: id, minutes: overrideMinutes() });
+        renderSchedule(schedule);
+        setScheduleStatus(`Running ${schedule.current?.label || id} for ${overrideMinutes()} minutes.`, 'warn');
+      }
+    } catch (error) {
+      setScheduleStatus(error.message, 'error');
+    }
+  });
+
+  /* ---------------------------------------------------------------------
+     Health and recovery controls
+     --------------------------------------------------------------------- */
+  $('btnHealthCheck')?.addEventListener('click', async () => {
+    try {
+      const health = await callRpc('health.check', { reason: 'dashboard' });
+      renderHealth(health);
+      setHealthStatus(`Health check complete at ${new Date().toLocaleTimeString('en-US')}.`, 'ok');
+    } catch (error) {
+      setHealthStatus(error.message, 'error');
+    }
+  });
+
+  $('btnHealthExport')?.addEventListener('click', async () => {
+    try {
+      const report = await callRpc('health.export');
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `christian-prayer-live-diagnostics-${stamp}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setHealthStatus('Diagnostic report downloaded. It contains no secrets, tokens or viewer data.', 'ok');
+    } catch (error) {
+      setHealthStatus(error.message, 'error');
+    }
+  });
+
+  $('btnHealthClear')?.addEventListener('click', async () => {
+    try {
+      const result = await callRpc('health.alerts.clear');
+      renderHealth(result.health);
+      setHealthStatus(`Cleared ${result.removed} resolved ${result.removed === 1 ? 'alert' : 'alerts'}.`, 'ok');
+    } catch (error) {
+      setHealthStatus(error.message, 'error');
+    }
+  });
+
+  async function retryComponent(component, label) {
+    try {
+      const result = await callRpc('health.retry', { component });
+      renderHealth(result.health);
+      setHealthStatus(`${label} requested. See the incident log for the result.`, 'warn');
+    } catch (error) {
+      setHealthStatus(error.message, 'error');
+    }
+  }
+
+  $('btnRetryPiper')?.addEventListener('click', () => retryComponent('piper', 'Piper restart'));
+  $('btnRetryTikTok')?.addEventListener('click', () => retryComponent('tiktok', 'TikTok reconnect'));
+  $('btnRecoverMusic')?.addEventListener('click', () => retryComponent('music', 'Music recovery'));
+
+  async function scanMusicIntegrity() {
+    try {
+      const report = await callRpc('music.integrity');
+      musicIntegrityFilter = null;
+      renderMusicIntegrity(report);
+      setHealthStatus(`Music scan complete: ${report.summary}. Nothing was deleted.`, report.healthy ? 'ok' : 'warn');
+      return report;
+    } catch (error) {
+      setHealthStatus(error.message, 'error');
+      return null;
+    }
+  }
+
+  $('btnScanMusicFiles')?.addEventListener('click', scanMusicIntegrity);
+
+  $('btnRefreshMusicManifest')?.addEventListener('click', async () => {
+    try {
+      const result = await callRpc('music.integrity.refresh');
+      musicIntegrityFilter = null;
+      renderMusicIntegrity(result.report);
+      await loadMusicCatalog();
+      setHealthStatus(`Manifest refreshed: ${result.scan.found} tracks found, ${result.scan.added} new, ${result.scan.removed} missing. A backup of the previous manifest was kept.`, 'ok');
+    } catch (error) {
+      setHealthStatus(error.message, 'error');
+    }
+  });
+
+  $('btnViewMissingMusic')?.addEventListener('click', async () => {
+    const report = musicIntegrityReport || await scanMusicIntegrity();
+    if (!report) return;
+    musicIntegrityFilter = musicIntegrityFilter === 'missing' ? null : 'missing';
+    renderMusicIntegrity(report);
+  });
+
+  $('btnViewUnusedMusic')?.addEventListener('click', async () => {
+    const report = musicIntegrityReport || await scanMusicIntegrity();
+    if (!report) return;
+    musicIntegrityFilter = musicIntegrityFilter === 'unused' ? null : 'unused';
+    renderMusicIntegrity(report);
+  });
+
+  /* ---------------------------------------------------------------------
+     TikTok reconnect controls
+     --------------------------------------------------------------------- */
+  async function updateTikTokReconnect(patch) {
+    try {
+      const result = await callRpc('live.setReconnect', patch);
+      const retryStatus = $('tiktokRetryStatus');
+      if (retryStatus) {
+        retryStatus.textContent = `Saved: auto reconnect ${result.settings.autoReconnect ? 'on' : 'off'}, ${result.settings.maxRetries} retries, ${result.settings.retrySeconds}s base delay.`;
+      }
+    } catch (error) {
+      reportError('Reconnect settings failed', error);
+    }
+  }
+
+  $('tiktokAutoReconnect')?.addEventListener('change', (event) => updateTikTokReconnect({ autoReconnect: event.target.checked }));
+  $('tiktokMaxRetries')?.addEventListener('change', (event) => updateTikTokReconnect({ maxRetries: Number(event.target.value) }));
+  $('tiktokRetrySeconds')?.addEventListener('change', (event) => updateTikTokReconnect({ retrySeconds: Number(event.target.value) }));
+  $('btnTikTokRetry')?.addEventListener('click', async () => {
+    try {
+      await callRpc('live.retryNow');
+      const retryStatus = $('tiktokRetryStatus');
+      if (retryStatus) retryStatus.textContent = 'Manual reconnect requested. Attempting now…';
+    } catch (error) {
+      reportError('Retry failed', error);
+    }
+  });
+
+  /* ---------------------------------------------------------------------
      Boot
      --------------------------------------------------------------------- */
   async function loadInitialState() {
@@ -2113,6 +2977,12 @@
   loadBackgroundCatalog();
   loadMusicCatalog();
   loadCopyrightAudit();
+  loadImageLibrary();
+  loadSchedule();
+  loadHealth();
+  setInterval(() => {
+    if (currentSchedule) renderSchedule(currentSchedule);
+  }, 1000);
   if (!messagesLoaded) loadMessages();
   connectSocket();
 })();
