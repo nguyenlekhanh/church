@@ -2247,7 +2247,11 @@ async function publishShowCue(cue, { source = 'auto' } = {}) {
 
   const showSettings = state.settings.show || {};
   if (!state.settings.ttsEnabled || showSettings.narration === false || !cue.ttsText) return;
-  if (Date.now() < narrationBusyUntil) {
+  // Welcome greetings queue behind whatever is speaking; the stage plays them
+  // back one at a time. Other cues keep the original "still speaking" guard so
+  // a prayer or verse is never stacked by the program's own timer.
+  const isWelcomeCue = cue.kind === 'welcome';
+  if (!isWelcomeCue && Date.now() < narrationBusyUntil) {
     console.log('[Show] Narration skipped: previous prayer is still speaking.');
     return;
   }
@@ -2260,14 +2264,17 @@ async function publishShowCue(cue, { source = 'auto' } = {}) {
     inspectTtsAudio(result, `the ${cue.kind || 'show'} cue`);
     const durationSec = Math.max(2, Number(result.durationSec) || 8);
     // Leaves room for the client's fade-out and a natural pause afterwards.
-    narrationBusyUntil = Date.now() + durationSec * 1000 + 2200;
+    narrationBusyUntil = isWelcomeCue
+      ? Math.max(narrationBusyUntil, Date.now() + durationSec * 1000 + 2200)
+      : Date.now() + durationSec * 1000 + 2200;
     broadcastNotification('tts.play', {
       text: cue.ttsText,
       voice: result.voice,
       language: result.language,
       url: result.url,
       durationSec,
-      source: 'show'
+      source: 'show',
+      welcome: isWelcomeCue
     });
   } catch (err) {
     console.warn('[Show] Narration failed:', err.message);

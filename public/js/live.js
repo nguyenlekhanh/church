@@ -1179,7 +1179,13 @@
 
   function handleShowCue(cue) {
     if (!cue || farewellActive) return;
-    if (cueQueue.length > 3) cueQueue.shift();
+    // Keep the card queue short, but never evict a welcome: every viewer's
+    // greeting is shown in arrival order before the card moves on.
+    while (cueQueue.length > 3) {
+      const stale = cueQueue.findIndex((item) => item.kind !== 'welcome');
+      if (stale === -1) break;
+      cueQueue.splice(stale, 1);
+    }
     cueQueue.push(cue);
     if (!activeCue) displayNextCue();
   }
@@ -1810,6 +1816,8 @@
             audio.enqueueTts(data.text || '', {
               lang: data.language || 'en',
               url: data.url,
+              // Welcome greetings are never evicted or text-deduplicated.
+              welcome: Boolean(data.welcome),
               // The closing blessing is an operator action: speak it even when
               // automatic narration is switched off.
               force: data.source === 'farewell'

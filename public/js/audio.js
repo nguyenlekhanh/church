@@ -648,7 +648,9 @@
 
       const now = Date.now();
       const last = this.recentSpoken.get(clean);
-      if (last && now - last < 12000) {
+      // Two viewers can share a display name; a welcome greeting is a distinct
+      // message for a distinct viewer, so it is never deduplicated by text.
+      if (!options.welcome && last && now - last < 12000) {
         if (onStart) onStart();
         if (onEnd) setTimeout(onEnd, 3200);
         return;
@@ -658,8 +660,11 @@
         this.recentSpoken.delete(this.recentSpoken.keys().next().value);
       }
 
-      if (this.ttsQueue.length >= this.maxQueue) {
-        const dropped = this.ttsQueue.shift();
+      // Welcome greetings are never discarded. When the queue is full the oldest
+      // non-welcome announcement makes room instead.
+      if (!options.welcome && this.ttsQueue.length >= this.maxQueue) {
+        const index = this.ttsQueue.findIndex((item) => !item.welcome);
+        const [dropped] = this.ttsQueue.splice(index === -1 ? 0 : index, 1);
         if (dropped?.onEnd) dropped.onEnd();
       }
 
@@ -670,6 +675,7 @@
         voice: options.voice || this.ttsVoice || undefined,
         rate: Number(options.rate || this.ttsRate || 1.0),
         url: options.url || null,
+        welcome: Boolean(options.welcome),
         onStart,
         onEnd,
         fetchPromise: null
