@@ -864,6 +864,154 @@
     particleEngine.spawnFloatingText(`Thank you, ${event.user}`, 540, 760, '#f7e6b8');
   }
 
+  /* ---------------------------------------------------------------------
+     Compact LIVE activity panel — right side, mirrors the existing events
+     --------------------------------------------------------------------- */
+  const activityPanel = document.getElementById('liveActivity');
+  const activityPanelList = document.getElementById('liveActivityList');
+  const activityPanelToggle = document.getElementById('liveActivityToggle');
+  // The stage's own SVG shapes (community counters / brand marks) are reused
+  // so the panel introduces no new icon set.
+  const ACTIVITY_ICON_PATHS = {
+    // Elegant five-petal flower: one petal duplicated and rotated around the bloom.
+    amen: '<ellipse cx="12" cy="6.9" rx="2.4" ry="3.2"/><ellipse cx="12" cy="6.9" rx="2.4" ry="3.2" transform="rotate(72 12 12)"/><ellipse cx="12" cy="6.9" rx="2.4" ry="3.2" transform="rotate(144 12 12)"/><ellipse cx="12" cy="6.9" rx="2.4" ry="3.2" transform="rotate(216 12 12)"/><ellipse cx="12" cy="6.9" rx="2.4" ry="3.2" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="2.1"/>'
+  };
+  // Transparent WebP artwork for the three gift actions (project-relative URLs).
+  const ACTIVITY_ICON_IMAGES = {
+    rose: '/assets/gift_icon/rose.webp',
+    candle: '/assets/gift_icon/PrayerCandle.webp',
+    grandCeremony: '/assets/gift_icon/grandCeremony.webp'
+  };
+  // Four permanent action slots: a fixed status panel, never an event feed.
+  const ACTIVITY_ACTIONS = [
+    { type: 'gift', icon: 'rose', label: 'Gift' },
+    { type: 'candle', icon: 'candle', label: 'Light Candle' },
+    { type: 'bigBlessing', icon: 'grandCeremony', label: 'Big Blessing' },
+    { type: 'amen', icon: 'amen', label: 'Amen' }
+  ];
+  const activitySlots = new Map();
+  const activitySeenIds = new Set();
+  let activityCollapsed = false;
+  let activitySeeded = false;
+
+  function syncActivityPanel() {
+    if (!activityPanel) return;
+    activityPanel.classList.add('visible');
+    activityPanel.classList.toggle('collapsed', activityCollapsed);
+    if (activityPanelToggle) {
+      activityPanelToggle.setAttribute('aria-expanded', String(!activityCollapsed));
+      activityPanelToggle.setAttribute('aria-label', activityCollapsed ? 'Expand live activity' : 'Collapse live activity');
+    }
+  }
+
+  /** Creates the four fixed rows once; later events only ever update them. */
+  function buildActivityPanel() {
+    if (!activityPanelList || activitySlots.size) return;
+    ACTIVITY_ACTIONS.forEach((action) => {
+      const row = document.createElement('li');
+      row.className = 'activity-item idle';
+      row.dataset.activity = action.type;
+
+      const icon = document.createElement('span');
+      icon.className = 'activity-icon';
+      if (ACTIVITY_ICON_IMAGES[action.icon]) {
+        const img = document.createElement('img');
+        img.className = 'activity-icon-img';
+        img.src = ACTIVITY_ICON_IMAGES[action.icon];
+        img.alt = '';
+        img.draggable = false;
+        icon.appendChild(img);
+      } else if (action.icon) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.innerHTML = ACTIVITY_ICON_PATHS[action.icon] || '';
+        icon.appendChild(svg);
+      } else {
+        icon.textContent = '✝';
+      }
+
+      const copy = document.createElement('span');
+      copy.className = 'activity-copy';
+      const label = document.createElement('span');
+      label.className = 'activity-label';
+      label.textContent = action.label;
+      const meta = document.createElement('span');
+      meta.className = 'activity-meta';
+      meta.textContent = 'No activity yet';
+      copy.append(label, meta);
+
+      const qty = document.createElement('span');
+      qty.className = 'activity-qty';
+      qty.hidden = true;
+
+      row.append(icon, copy, qty);
+      activityPanelList.appendChild(row);
+      activitySlots.set(action.type, { row, meta, qty, count: 0 });
+    });
+    syncActivityPanel();
+  }
+
+  /** Maps the shapes the server already broadcasts onto the four fixed slots. */
+  function activityUpdateFor(event) {
+    if (!event) return null;
+    const who = event.user || 'A friend';
+    switch (event.kind) {
+      case 'candle':
+        return { type: 'candle', amount: Math.max(1, Number(event.count) || 1), meta: who };
+      case 'gift': {
+        // Large tiers arrive as grandCeremony and must update Big Blessing, never Gift.
+        const big = event.tier === 'large' || event.type === 'grandCeremony';
+        return {
+          type: big ? 'bigBlessing' : 'gift',
+          amount: Math.max(1, Number(event.quantity) || 1),
+          meta: event.giftName ? `${who} · ${event.giftName}` : who
+        };
+      }
+      default:
+        return null;
+    }
+  }
+
+  function updateActivitySlot(update) {
+    const slot = update && activitySlots.get(update.type);
+    if (!slot) return;
+    slot.count += update.amount || 1;
+    if (update.meta) slot.meta.textContent = update.meta;
+    slot.qty.textContent = `×${slot.count}`;
+    slot.qty.hidden = false;
+    slot.row.classList.remove('idle');
+  }
+
+  /** Same event can arrive twice (temple.event + temple.state replay) — count it once. */
+  function noteActivityId(key) {
+    if (!key || activitySeenIds.has(key)) return false;
+    activitySeenIds.add(key);
+    if (activitySeenIds.size > 400) activitySeenIds.delete(activitySeenIds.values().next().value);
+    return true;
+  }
+
+  function pushActivityEvent(event) {
+    if (!event || !event.id) return;
+    if (!noteActivityId(event.id)) return;
+    updateActivitySlot(activityUpdateFor(event));
+  }
+
+  function seedActivity(events) {
+    if (activitySeeded) return;
+    activitySeeded = true;
+    // recentEvents is newest first; replay oldest first so the latest sender shows.
+    (Array.isArray(events) ? events : []).slice().reverse().forEach(pushActivityEvent);
+  }
+
+  buildActivityPanel();
+
+  activityPanelToggle?.addEventListener('click', (event) => {
+    event.preventDefault();
+    activityCollapsed = !activityCollapsed;
+    syncActivityPanel();
+  });
+
   function handleEvent(event) {
     if (!event) return;
 
@@ -923,6 +1071,7 @@
       footerActivity.textContent = activityLine(event);
     }
 
+    pushActivityEvent(event);
     enqueueEventTts(event);
   }
 
@@ -1536,6 +1685,7 @@
     renderPrayerWall(state.prayerRequests);
     renderEventFeed(state.recentEvents);
     renderStageActivity(state.recentEvents);
+    seedActivity(state.recentEvents);
 
     if (state.backgrounds?.current) {
       if (firstState) setInitialBackground(state.backgrounds.current);
@@ -1580,6 +1730,10 @@
         case 'temple.event':
           if (data?.state) updateState(data.state);
           if (data?.event) handleEvent(data.event);
+          break;
+        case 'live.amen':
+          // Only a real TikTok comment containing "amen" moves the Amen row.
+          updateActivitySlot({ type: 'amen', amount: 1, meta: data?.user || 'A friend' });
           break;
         case 'prayer.request':
           if (data?.state) updateState(data.state);

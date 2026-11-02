@@ -1836,6 +1836,247 @@ body.demo-mode .demo-badge { display: block; }
 }
 
 /* ==========================================================================
+   Compact LIVE activity panel — right side, real events only
+   ========================================================================== */
+.live-activity {
+  position: absolute;
+  /* Horizontal band centred under the welcome line (header ends at y≈273). */
+  left: 0;
+  right: 0;
+  top: 300px;
+  z-index: 44;
+  width: 1040px;
+  max-width: calc(100% - 32px);
+  margin: 0 auto;
+  padding: 8px 12px;
+  border: 1px solid rgba(232, 200, 122, 0.2);
+  border-radius: 16px;
+  /* Background-only transparency — exactly 50%, so text/icons stay fully opaque. */
+  background: rgba(20, 24, 32, 0.5);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(247, 230, 184, 0.07);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.45s ease, transform 0.45s ease, visibility 0.45s;
+  pointer-events: none;
+}
+
+.live-activity.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.live-activity-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 4px 8px;
+}
+
+.live-activity-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  color: var(--gold);
+}
+
+.live-activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d9534f;
+  box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.5);
+  animation: livePulse 2.4s ease-out infinite;
+}
+
+.live-activity-toggle {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(232, 200, 122, 0.24);
+  border-radius: 50%;
+  background: rgba(232, 200, 122, 0.08);
+  color: var(--gold-bright);
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.live-activity-toggle:hover { background: rgba(232, 200, 122, 0.18); }
+
+.live-activity-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.35s ease;
+}
+
+.live-activity.collapsed .live-activity-toggle svg { transform: rotate(180deg); }
+
+/* One horizontal row of four fixed actions — no scrolling, no wrapping. */
+.live-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 8px;
+  max-height: 340px; /* only drives the collapse animation; never scrolls */
+  transition: max-height 0.35s ease, opacity 0.3s ease;
+}
+
+/* Compact one-line action: icon + label (+ count) only, so all four share the row. */
+.live-activity-list .activity-meta {
+  display: none;
+}
+
+.live-activity.collapsed .live-activity-list {
+  max-height: 0;
+  opacity: 0;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  /* The four actions share the band evenly, so spacing stays consistent. */
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 6px;
+  padding: 6px 8px;
+  white-space: nowrap;
+  border: 1px solid rgba(232, 200, 122, 0.13);
+  border-radius: 11px;
+  background: rgba(12, 22, 38, 0.72);
+  animation: activityRowIn 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition: opacity 0.34s ease, transform 0.34s ease;
+}
+
+.activity-item.leaving {
+  opacity: 0;
+  transform: translateX(16px);
+}
+
+/* Fixed slots: an action that has not happened yet stays listed, but recedes. */
+.activity-item.idle {
+  border-color: rgba(232, 200, 122, 0.07);
+  background: rgba(12, 22, 38, 0.34);
+}
+
+.activity-item.idle .activity-icon {
+  border-color: rgba(232, 200, 122, 0.16);
+  color: rgba(232, 200, 122, 0.4);
+}
+
+.activity-item.idle .activity-label {
+  color: rgba(247, 230, 184, 0.6);
+}
+
+.activity-item.idle .activity-meta {
+  color: rgba(247, 230, 184, 0.34);
+}
+
+.activity-qty[hidden] { display: none; }
+
+@keyframes activityRowIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.activity-icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 200, 122, 0.34);
+  background: radial-gradient(circle, rgba(232, 200, 122, 0.2), rgba(232, 200, 122, 0.05));
+  color: var(--gold-bright);
+  font-family: var(--serif);
+  font-size: 16px;
+}
+
+.activity-icon svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+/* Rose artwork (Gift + Big Blessing): transparent WebP kept in its own ratio. */
+.activity-icon .activity-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+}
+
+.activity-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--gold-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-meta {
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--beige-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-qty {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 200, 122, 0.3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--gold);
+}
+
+.activity-item[data-activity="bigBlessing"] {
+  border-color: rgba(247, 230, 184, 0.42);
+  background: linear-gradient(135deg, rgba(41, 31, 16, 0.82), rgba(14, 22, 36, 0.74));
+  box-shadow: 0 0 22px rgba(232, 200, 122, 0.18);
+}
+
+.activity-item[data-activity="bigBlessing"] .activity-icon {
+  border-color: rgba(247, 230, 184, 0.6);
+  box-shadow: 0 0 18px rgba(232, 200, 122, 0.32);
+}
+
+/* ==========================================================================
    Prayer congregation — cathedral nave, one seat per real TikTok joiner
    ========================================================================== */
 .congregation-scene {

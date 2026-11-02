@@ -2800,6 +2800,15 @@ function handleViewerComment(commentText, user, uniqueId, avatar, options = {}) 
 
   const command = detectCommand(raw);
   if (command) {
+    // A real Amen comment updates the LIVE Activity row on every comment, even
+    // when the spoken acknowledgement below is rate-limited.
+    if (command === 'AMEN' && options.source === 'tiktok') {
+      broadcastNotification('live.amen', {
+        user: memberName,
+        uniqueId,
+        at: new Date().toISOString()
+      });
+    }
     const event = handleCommand(command, {
       user: memberName,
       uniqueId,
