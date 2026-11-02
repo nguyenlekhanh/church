@@ -1,26 +1,26 @@
 {
-  "scannedAt": "2026-11-01T06:36:39.853Z",
-  "durationMs": 85,
+  "scannedAt": "2026-11-02T02:01:19.635Z",
+  "durationMs": 160,
   "totals": {
-    "images": 31,
+    "images": 34,
     "categories": 7,
-    "aiGenerated": 10,
-    "licensed": 31,
+    "aiGenerated": 13,
+    "licensed": 34,
     "needsReview": 0
   },
   "categories": [
     {
       "id": "backgrounds",
       "label": "Backgrounds",
-      "count": 5,
-      "aiGenerated": 2,
+      "count": 6,
+      "aiGenerated": 3,
       "needsReview": 0
     },
     {
       "id": "bible",
       "label": "Bible",
-      "count": 4,
-      "aiGenerated": 2,
+      "count": 5,
+      "aiGenerated": 3,
       "needsReview": 0
     },
     {
@@ -40,8 +40,8 @@
     {
       "id": "church",
       "label": "Church",
-      "count": 4,
-      "aiGenerated": 0,
+      "count": 5,
+      "aiGenerated": 1,
       "needsReview": 0
     },
     {

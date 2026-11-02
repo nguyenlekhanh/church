@@ -1,6 +1,6 @@
 # Copyright & Commercial Licensing Audit
 
-**Generated:** Nov 01, 2026, 1:36 AM  
+**Generated:** Nov 01, 2026, 8:01 PM  
 **Scope:** Production assets under public/assets (active Christian assets, legacy files and archived music) plus documentation/reference images under docs. Generated TTS cache and dependency files are excluded.  
 **Status:** Evidence-based inventory. This is **not legal advice** and does not grant clearance.
 
@@ -13,15 +13,15 @@
 | Music files audited | 23 |
 | — active playlist | 21 (18 enabled) |
 | — archived originals | 2 |
-| Image files audited | 81 |
-| — active Christian broadcast assets | 34 |
-| — legacy public/assets files | 12 |
-| — documentation/reference images | 35 |
-| **VERIFIED** | **42** |
-| **NEEDS_REVIEW** | **46** |
+| Image files audited | 88 |
+| — active Christian broadcast assets | 37 |
+| — legacy public/assets files | 15 |
+| — documentation/reference images | 36 |
+| **VERIFIED** | **45** |
+| **NEEDS_REVIEW** | **47** |
 | **REJECTED** | **0** |
-| **UNKNOWN** | **16** |
-| Total assets audited | 104 |
+| **UNKNOWN** | **19** |
+| Total assets audited | 111 |
 
 ### What the statuses mean
 
@@ -67,15 +67,17 @@ The active playlist contains 21 tracks. 3 are original synthesis; 18 MP3 tracks 
 
 ## Images — active Christian assets
 
-34 files are in the active catalog. Public-domain, CC0, CC BY and generated overlays are **VERIFIED** subject to attribution. The CC BY-SA files are **NEEDS_REVIEW** because the adapted 9:16 crops may require ShareAlike release; do not describe those images as fully cleared.
+37 files are in the active catalog. Public-domain, CC0, CC BY and generated overlays are **VERIFIED** subject to attribution. The CC BY-SA files are **NEEDS_REVIEW** because the adapted 9:16 crops may require ShareAlike release; do not describe those images as fully cleared.
 
 | File | Author | Source | License | Modifications | Attribution | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `AI_Peaceful_landscape_at_sunrise_15c87dfd.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `AI_Sunlight_illuminating_landscape_…_42e43441.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
+| `AI_User_editing_image_reference_bf23c818.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `backgrounds-01-golden-clouds.jpg` | Velatrix | [Source](https://commons.wikimedia.org/wiki/File:Golden_Clouds.JPG) | [CC0](http://creativecommons.org/publicdomain/zero/1.0/deed.en) | Resized/optimized from 3840×2160 to 1600×900 | No | **VERIFIED** |
 | `backgrounds-02-d-lmen-umland-sonnenaufgang-2012-8084.jpg` | Dietmar Rabich | [Source](https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Umland,_Sonnenaufgang_--_2012_--_8084.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Resized/optimized from 3456×5184 to 1066×1600 | Yes | **NEEDS_REVIEW** |
 | `backgrounds-03-d-lmen-umland-sonnenaufgang-2012-8069.jpg` | Dietmar Rabich | [Source](https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Umland,_Sonnenaufgang_--_2012_--_8069.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Resized/optimized from 5184×3456 to 1600×1066 | Yes | **NEEDS_REVIEW** |
+| `AI_ Create_image_using_reference_46a9b712.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `AI_Bible_resting_on_wooden_table_395f2590.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `AI_Bible_resting_on_wooden_table_5c55bf43.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `bible-03-bible-on-a-coffee-table.jpg` | Harmonywriter | [Source](https://commons.wikimedia.org/wiki/File:Bible_on_a_coffee_table.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 1920×2560 to 1200×1600 | Yes | **NEEDS_REVIEW** |
@@ -90,6 +92,7 @@ The active playlist contains 21 tracks. 3 are original synthesis; 18 MP3 tracks 
 | `AI_Congregation_praying_in_Gothic_c…_bf512f0e.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `cathedral-01-cathedral-mass.jpg` | U.S. Customs and Border Protection | [Source](https://commons.wikimedia.org/wiki/File:Police_Week_Blue_Mass_2013_(8738256373%29.jpg) | [Public domain](https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain) | Center 9:16 crop, deeper warm cinematic grade, light sharpening | No | **VERIFIED** |
 | `cathedral-02-sanctuary-service.jpg` | Daniel G Rego | [Source](https://commons.wikimedia.org/wiki/File:Central_nave_of_S%C3%A3o_Jos%C3%A9_Sanctuary_during_a_Catholic_service,_Igreja_S%C3%A3o_Jos%C3%A9_Belo_Horizonte_Minas_Gerais_Brasil_-_Daniel_Guimaraes_Rego_Dan_Rego_Daniel_G.Rego_Daniel_Rego.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Center 9:16 crop, warm cinematic grade | Yes | **NEEDS_REVIEW** |
+| `AI_Create_similar_modified_image_3c9f898c.jpg` | AI Generated | Local file | AI Generated (project original) | None documented | No | **VERIFIED** |
 | `church-01-nave-of-basilica-saint-sernin-2012-08-24.jpg` | PierreSelim | [Source](https://commons.wikimedia.org/wiki/File:Nave_of_Basilica_Saint-Sernin_-_2012-08-24.jpg) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | Resized/optimized from 4270×2006 to 1600×751 | Yes | **VERIFIED** |
 | `church-02-holy-trinity-sloane-street-church-nave-2-diliff.jpg` | Diliff | [Source](https://commons.wikimedia.org/wiki/File:Holy_Trinity_Sloane_Street_Church_Nave_2_-_Diliff.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 7152×4770 to 1600×1067 | Yes | **NEEDS_REVIEW** |
 | `church-03-st-peter-s-church-nave-1-drogheda-ireland-diliff.jpg` | Diliff | [Source](https://commons.wikimedia.org/wiki/File:St_Peter%27s_Church_Nave_1,_Drogheda,_Ireland_-_Diliff.jpg) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | Resized/optimized from 9839×7989 to 1600×1299 | Yes | **NEEDS_REVIEW** |
@@ -123,6 +126,9 @@ These files are retained in place for compatibility. They are **not** in the Chr
 | `devotee_walk_2.png` | Unknown | Local file | Unknown | Unknown | Unknown | **UNKNOWN** |
 | `devotee_walk.png` | Unknown | Local file | Unknown | Unknown | Unknown | **UNKNOWN** |
 | `devotee.png` | Unknown | Local file | Unknown | Unknown | Unknown | **UNKNOWN** |
+| `grandCeremony.webp` | Unknown | Local file | Unknown | Unknown | Unknown | **UNKNOWN** |
+| `PrayerCandle.webp` | Unknown | Local file | Unknown | Unknown | Unknown | **UNKNOWN** |
+| `rose.webp` | Unknown | Local file | Unknown | Unknown | Unknown | **UNKNOWN** |
 | `temple_stage_bg.png` | Unknown | Local file | Unknown | Unknown | Unknown | **UNKNOWN** |
 
 ## Documentation and reference images
@@ -150,6 +156,7 @@ These are not broadcast assets. Screenshots may contain licensed backgrounds; up
 | `congregation-interactions.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `congregation-prayer.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `congregation-stage.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
+| `farewell-stage.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `gift-stage.jpg` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `live-show-stage-preview.jpg` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |
 | `live-show-stage.png` | Christian Prayer Live (documentation capture) | Local file | Project-generated capture; may contain third-party imagery | Documentation capture | Yes | **NEEDS_REVIEW** |

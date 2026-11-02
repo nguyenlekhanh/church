@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-11-01T18:47:30.069Z",
+  "savedAt": "2026-11-02T02:30:47.849Z",
   "counters": {
     "recoveries": 0,
     "failedRecoveries": 0,
@@ -8,6 +8,42 @@
   },
   "lastRecovery": null,
   "incidents": [
+    {
+      "id": "inc_1793586631450_7gig1",
+      "at": "2026-11-02T02:30:31.450Z",
+      "component": "tiktok",
+      "severity": "warning",
+      "message": "TikTok Live connection to @tinytails99 closed.",
+      "action": "Scheduling a reconnect with backoff",
+      "result": "Awaiting retry",
+      "detail": null,
+      "resolved": false,
+      "resolvedAt": null
+    },
+    {
+      "id": "inc_1793584865792_gec2h",
+      "at": "2026-11-02T02:01:05.792Z",
+      "component": "ram",
+      "severity": "warning",
+      "message": "System memory 85.6% used",
+      "action": "Monitoring only.",
+      "result": "No destructive action taken",
+      "detail": null,
+      "resolved": true,
+      "resolvedAt": "2026-11-02T02:30:47.047Z"
+    },
+    {
+      "id": "inc_1793584548657_ys8am",
+      "at": "2026-11-02T01:55:48.657Z",
+      "component": "ram",
+      "severity": "warning",
+      "message": "System memory 84.3% used",
+      "action": "Monitoring only.",
+      "result": "No destructive action taken",
+      "detail": null,
+      "resolved": true,
+      "resolvedAt": "2026-11-02T02:30:47.047Z"
+    },
     {
       "id": "inc_1793558849268_hld6c",
       "at": "2026-11-01T18:47:29.268Z",
