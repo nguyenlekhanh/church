@@ -303,6 +303,85 @@
         <div class="show-log" id="showLog"><div class="empty">No cues yet.</div></div>
       </section>
 
+      <!-- Engagement TTS -->
+      <section class="panel span-2" id="engagementTts">
+        <div class="panel-head">
+          <h2>Engagement TTS</h2>
+          <span class="badge" id="engBadge">Loading</span>
+        </div>
+        <p class="note">
+          Gentle reminders that invite likes, shares, optional gifts, prayer requests and a short Scripture.
+          They use the same Piper voice and the same narration queue as every other announcement, so they never
+          overlap a welcome, gift or prayer message. Reminders stay silent when nobody is watching, and gifts are
+          always optional — prayers are never withheld.
+        </p>
+
+        <div class="bg-controls">
+          <label class="switch">
+            <input type="checkbox" id="engEnabled" />
+            <span>Engagement reminders</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="engLike" />
+            <span>Like</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="engShare" />
+            <span>Share</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="engGift" />
+            <span>Gift / support</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="engPrayer" />
+            <span>Prayer request</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="engScripture" />
+            <span>Scripture</span>
+          </label>
+        </div>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Like every (seconds)</span>
+            <input type="number" id="engLikeInterval" min="30" max="3600" step="10" value="120" />
+          </label>
+          <label class="field">
+            <span>Share every (seconds)</span>
+            <input type="number" id="engShareInterval" min="30" max="3600" step="10" value="240" />
+          </label>
+          <label class="field">
+            <span>Gift / support every (seconds)</span>
+            <input type="number" id="engGiftInterval" min="30" max="3600" step="10" value="360" />
+          </label>
+          <label class="field">
+            <span>Prayer request every (seconds)</span>
+            <input type="number" id="engPrayerInterval" min="30" max="3600" step="10" value="480" />
+          </label>
+          <label class="field">
+            <span>Scripture every (seconds)</span>
+            <input type="number" id="engScriptureInterval" min="30" max="3600" step="10" value="600" />
+          </label>
+        </div>
+
+        <div class="button-row">
+          <label class="field compact">
+            <span>Test category</span>
+            <select id="engTestCategory">
+              <option value="like">Like</option>
+              <option value="share">Share</option>
+              <option value="gift">Gift / support</option>
+              <option value="prayer">Prayer request</option>
+              <option value="scripture">Scripture</option>
+            </select>
+          </label>
+          <button class="btn gold" id="btnEngSpeak">Speak a reminder now</button>
+        </div>
+        <p class="note" id="engStatusNote">Loading engagement schedule…</p>
+      </section>
+
       <!-- Community engagement -->
       <section class="panel span-2" id="engagement">
         <div class="panel-head">

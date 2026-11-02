@@ -122,6 +122,7 @@
     renderMusic(state.settings?.music);
     renderShow(state.show);
     renderEngagement(state.settings, state.quiz);
+    renderEngagementTts(state.settings);
     renderCongregation(state.congregation);
     renderPrayerQueue(state.prayerRequests, state.settings?.prayer);
     renderChat(state.chatFeed);
@@ -805,6 +806,43 @@
 
       row.append(seat, copy, marks, tag);
       roster.appendChild(row);
+    }
+  }
+
+  function renderEngagementTts(settings) {
+    const engagement = settings?.engagement;
+    if (!engagement) return;
+    const setChecked = (id, value) => {
+      const el = $(id);
+      if (el && document.activeElement !== el) el.checked = Boolean(value);
+    };
+    const setValue = (id, value) => {
+      const el = $(id);
+      if (el && document.activeElement !== el) el.value = String(value);
+    };
+    const categories = ['like', 'share', 'gift', 'prayer', 'scripture'];
+    setChecked('engEnabled', engagement.enabled !== false);
+    categories.forEach((category) => {
+      const cap = category.charAt(0).toUpperCase() + category.slice(1);
+      setChecked(`eng${cap}`, engagement[category]?.enabled !== false);
+      setValue(`eng${cap}Interval`, engagement[category]?.intervalSeconds ?? '');
+    });
+    const badge = $('engBadge');
+    if (badge) {
+      const on = engagement.enabled !== false;
+      badge.textContent = on ? 'On' : 'Off';
+      badge.className = `badge ${on ? 'ok' : ''}`;
+    }
+    const note = $('engStatusNote');
+    if (note) {
+      if (engagement.enabled === false) {
+        note.textContent = 'Engagement reminders are off.';
+      } else {
+        const active = categories.filter((category) => engagement[category]?.enabled !== false);
+        note.textContent = active.length === 0
+          ? 'All five categories are disabled, so nothing will be spoken.'
+          : `Schedule: ${active.map((c) => `${c} ${engagement[c].intervalSeconds}s`).join(' · ')}. Spoken only while viewers are present and nothing else is speaking.`;
+      }
     }
   }
 
@@ -2639,6 +2677,25 @@
   $('quizNarration')?.addEventListener('change', (event) => updateQuiz({ tts: event.target.checked }));
   $('quizFrequency')?.addEventListener('change', (event) => updateQuiz({ frequencyMinutes: Number(event.target.value) }));
   $('quizRevealDelay')?.addEventListener('change', (event) => updateQuiz({ revealSeconds: Number(event.target.value) }));
+
+  /* Engagement TTS schedule */
+  $('engEnabled')?.addEventListener('change', (event) => updateSettings({ engagement: { enabled: event.target.checked } }));
+  ['Like', 'Share', 'Gift', 'Prayer', 'Scripture'].forEach((cap) => {
+    const key = cap.toLowerCase();
+    $(`eng${cap}`)?.addEventListener('change', (event) => {
+      updateSettings({ engagement: { [key]: { enabled: event.target.checked } } });
+    });
+    $(`eng${cap}Interval`)?.addEventListener('change', (event) => {
+      updateSettings({ engagement: { [key]: { intervalSeconds: Number(event.target.value) } } });
+    });
+  });
+  $('btnEngSpeak')?.addEventListener('click', async () => {
+    try {
+      printOutput(await callRpc('engagement.test', { category: $('engTestCategory')?.value || 'like' }));
+    } catch (error) {
+      reportError('Engagement reminder failed', error);
+    }
+  });
 
   $('btnQuizNext')?.addEventListener('click', async () => {
     try {

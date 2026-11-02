@@ -673,8 +673,8 @@
     }
   },
   "featuredVerse": {
-    "text": "Take therefore no thought for the morrow: for the morrow shall take thought for the things of itself.",
-    "reference": "Matthew 6:34 (KJV)"
+    "text": "Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid.",
+    "reference": "John 14:27 (KJV)"
   },
   "prayerRequests": [
     {
@@ -1149,6 +1149,26 @@
   ],
   "showHistory": [
     {
+      "id": "cue_1793580669427",
+      "kind": "verse",
+      "eyebrow": "VERSE OF THE MOMENT",
+      "title": "A Word for Today",
+      "body": "Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid.",
+      "at": "2026-11-02T00:51:09.427Z",
+      "source": "auto",
+      "simulated": false
+    },
+    {
+      "id": "cue_1793580549425",
+      "kind": "welcome",
+      "eyebrow": "WELCOME",
+      "title": "Peace Be With You",
+      "body": "Welcome to Christian Prayer Live. Thank you for pausing here. Wherever this day has taken you, you are welcome in this moment of prayer. Let us begin together.",
+      "at": "2026-11-02T00:49:09.425Z",
+      "source": "auto",
+      "simulated": false
+    },
+    {
       "id": "cue_1793579418951",
       "kind": "welcome",
       "eyebrow": "WELCOME",
@@ -1327,29 +1347,10 @@
       "at": "2026-11-01T21:53:45.533Z",
       "source": "auto",
       "simulated": false
-    },
-    {
-      "id": "cue_1793559239688",
-      "kind": "verse",
-      "eyebrow": "VERSE OF THE MOMENT",
-      "title": "A Word for Today",
-      "body": "Rejoicing in hope; patient in tribulation; continuing instant in prayer;",
-      "at": "2026-11-01T18:53:59.688Z",
-      "source": "auto",
-      "simulated": false
-    },
-    {
-      "id": "cue_1793559119686",
-      "kind": "welcome",
-      "eyebrow": "WELCOME",
-      "title": "Peace Be With You",
-      "body": "Welcome to Christian Prayer Live. Thank you for pausing here. Wherever this day has taken you, you are welcome in this moment of prayer. Let us begin together.",
-      "at": "2026-11-01T18:51:59.686Z",
-      "source": "auto",
-      "simulated": false
     }
   ],
   "quizRecent": [
+    "q038",
     "q127",
     "q052",
     "q078",
@@ -1398,12 +1399,11 @@
     "q046",
     "q073",
     "q129",
-    "q117",
-    "q068"
+    "q117"
   ],
   "settings": {
     "copyrightSafeMode": true,
-    "ttsEnabled": false,
+    "ttsEnabled": true,
     "ttsLanguage": "en",
     "enVoice": "en_US-amy-medium",
     "vnVoice": "vi_VN-vais1000-medium",
@@ -1411,7 +1411,7 @@
     "ttsRate": 1,
     "sfxEnabled": true,
     "music": {
-      "enabled": false,
+      "enabled": true,
       "volume": 0.11,
       "duckVolume": 0.035,
       "track": "charlotte",
@@ -1447,7 +1447,7 @@
       "randomize": false,
       "transitionMs": 1600,
       "sceneMatch": true,
-      "current": "/assets/christian/cathedral/cathedral-01-cathedral-mass.jpg"
+      "current": "/assets/christian/candles/AI_Prayer_candles_glowing_inside_ch…_310bb196.jpg"
     },
     "prayer": {
       "autoApprove": true,
@@ -1461,6 +1461,32 @@
       "showNames": true,
       "inactivityMinutes": 20,
       "maxVisible": 50
+    },
+    "engagement": {
+      "enabled": true,
+      "startupGraceSeconds": 120,
+      "minSpacingSeconds": 45,
+      "staleAfterSeconds": 300,
+      "scripture": {
+        "enabled": false,
+        "intervalSeconds": 600
+      },
+      "prayer": {
+        "enabled": false,
+        "intervalSeconds": 480
+      },
+      "gift": {
+        "enabled": true,
+        "intervalSeconds": 360
+      },
+      "share": {
+        "enabled": true,
+        "intervalSeconds": 240
+      },
+      "like": {
+        "enabled": true,
+        "intervalSeconds": 120
+      }
     },
     "tiktok": {
       "autoReconnect": true,

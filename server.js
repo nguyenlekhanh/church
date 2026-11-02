@@ -75,7 +75,16 @@ const BRAND = {
 // 2. PIPER TTS WORKER MANAGER (LANGUAGE AWARE: EN-US + VI-VN)
 // ============================================================================
 let ttsManager = null;
+const {
+  mergeEngagementSettings,
+  EngagementMessages,
+  EngagementScheduler,
+  ENGAGEMENT_DEFAULTS
+} = require('./lib/engagement');
+
 let showProgram = null;
+let engagementScheduler = null;
+let engagementMessages = null;
 let quizEngine = null;
 let healthMonitor = null;
 let smartSchedule = null;
@@ -696,6 +705,7 @@ function defaultSettings() {
       inactivityMinutes: 20,
       maxVisible: 50
     },
+    engagement: mergeEngagementSettings({}),
     tiktok: {
       autoReconnect: true,
       maxRetries: 6,
@@ -763,6 +773,10 @@ function loadState() {
           prayer: { ...DEFAULT_STATE.settings.prayer, ...((saved.settings || {}).prayer || {}) },
           music: { ...DEFAULT_STATE.settings.music, ...((saved.settings || {}).music || {}) },
           show: { ...DEFAULT_STATE.settings.show, ...((saved.settings || {}).show || {}) },
+          engagement: mergeEngagementSettings(
+            DEFAULT_STATE.settings.engagement,
+            (saved.settings || {}).engagement || {}
+          ),
           quiz: { ...DEFAULT_STATE.settings.quiz, ...((saved.settings || {}).quiz || {}) },
           gifts: { ...DEFAULT_STATE.settings.gifts, ...((saved.settings || {}).gifts || {}) },
           congregation: { ...DEFAULT_STATE.settings.congregation, ...((saved.settings || {}).congregation || {}) },
@@ -1232,6 +1246,8 @@ function displayPrayerRequest(request) {
   });
 
   saveState();
+  // A prayer announcement owns the room; engagement reminders wait their turn.
+  if (state.settings.ttsEnabled) engagementScheduler?.hold(15000);
   broadcastNotification('prayer.request', {
     request: {
       id: request.id,
@@ -1502,6 +1518,11 @@ const Rituals = {
       giftName,
       simulated: Boolean(params.simulated) || params.source !== 'tiktok'
     });
+
+    // A spoken gift thank-you owns the room; reminders wait their turn.
+    if (announce && giftSettings.tts !== false && state.settings.ttsEnabled) {
+      engagementScheduler?.hold(15000);
+    }
 
     const event = pushEventLog({
       type: tier === 'large' ? 'grandCeremony' : 'offerGift',
@@ -1864,6 +1885,60 @@ function applyCopyrightSafeMode(enabled) {
   return safety;
 }
 
+/** Engagement reminders only speak to a room that actually has an audience. */
+function engagementAudiencePresent() {
+  if ((Number(state.tiktok?.viewerCount) || 0) > 0) return true;
+  const payload = congregation && congregation.getPayload ? congregation.getPayload() : null;
+  const seats = (payload?.participants || []).filter((participant) => participant.source !== 'demo');
+  return seats.length > 0;
+}
+
+function engagementStatusPayload() {
+  const status = engagementScheduler ? engagementScheduler.status() : { enabled: false, next: [] };
+  return {
+    ...status,
+    viewers: Number(state.tiktok?.viewerCount) || 0,
+    audiencePresent: engagementAudiencePresent(),
+    narrationBusySeconds: Math.max(0, Math.ceil((narrationBusyUntil - Date.now()) / 1000)),
+    defaults: ENGAGEMENT_DEFAULTS
+  };
+}
+
+/**
+ * Speaks one engagement reminder through the shared Piper + tts.play path.
+ * Nothing is spoken while another announcement is in the room, and a failure
+ * backs the scheduler off instead of hammering the voice engine.
+ */
+async function speakEngagementReminder(category = 'like', options = {}) {
+  if (!engagementMessages || !ttsManager) return { ok: false, error: 'Narration is not ready yet.' };
+  if (!state.settings.ttsEnabled) return { ok: false, skipped: 'narration is off' };
+  if (Date.now() < farewellUntil) return { ok: false, skipped: 'the closing blessing is playing' };
+  if (Date.now() < narrationBusyUntil) return { ok: false, skipped: 'another announcement is speaking' };
+  if (!options.manual && !engagementAudiencePresent()) return { ok: false, skipped: 'no viewers watching' };
+  const text = engagementMessages.pick(category);
+  if (!text) return { ok: false, error: `No ${category} message configured.` };
+  try {
+    const result = await ttsManager.synthesize(text, { lang: 'en' });
+    if (!result.ok) return { ok: false, error: result.error || 'Piper is unavailable' };
+    inspectTtsAudio(result, `the ${category} reminder`);
+    const durationSec = Math.max(2, Number(result.durationSec) || 8);
+    // Welcome and prayer cues extend this; reminders never shorten the lock.
+    narrationBusyUntil = Math.max(narrationBusyUntil, Date.now() + durationSec * 1000 + 2200);
+    broadcastNotification('tts.play', {
+      text,
+      voice: result.voice,
+      language: result.language,
+      url: result.url,
+      durationSec,
+      source: 'engagement',
+      engagement: true
+    });
+    return { ok: true, category, text, durationSec, manual: Boolean(options.manual) };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 function applySettingsUpdate(params = {}) {
   const settings = state.settings;
   if (typeof params.ttsEnabled === 'boolean') settings.ttsEnabled = params.ttsEnabled;
@@ -1926,6 +2001,12 @@ function applySettingsUpdate(params = {}) {
       settings.prayer.maxQueue = clampNumber(params.prayer.maxQueue, 5, 200, settings.prayer.maxQueue);
       trimPrayerQueue();
     }
+  }
+
+  if (params.engagement && typeof params.engagement === 'object') {
+    settings.engagement = mergeEngagementSettings(settings.engagement, params.engagement);
+    // New intervals restart the clocks instead of firing an old backlog.
+    engagementScheduler?.refresh();
   }
 
   configureAutoSim(settings.autoSim);
@@ -3441,6 +3522,11 @@ async function handleRpcCall(method, params = {}) {
     case 'state.get':
       return getPublicState();
 
+    case 'engagement.status':
+      return engagementStatusPayload();
+    case 'engagement.test':
+      return speakEngagementReminder(params.category || 'like', { manual: true });
+
     // ---- Legacy ritual methods ----
     case 'temple.burnIncense':
       return Rituals.burnIncense(params);
@@ -4136,6 +4222,16 @@ wss.on('connection', (ws, req) => {
 
 ttsManager = new PiperManager();
 
+engagementMessages = new EngagementMessages({
+  getVerses: () => messageLibrary.data.bibleVerses || []
+});
+engagementScheduler = new EngagementScheduler({
+  getSettings: () => state.settings.engagement || ENGAGEMENT_DEFAULTS,
+  canSpeak: engagementAudiencePresent,
+  speak: (category) => speakEngagementReminder(category),
+  log: (message) => console.log(message)
+});
+
 quizEngine = new QuizEngine({
   getSettings: () => state.settings.quiz,
   recent: state.quizRecent,
@@ -4288,6 +4384,12 @@ server.listen(PORT, () => {
   healthMonitor.start();
   startTikTokWatchdog();
   startAutomatedShow();
+  if (state.settings.engagement?.enabled !== false) {
+    engagementScheduler.start();
+    console.log('[Engagement] Reminders on — like 120s · share 240s · gift 360s · prayer 480s · Scripture 600s.');
+  } else {
+    console.log('[Engagement] Reminders are off. Enable them from the dashboard.');
+  }
   if (state.settings.quiz.enabled) {
     quizEngine.sync({ firstRun: true });
     console.log('[Quiz] Bible quiz enabled — first question in about 45 seconds.');
@@ -4309,6 +4411,9 @@ process.on('SIGINT', () => {
   console.log('\n[Server] Shutting down...');
   try {
     if (showProgram) showProgram.stop();
+  } catch (_) {}
+  try {
+    if (engagementScheduler) engagementScheduler.stop();
   } catch (_) {}
   try {
     if (quizEngine) quizEngine.stop();

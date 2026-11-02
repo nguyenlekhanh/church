@@ -12,8 +12,10 @@
   'use strict';
 
   const params = new URLSearchParams(window.location.search);
-  const isObs = params.get('obs') === '1';
-  if (isObs) document.body.classList.add('obs-mode');
+  document.body.classList.add('obs-mode');
+
+  const isAdminMode = params.get('adminMode') === '1';
+  if (isAdminMode) document.body.classList.remove('obs-mode');
 
   const stageWrapper = document.getElementById('stageWrapper');
   const stage = document.getElementById('stage9x16');
